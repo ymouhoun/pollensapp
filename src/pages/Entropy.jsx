@@ -19,7 +19,6 @@ export default function Entropy() {
     queryFn: () => base44.entities.MediaItem.list('-created_date', 200),
   });
 
-  // Shuffle items deterministically based on a seed
   const shuffled = useMemo(() => {
     const filtered = items.filter(i => !i.is_forgotten);
     const arr = [...filtered];
@@ -30,25 +29,24 @@ export default function Entropy() {
     return arr;
   }, [items]);
 
-  const currentItem = shuffled[currentIndex % shuffled.length];
+  const currentItem = shuffled[currentIndex % Math.max(shuffled.length, 1)];
 
-  // Floating background images (exclude current)
   const floatingItems = useMemo(() => {
-    const others = shuffled.filter((_, i) => i !== currentIndex % shuffled.length);
+    const others = shuffled.filter((_, i) => i !== currentIndex % Math.max(shuffled.length, 1));
     const positions = [
-      { top: '5%', left: '2%', imgWidth: 140, imgHeight: 100 },
-      { top: '8%', left: '25%', imgWidth: 100, imgHeight: 75 },
-      { top: '3%', right: '35%', imgWidth: 110, imgHeight: 80 },
-      { top: '15%', right: '3%', imgWidth: 130, imgHeight: 95 },
-      { top: '45%', left: '1%', imgWidth: 120, imgHeight: 160 },
-      { top: '55%', right: '2%', imgWidth: 115, imgHeight: 85 },
-      { bottom: '20%', left: '5%', imgWidth: 135, imgHeight: 100 },
-      { bottom: '5%', left: '25%', imgWidth: 100, imgHeight: 130 },
-      { bottom: '8%', right: '20%', imgWidth: 110, imgHeight: 80 },
-      { bottom: '3%', right: '5%', imgWidth: 90, imgHeight: 70 },
+      { top: '4%',    left: '2%',    imgWidth: 130, imgHeight: 95  },
+      { top: '6%',    left: '22%',   imgWidth: 95,  imgHeight: 70  },
+      { top: '2%',    right: '30%',  imgWidth: 105, imgHeight: 78  },
+      { top: '12%',   right: '2%',   imgWidth: 125, imgHeight: 92  },
+      { top: '40%',   left: '0.5%',  imgWidth: 115, imgHeight: 155 },
+      { top: '52%',   right: '1%',   imgWidth: 110, imgHeight: 82  },
+      { bottom: '18%',left: '4%',    imgWidth: 128, imgHeight: 96  },
+      { bottom: '4%', left: '22%',   imgWidth: 95,  imgHeight: 125 },
+      { bottom: '6%', right: '18%',  imgWidth: 105, imgHeight: 76  },
+      { bottom: '2%', right: '4%',   imgWidth: 88,  imgHeight: 66  },
     ];
     return positions.map((pos, i) => ({
-      item: others[i % others.length],
+      item: others[i % Math.max(others.length, 1)],
       style: pos,
     })).filter(p => p.item);
   }, [shuffled, currentIndex]);
@@ -70,60 +68,65 @@ export default function Entropy() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-muted-foreground/20 border-t-foreground rounded-full animate-spin" />
+      <div className="h-full flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   if (shuffled.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <p className="text-muted-foreground font-light">No memories to explore</p>
-        <p className="text-muted-foreground/60 text-xs mt-1">Add images in the Memory tab first</p>
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-macos-sm text-muted-foreground">No memories to explore</p>
+        <p className="text-macos-xs text-muted-foreground/50 mt-1">Add images in Memory first</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative h-full min-h-[calc(100vh-88px)] overflow-hidden">
       {/* Floating background images */}
       {floatingItems.map((fi, i) => (
         <FloatingImage key={`${fi.item.id}-${i}`} item={fi.item} style={fi.style} />
       ))}
 
-      {/* Soft gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-radial from-background/70 via-background/50 to-transparent pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, hsl(var(--background) / 0.75) 30%, transparent 70%)' }}
+      {/* Radial gradient to focus center */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 60% 70% at center, hsl(var(--background)/0.82) 30%, transparent 80%)',
+        }}
       />
 
-      {/* Category filters - top right */}
-      <div className="absolute top-6 right-6 flex gap-4 z-10">
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`text-xs font-light tracking-wider transition-all duration-200 ${
-              activeCategory === cat
-                ? 'text-foreground'
-                : 'text-muted-foreground/50 hover:text-muted-foreground'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Category pill bar — top right, like in mockup */}
+      <div className="absolute top-4 right-5 flex items-center gap-1 z-20">
+        <div className="flex items-center bg-background/60 backdrop-blur-md rounded-full px-1.5 py-1 gap-0.5 shadow-macos-sm border border-white/20">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] transition-all duration-150 ${
+                activeCategory === cat
+                  ? 'bg-foreground/90 text-background font-medium shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Main content - centered */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center">
+      {/* Main centered content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center gap-0">
         <EntropyCard item={currentItem} direction={direction} />
         <EntropyActions onForget={handleForget} onKeep={handleKeep} />
       </div>
 
-      {/* Bottom bar */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-3 z-10">
-        <span className="text-[10px] text-muted-foreground/40 font-light tracking-wider">
-          {currentIndex + 1} / {shuffled.length}
+      {/* Counter — bottom right */}
+      <div className="absolute bottom-5 right-5 z-20">
+        <span className="text-[10px] text-muted-foreground/40 font-light tabular-nums">
+          {(currentIndex % shuffled.length) + 1} / {shuffled.length}
         </span>
       </div>
     </div>
