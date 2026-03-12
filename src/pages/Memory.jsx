@@ -48,7 +48,12 @@ export default function Memory() {
     setColumnItems(distributeToColumns(filtered, NUM_COLS));
   }, [filtered]);
 
-  const usedTags = useMemo(() => ALL_TAGS, []);
+  const usedTags = useMemo(() => {
+    const freq = {};
+    items.forEach(item => item.tags?.forEach(t => { freq[t] = (freq[t] || 0) + 1; }));
+    const fromItems = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+    return [...new Set([...ALL_TAGS, ...fromItems])];
+  }, [items]);
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
