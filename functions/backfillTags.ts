@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
         if (item.content_type === 'text') {
           prompt = `Analyze this text and pick 1-4 tags.\nText: "${item.text_content}"`;
         } else {
-          prompt = `Analyze this image URL and pick 1-4 tags.\nURL: ${item.file_url}`;
+          prompt = `Analyze this image and pick 1-4 tags based on its title/description.\nTitle: "${item.title || ''}"\nCollection: "${item.collection || ''}"`;
         }
         prompt += `\nAvailable tags: ia, design, photography, eros, 3d, peinture, littérature, art direction, films, portrait, nature, architecture, abstract, urban, fashion, minimal, texture, experimental\nReturn JSON: {"tags": [...]}`;
 
