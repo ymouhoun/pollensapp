@@ -27,7 +27,7 @@ Return a JSON object with a "tags" array of strings. Only use tags from the list
 
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt,
-    file_urls: item.content_type !== 'text' && item.file_url ? [item.file_url] : undefined,
+    file_urls: item.content_type !== 'text' && item.file_url && item.file_url.includes('supabase') ? [item.file_url] : undefined,
     response_json_schema: {
       type: 'object',
       properties: {
