@@ -16,9 +16,11 @@ Deno.serve(async (req) => {
         }
         prompt += `\nAvailable tags: ia, design, photography, eros, 3d, peinture, littérature, art direction, films, portrait, nature, architecture, abstract, urban, fashion, minimal, texture, experimental\nReturn JSON: {"tags": [...]}`;
 
+        // Only pass file_urls for properly uploaded files (not external CDN links)
+        const isUploadedFile = item.file_url && item.file_url.includes('supabase');
         const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,
-          file_urls: item.content_type !== 'text' && item.file_url ? [item.file_url] : undefined,
+          file_urls: isUploadedFile ? [item.file_url] : undefined,
           response_json_schema: {
             type: 'object',
             properties: { tags: { type: 'array', items: { type: 'string' } } }
