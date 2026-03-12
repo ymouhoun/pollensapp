@@ -4,8 +4,9 @@ Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const items = await base44.asServiceRole.entities.MediaItem.list();
   const results = [];
+  const toProcess = items.slice(0, 5); // process in batches
 
-  for (const item of items) {
+  for (const item of toProcess) {
     let prompt = '';
     if (item.content_type === 'text') {
       prompt = `Analyze this text/quote and return relevant tags.\nText: "${item.text_content}"`;
