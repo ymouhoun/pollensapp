@@ -15,7 +15,7 @@ export default function MediaCard({ item, index, onClick }) {
       className="group relative cursor-pointer break-inside-avoid mb-3"
       onClick={() => onClick?.(item)}
     >
-      <div className="relative overflow-hidden rounded-xl bg-muted/30">
+      <div className="relative overflow-hidden rounded-macos bg-muted/30">
         <img
           src={item.file_url}
           alt={item.title || ''}

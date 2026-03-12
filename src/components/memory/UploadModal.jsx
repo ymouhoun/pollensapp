@@ -49,9 +49,9 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong border-border/50 max-w-md">
+      <DialogContent className="vibrancy-popover border border-white/20 shadow-macos-window max-w-md rounded-macos-xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-lg font-normal">Add to Memory</DialogTitle>
+          <DialogTitle className="text-macos-md font-semibold tracking-tight">Add to Memory</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 mt-2">
