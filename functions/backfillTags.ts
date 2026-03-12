@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-  const items = await base44.asServiceRole.entities.MediaItem.filter({ tags: [] });
+  const items = await base44.asServiceRole.entities.MediaItem.list();
   const results = [];
 
   for (const item of items) {
