@@ -1,132 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* macOS uses system fonts */
-    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Playfair Display', serif;
 
-    /* macOS light mode — vibrancy / frosted glass palette */
-    --background: 240 8% 94%;
-    --foreground: 240 10% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --background: 230 25% 95%;
+    --foreground: 230 15% 15%;
+    --card: 230 30% 98%;
+    --card-foreground: 230 15% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
-    --primary: 211 100% 50%;
+    --popover-foreground: 230 15% 15%;
+    --primary: 250 30% 42%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 6% 90%;
-    --secondary-foreground: 240 10% 20%;
-    --muted: 240 5% 88%;
-    --muted-foreground: 240 5% 52%;
-    --accent: 211 100% 50%;
+    --secondary: 230 20% 92%;
+    --secondary-foreground: 230 15% 25%;
+    --muted: 230 15% 90%;
+    --muted-foreground: 230 10% 50%;
+    --accent: 340 25% 65%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 86%;
-    --input: 240 6% 86%;
-    --ring: 211 100% 50%;
-    --radius: 0.5rem;
-
-    /* Sidebar — macOS sidebar vibrancy */
-    --sidebar-background: 240 8% 93%;
-    --sidebar-foreground: 240 8% 30%;
-    --sidebar-primary: 211 100% 50%;
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 230 20% 88%;
+    --input: 230 20% 88%;
+    --ring: 250 30% 42%;
+    --chart-1: 250 30% 55%;
+    --chart-2: 340 25% 65%;
+    --chart-3: 45 50% 60%;
+    --chart-4: 180 30% 50%;
+    --chart-5: 20 50% 60%;
+    --radius: 0.75rem;
+    --sidebar-background: 230 25% 97%;
+    --sidebar-foreground: 230 10% 40%;
+    --sidebar-primary: 250 30% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 6% 87%;
-    --sidebar-accent-foreground: 240 8% 15%;
-    --sidebar-border: 240 6% 84%;
-    --sidebar-ring: 211 100% 50%;
+    --sidebar-accent: 230 20% 92%;
+    --sidebar-accent-foreground: 230 15% 25%;
+    --sidebar-border: 230 20% 90%;
+    --sidebar-ring: 250 30% 42%;
   }
 
   .dark {
-    /* macOS dark mode */
-    --background: 240 6% 11%;
-    --foreground: 0 0% 93%;
-    --card: 240 6% 15%;
-    --card-foreground: 0 0% 93%;
-    --popover: 240 6% 13%;
-    --popover-foreground: 0 0% 93%;
-    --primary: 211 100% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 20%;
-    --secondary-foreground: 0 0% 85%;
-    --muted: 240 5% 20%;
-    --muted-foreground: 240 5% 60%;
-    --accent: 211 100% 58%;
+    --background: 230 20% 8%;
+    --foreground: 230 10% 92%;
+    --card: 230 20% 12%;
+    --card-foreground: 230 10% 92%;
+    --popover: 230 20% 10%;
+    --popover-foreground: 230 10% 92%;
+    --primary: 250 35% 65%;
+    --primary-foreground: 230 20% 8%;
+    --secondary: 230 15% 18%;
+    --secondary-foreground: 230 10% 85%;
+    --muted: 230 15% 18%;
+    --muted-foreground: 230 10% 55%;
+    --accent: 340 30% 55%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 5% 22%;
-    --input: 240 5% 22%;
-    --ring: 211 100% 58%;
-
-    --sidebar-background: 240 6% 13%;
-    --sidebar-foreground: 0 0% 75%;
-    --sidebar-primary: 211 100% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 18%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 240 5% 18%;
-    --sidebar-ring: 211 100% 58%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 230 15% 20%;
+    --input: 230 15% 20%;
+    --ring: 250 35% 65%;
+    --chart-1: 250 35% 60%;
+    --chart-2: 340 30% 55%;
+    --chart-3: 45 45% 55%;
+    --chart-4: 180 25% 45%;
+    --chart-5: 20 45% 55%;
+    --sidebar-background: 230 20% 10%;
+    --sidebar-foreground: 230 10% 80%;
+    --sidebar-primary: 250 35% 65%;
+    --sidebar-primary-foreground: 230 20% 8%;
+    --sidebar-accent: 230 15% 16%;
+    --sidebar-accent-foreground: 230 10% 85%;
+    --sidebar-border: 230 15% 16%;
+    --sidebar-ring: 250 35% 65%;
   }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    /* macOS-like font smoothing */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    /* Prevent text selection on UI chrome — feels more native */
-    user-select: none;
-  }
-  /* Allow selection inside content areas */
-  p, h1, h2, h3, textarea, input {
-    user-select: text;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
-/* macOS-style scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.25);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.4);
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 10px;
 }
 
-/* Vibrancy / frosted glass */
-.vibrancy {
-  background: hsl(var(--background) / 0.72);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+/* Frosted glass utility */
+.glass {
+  background: hsl(var(--background) / 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.vibrancy-sidebar {
-  background: hsl(var(--sidebar-background) / 0.78);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-}
-
-.vibrancy-popover {
-  background: hsl(var(--popover) / 0.88);
-  backdrop-filter: blur(60px) saturate(200%);
-  -webkit-backdrop-filter: blur(60px) saturate(200%);
-}
-
-/* macOS traffic lights sizes */
-.traffic-light {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+.glass-strong {
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
 }

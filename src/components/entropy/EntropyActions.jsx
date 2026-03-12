@@ -11,18 +11,18 @@ export default function EntropyActions({ onForget, onKeep }) {
     >
       <button
         onClick={onForget}
-        className="group flex items-center justify-center w-[72px] h-[72px] rounded-full border border-border/50 bg-background/40 backdrop-blur-md hover:bg-background/70 hover:border-border transition-all duration-200 hover:scale-105 active:scale-95 shadow-macos-sm"
+        className="group flex items-center justify-center w-20 h-20 rounded-full border border-border/60 hover:border-muted-foreground/40 transition-all duration-300 hover:scale-105 active:scale-95"
       >
-        <span className="text-macos-sm text-muted-foreground group-hover:text-foreground transition-colors">
+        <span className="text-sm font-light text-muted-foreground group-hover:text-foreground transition-colors">
           forget
         </span>
       </button>
 
       <button
         onClick={onKeep}
-        className="group flex items-center justify-center w-[72px] h-[72px] rounded-full border border-border/50 bg-background/40 backdrop-blur-md hover:bg-background/70 hover:border-primary/40 transition-all duration-200 hover:scale-105 active:scale-95 shadow-macos-sm"
+        className="group flex items-center justify-center w-20 h-20 rounded-full border border-border/60 hover:border-primary/40 transition-all duration-300 hover:scale-105 active:scale-95"
       >
-        <span className="text-macos-sm text-muted-foreground group-hover:text-foreground transition-colors">
+        <span className="text-sm font-light text-muted-foreground group-hover:text-foreground transition-colors">
           keep
         </span>
       </button>
