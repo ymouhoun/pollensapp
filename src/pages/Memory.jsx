@@ -10,7 +10,7 @@ import UploadModal from '@/components/memory/UploadModal';
 import MediaOverlay from '@/components/memory/MediaOverlay';
 import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
 
-const ALL_TAGS = ['ia', 'design', 'photography', 'eros', '3d', 'peinture', 'littérature', 'art direction', 'films', 'portrait', 'nature', 'architecture', 'abstract', 'urban', 'fashion', 'minimal', 'texture', 'experimental'];
+const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 const NUM_COLS = 5;
 
 function distributeToColumns(items, numCols) {
