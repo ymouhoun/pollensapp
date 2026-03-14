@@ -9,11 +9,11 @@ export default function EvolveGradientBackground() {
         className="absolute inset-0"
         animate={{
           background: [
-            'linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 50%, #0a0a0a 100%)',
-            'linear-gradient(135deg, #0f0a1a 0%, #2e0f1a 50%, #0a0f1a 100%)',
-            'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)',
-            'linear-gradient(135deg, #0a0f0a 0%, #1a2e0f 50%, #0a0a0a 100%)',
-            'linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 50%, #0a0a0a 100%)',
+            'linear-gradient(135deg, #f5f5f5 0%, #e8e0f5 50%, #f5f5f5 100%)',
+            'linear-gradient(135deg, #f0f5f5 0%, #f5e8f0 50%, #f5f5f0 100%)',
+            'linear-gradient(135deg, #f5f5f5 0%, #f0f0f5 50%, #f5f5f5 100%)',
+            'linear-gradient(135deg, #f5f0f5 0%, #f0f5f0 50%, #f5f5f5 100%)',
+            'linear-gradient(135deg, #f5f5f5 0%, #e8e0f5 50%, #f5f5f5 100%)',
           ],
         }}
         transition={{
