@@ -7,7 +7,7 @@ import ItemContextMenu from './ItemContextMenu';
 export default function MediaCard({ item, index, onClick }) {
   const [loaded, setLoaded] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
-  const isVideo = item.media_type === 'video';
+  const isVideo = item.content_type === 'video';
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -18,64 +18,65 @@ export default function MediaCard({ item, index, onClick }) {
 
   return (
     <>
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.04 }}
-      className="group relative cursor-pointer break-inside-avoid"
-      onClick={() => onClick?.(item)}
-      onContextMenu={handleContextMenu}
-    >
-      <div className="relative overflow-hidden rounded-sm bg-muted/20">
-        <img
-          src={item.file_url}
-          alt={item.title || ''}
-          className={cn(
-            "w-full object-cover transition-all duration-700",
-            loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
-          )}
-          onLoad={() => setLoaded(true)}
-        />
-        
-        {isVideo && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
-              <Play className="w-4 h-4 fill-foreground text-foreground ml-0.5" />
-            </div>
-          </div>
-        )}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: index * 0.04 }}
+        className="group relative cursor-pointer break-inside-avoid"
+        onClick={() => onClick?.(item)}
+        onContextMenu={handleContextMenu}
+      >
+        <div className="relative overflow-hidden rounded-sm bg-muted/20">
+          <img
+            src={item.file_url}
+            alt={item.title || ''}
+            className={cn(
+              "w-full object-cover transition-all duration-700",
+              loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+            )}
+            onLoad={() => setLoaded(true)}
+          />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          {item.title && (
-            <p className="text-white text-xs font-light tracking-wide">{item.title}</p>
+          {isVideo && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
+                <Play className="w-4 h-4 fill-foreground text-foreground ml-0.5" />
+              </div>
+            </div>
           )}
-          {item.tags?.length > 0 && (
-            <div className="flex gap-1 mt-1.5 flex-wrap">
-              {item.tags.slice(0, 3).map(tag => (
-                <span key={tag} className="text-[10px] text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
-                  {tag}
-                </span>
-              ))}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+            {item.title && (
+              <p className="text-white text-xs font-light tracking-wide">{item.title}</p>
+            )}
+            {item.tags?.length > 0 && (
+              <div className="flex gap-1 mt-1.5 flex-wrap">
+                {item.tags.slice(0, 3).map(tag => (
+                  <span key={tag} className="text-[10px] text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {item.is_kept && (
+            <div className="absolute top-2 right-2">
+              <Heart className="w-3 h-3 fill-accent text-accent" />
             </div>
           )}
         </div>
+      </motion.div>
 
-        {item.is_kept && (
-          <div className="absolute top-2 right-2">
-            <Heart className="w-3 h-3 fill-accent text-accent" />
-          </div>
-        )}
-      </div>
-    </motion.div>
-    {contextMenu && (
-      <ItemContextMenu
-        item={item}
-        position={contextMenu}
-        onClose={() => setContextMenu(null)}
-      />
-    )}
+      {contextMenu && (
+        <ItemContextMenu
+          item={item}
+          position={contextMenu}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </>
   );
 }
