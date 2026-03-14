@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Plus, Camera } from 'lucide-react';
-import EntropyBackground from '@/components/entropy/EntropyBackground';
-import EntropyGrid from '@/components/entropy/EntropyGrid';
-import EntropyPrompt from '@/components/entropy/EntropyPrompt';
+import EntropyBackground from '@/components/entropy/EntropyBackground.jsx';
+import EntropyGrid from '@/components/entropy/EntropyGrid.jsx';
+import EntropyPrompt from '@/components/entropy/EntropyPrompt.jsx';
 
 const PLACEHOLDER_IMGS = [
   'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
