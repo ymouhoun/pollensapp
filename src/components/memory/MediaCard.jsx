@@ -27,15 +27,26 @@ export default function MediaCard({ item, index, onClick }) {
         onContextMenu={handleContextMenu}
       >
         <div className="relative overflow-hidden rounded-sm bg-muted/20">
-          <img
-            src={item.file_url}
-            alt={item.title || ''}
-            className={cn(
-              "w-full object-cover transition-all duration-700",
-              loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
-            )}
-            onLoad={() => setLoaded(true)}
-          />
+          {isVideo ? (
+            <video
+              src={item.file_url}
+              className={cn(
+                "w-full h-full object-cover transition-all duration-700",
+                loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+              )}
+              onLoadedMetadata={() => setLoaded(true)}
+            />
+          ) : (
+            <img
+              src={item.file_url}
+              alt={item.title || ''}
+              className={cn(
+                "w-full object-cover transition-all duration-700",
+                loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+              )}
+              onLoad={() => setLoaded(true)}
+            />
+          )}
 
           {isVideo && (
             <div className="absolute inset-0 flex items-center justify-center">
