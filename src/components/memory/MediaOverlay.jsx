@@ -43,8 +43,26 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
         className="fixed inset-0 z-50 flex items-center justify-center"
         onClick={onClose}
       >
-        {/* Blurred backdrop */}
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-xl" />
+        {/* Fullscreen blurred + grain image backdrop */}
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src={item.file_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover scale-110"
+            style={{ filter: 'blur(40px)', transform: 'scale(1.15)' }}
+          />
+          <div className="absolute inset-0 bg-background/30" />
+          {/* Grain overlay */}
+          <div
+            className="absolute inset-0 opacity-40"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '128px 128px',
+              mixBlendMode: 'overlay',
+            }}
+          />
+        </div>
 
         {/* Close button */}
         <button
