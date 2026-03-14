@@ -98,19 +98,19 @@ export default function ItemContextMenu({ item, position, onClose }) {
           <MenuItem icon={Zap} label="Use as prompt" onClick={handleUseAsPrompt} />
           <MenuItem icon={Tag} label="Add tag" onClick={() => setAddingTag(true)} />
           {item.file_url && (
-            <a
-              href={item.file_url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-              className="flex items-center justify-between px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <span className="font-light tracking-wide">Download</span>
-              <Download className="w-4 h-4 opacity-50" strokeWidth={1.5} />
-            </a>
+           <a
+             href={item.file_url}
+             download
+             target="_blank"
+             rel="noopener noreferrer"
+             onClick={onClose}
+             className="flex items-center gap-2 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 transition-colors cursor-pointer"
+           >
+             <Download className="w-3 h-3 opacity-50 flex-shrink-0" strokeWidth={1.5} />
+             <span className="font-light tracking-wide">Download</span>
+           </a>
           )}
-          <div className="h-px bg-white/10 my-1" />
+          <div className="h-px bg-white/10 my-0.5" />
           <MenuItem icon={Trash2} label="Delete" onClick={handleDelete} danger />
         </div>
       )}
