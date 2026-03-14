@@ -80,9 +80,9 @@ export default function MediaCard({ item, index, onClick }) {
               <p className="text-white text-xs font-light tracking-wide">{item.title}</p>
             )}
             {item.tags?.length > 0 && (
-              <div className="flex gap-1 mt-1.5 flex-wrap">
+              <div className="flex gap-0.5 mt-1.5 flex-wrap">
                 {item.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-[10px] text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                  <span key={tag} className="text-[10px] text-white/70 bg-white/15 px-1 py-0.5 rounded-full backdrop-blur-sm">
                     {tag}
                   </span>
                 ))}

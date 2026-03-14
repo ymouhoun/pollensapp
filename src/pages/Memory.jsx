@@ -236,12 +236,12 @@ export default function Memory() {
         {/* Tag pills row */}
         <div className="flex items-center gap-0 flex-wrap justify-center pt-1" style={{ fontFamily: 'BananaGrotesk, sans-serif' }}>
           <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-light">Filter</span>
-          <span className="mx-3 text-muted-foreground/20">|</span>
+          <span className="mx-2 text-muted-foreground/20">|</span>
           {usedTags.map(tag => (
             <button
               key={tag}
               onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`px-2 py-0.5 text-[10px] uppercase tracking-widest font-light transition-colors ${
+              className={`px-1.5 py-0.5 text-[10px] uppercase tracking-widest font-light transition-colors ${
                 activeTag === tag
                   ? 'text-foreground font-medium'
                   : 'text-muted-foreground/50 hover:text-foreground'
@@ -252,7 +252,7 @@ export default function Memory() {
           ))}
           <button
             onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-2"
+            className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-1"
           >
             <Plus className="w-2.5 h-2.5" strokeWidth={2} />
             add
