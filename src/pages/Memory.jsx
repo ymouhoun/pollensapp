@@ -34,7 +34,10 @@ export default function Memory() {
   const [columnItems, setColumnItems] = useState(Array.from({ length: getNumCols(window.innerWidth) }, () => []));
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [uploadingDrop, setUploadingDrop] = useState(false);
   const lastScrollY = useRef(0);
+  const dragCounter = useRef(0);
   const sentinelRef = useRef(null);
   const queryClient = useQueryClient();
 
