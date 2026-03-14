@@ -36,7 +36,6 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Navigate to="/Memory" replace />} />
       <Route element={<AppLayout />}>
         <Route path="/Memory" element={<Memory />} />
-        <Route path="/Entropy" element={<Entropy />} />
         <Route path="/Iterate" element={<Iterate />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
