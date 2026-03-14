@@ -79,7 +79,7 @@ export default function Memory() {
       <ProgressiveBlur side="bottom" height={160} />
 
       {/* Sticky header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md pt-5 pb-3 px-8">
+      <div className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md pt-5 pb-3 px-8 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         {/* Nav tabs */}
         <div className="flex items-center justify-center gap-6 mb-4">
           <span className="flex items-center gap-1.5 text-[11px] tracking-widest text-foreground font-medium uppercase">
