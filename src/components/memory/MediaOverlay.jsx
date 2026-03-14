@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Trash2, Zap, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -6,6 +6,28 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
   const queryClient = useQueryClient();
+  const [backdropImage, setBackdropImage] = useState(null);
+
+  useEffect(() => {
+    if (!item || item.content_type !== 'video') return;
+
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.src = item.file_url;
+
+    video.onloadedmetadata = () => {
+      video.currentTime = 0.5;
+    };
+
+    video.onseeked = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+      setBackdropImage(canvas.toDataURL());
+    };
+  }, [item]);
 
   useEffect(() => {
     if (!item) return;
