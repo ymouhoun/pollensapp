@@ -22,6 +22,7 @@ export default function Memory() {
   const [activeTag, setActiveTag] = useState(null);
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [columnItems, setColumnItems] = useState(Array.from({ length: NUM_COLS }, () => []));
   const queryClient = useQueryClient();
 
