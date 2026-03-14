@@ -182,6 +182,27 @@ export default function Memory() {
 
   return (
     <div className="min-h-screen bg-background relative">
+      {/* File drop overlay */}
+      {(isDraggingFiles || uploadingDrop) && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+          <div className="relative flex flex-col items-center gap-3">
+            {uploadingDrop ? (
+              <>
+                <div className="w-6 h-6 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+                <p className="text-[11px] tracking-widest uppercase text-foreground/60">Uploading...</p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-foreground/30 flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-foreground/40" strokeWidth={1.5} />
+                </div>
+                <p className="text-[11px] tracking-widest uppercase text-foreground/60">Drop to add to memory</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       {scrolled && <ProgressiveBlur side="top" height={160} />}
       <ProgressiveBlur side="bottom" height={160} />
 
