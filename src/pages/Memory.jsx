@@ -30,7 +30,8 @@ export default function Memory() {
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [columnItems, setColumnItems] = useState(Array.from({ length: NUM_COLS }, () => []));
+  const [numCols, setNumCols] = useState(() => getNumCols(window.innerWidth));
+  const [columnItems, setColumnItems] = useState(Array.from({ length: getNumCols(window.innerWidth) }, () => []));
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const lastScrollY = useRef(0);
