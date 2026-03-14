@@ -122,14 +122,14 @@ function MenuItem({ icon: Icon, label, onClick, danger }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+      className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer ${
         danger
           ? 'text-red-400 hover:bg-red-500/15'
           : 'text-white/70 hover:bg-white/10'
       }`}
     >
+      <Icon className="w-3 h-3 opacity-60 flex-shrink-0" strokeWidth={1.5} />
       <span className="font-light tracking-wide">{label}</span>
-      <Icon className="w-4 h-4 opacity-60" strokeWidth={1.5} />
     </button>
   );
 }
