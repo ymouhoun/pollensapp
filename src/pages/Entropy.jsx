@@ -66,6 +66,23 @@ export default function Entropy() {
       {/* Floating images background */}
       <FloatingImagesBackground items={floatingImages} />
 
+      {/* Loading indicator */}
+      <AnimatePresence>
+        {generating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+          >
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 text-white/40 animate-spin" />
+              <p className="text-white/30 text-sm font-light">generating...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
