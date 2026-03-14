@@ -175,7 +175,7 @@ export default function Memory() {
             <button
               key={tag}
               onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`px-2 py-0.5 text-[10px] uppercase tracking-widest font-light transition-colors ${
+              className={`px-2 py-0.5 text-[9px] uppercase tracking-widest font-light transition-colors ${
                 activeTag === tag
                   ? 'text-foreground font-medium'
                   : 'text-muted-foreground/50 hover:text-foreground'
