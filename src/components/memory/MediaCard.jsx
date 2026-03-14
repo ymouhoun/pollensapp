@@ -28,8 +28,6 @@ export default function MediaCard({ item, index, onClick }) {
         className="group relative cursor-pointer break-inside-avoid"
         onClick={() => onClick?.(item)}
         onContextMenu={handleContextMenu}
-        onMouseEnter={() => handleVideoHover(true)}
-        onMouseLeave={() => handleVideoHover(false)}
       >
         <div className="relative overflow-hidden rounded-sm bg-muted/20">
           {isVideo ? (
