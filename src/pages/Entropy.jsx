@@ -26,9 +26,19 @@ export default function Entropy() {
   const [draft, setDraft] = useState(true);
   const inputRef = useRef(null);
 
-  const gridItems = history.length > 0
-    ? [...history.map(h => ({ url: h.url, prompt: h.prompt })), ...PLACEHOLDER_IMGS.slice(0, Math.max(0, 12 - history.length)).map(url => ({ url, prompt: '' }))]
-    : PLACEHOLDER_IMGS.map(url => ({ url, prompt: '' }));
+  const floatingImages = history.length > 0
+    ? history.map(h => ({ 
+        file_url: h.url, 
+        prompt: h.prompt,
+        content_type: 'image',
+        title: h.prompt.slice(0, 30)
+      }))
+    : PLACEHOLDER_IMGS.map(url => ({ 
+        file_url: url, 
+        prompt: '',
+        content_type: 'image',
+        title: ''
+      }));
 
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
