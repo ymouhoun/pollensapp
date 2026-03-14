@@ -17,12 +17,14 @@ export default function MediaCard({ item, index, onClick }) {
   };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.04 }}
       className="group relative cursor-pointer break-inside-avoid"
       onClick={() => onClick?.(item)}
+      onContextMenu={handleContextMenu}
     >
       <div className="relative overflow-hidden rounded-sm bg-muted/20">
         <img
