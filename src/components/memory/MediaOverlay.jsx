@@ -30,7 +30,7 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
 
   const handleUseAsPrompt = async () => {
     const caption = await base44.integrations.Core.InvokeLLM({
-      prompt: `Provide a detailed, vivid visual description of this image. Focus on composition, colors, mood, and key elements. Keep it concise but evocative.`,
+      prompt: `Analyze this image in great detail and provide a comprehensive visual description suitable as a creative prompt for image generation. Include: the main subjects and their arrangement, background elements and depth, color palette and lighting conditions, atmospheric qualities and mood, composition and framing techniques, textures and materials, any distinctive style or aesthetic, technical aspects like focus and perspective, and the overall narrative or feeling conveyed. Be specific, vivid, and evocative. Aim for a rich, detailed description that captures both obvious and subtle visual elements.`,
       file_urls: [item.file_url]
     });
     window.location.href = `/Entropy?prompt=${encodeURIComponent(caption)}`;
