@@ -4,8 +4,28 @@ import { Download, Trash2, Zap, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
+function getDominantColor(imgEl) {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0, 16, 16);
+    const data = ctx.getImageData(0, 0, 16, 16).data;
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+    }
+    return `rgb(${Math.round(r/count)},${Math.round(g/count)},${Math.round(b/count)})`;
+  } catch {
+    return null;
+  }
+}
+
 export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
   const queryClient = useQueryClient();
+  const [dominantColor, setDominantColor] = useState(null);
+  const imgRef = useRef(null);
 
   useEffect(() => {
     if (!item) return;
