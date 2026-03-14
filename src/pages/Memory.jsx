@@ -150,7 +150,7 @@ export default function Memory() {
         </div>
 
         {/* Tag pills row */}
-        <div className="flex items-center gap-0 flex-wrap justify-center border-t border-border/30 pt-3">
+        <div className="flex items-center gap-0 flex-wrap justify-center border-t border-border/30 pt-3" style={{ fontFamily: 'BananaGrotesk, sans-serif' }}>
           <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest mr-3 font-light">Filter</span>
           {usedTags.map(tag => (
             <button
