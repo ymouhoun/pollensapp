@@ -99,7 +99,7 @@ export default function Memory() {
       window.removeEventListener('randomize-memory', handler);
       window.removeEventListener('keydown', keyHandler);
     };
-  }, [filtered]);
+  }, [filtered, numCols]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
