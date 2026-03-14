@@ -203,8 +203,12 @@ export default function Memory() {
           </div>
         </div>
       )}
-      <ProgressiveBlur side="top" height={160} />
-      <ProgressiveBlur side="bottom" height={160} />
+      <div className="fixed top-0 left-0 right-0 z-40 pointer-events-none">
+        <ProgressiveBlur side="top" height={160} />
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+        <ProgressiveBlur side="bottom" height={160} />
+      </div>
 
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
