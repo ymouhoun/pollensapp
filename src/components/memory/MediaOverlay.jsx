@@ -99,10 +99,10 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
 
         {/* Content */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, scale: 0.92, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.92, y: 10 }}
+          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="relative flex items-center gap-8"
           onClick={e => e.stopPropagation()}
         >
