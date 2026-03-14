@@ -165,8 +165,8 @@ export default function Memory() {
                               className="mb-1.5"
                             >
                               {item.content_type === 'text'
-                                ? <TextCard item={item} index={index} />
-                                : <MediaCard item={item} index={index} />}
+                              ? <TextCard item={item} index={index} />
+                              : <MediaCard item={item} index={index} onClick={setSelectedItem} />}
                             </div>
                           )}
                         </Draggable>
