@@ -186,7 +186,7 @@ export default function Memory() {
           ))}
           <button
             onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-2"
+            className="flex items-center gap-1 px-2 py-0.5 text-[9px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-2"
           >
             <Plus className="w-2.5 h-2.5" strokeWidth={2} />
             add
