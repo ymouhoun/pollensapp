@@ -4,18 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Plus, Image as ImageIcon, Infinity, Camera, Square, Upload, ChevronDown } from 'lucide-react';
 import FloatingImagesBackground from '@/components/entropy/FloatingImagesBackground';
 
-const ASPECT_CLASSES = [
-  'col-span-1 row-span-2',
-  'col-span-1 row-span-1',
-  'col-span-1 row-span-1',
-  'col-span-1 row-span-2',
-  'col-span-1 row-span-1',
-  'col-span-1 row-span-1',
-  'col-span-1 row-span-2',
-  'col-span-1 row-span-1',
-  'col-span-1 row-span-1',
-];
-
 const PLACEHOLDER_IMGS = [
   'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
   'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
@@ -25,13 +13,7 @@ const PLACEHOLDER_IMGS = [
   'https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?w=400&q=80',
   'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=80',
   'https://images.unsplash.com/photo-1574169208507-84376144848b?w=400&q=80',
-  'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=400&q=80',
-  'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=400&q=80',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&q=80',
-  'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=80',
 ];
-
-const TABS = ['KEYFRAME', 'REFERENCE', 'MODIFY'];
 
 export default function Entropy() {
   const [prompt, setPrompt] = useState(() => {
