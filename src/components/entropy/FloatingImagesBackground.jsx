@@ -82,6 +82,7 @@ export default function FloatingImagesBackground({ items = [] }) {
               <video
                 src={item.file_url}
                 className="w-full h-full object-cover"
+                style={{ mixBlendMode: 'multiply' }}
                 muted
                 autoPlay
                 loop
@@ -91,6 +92,7 @@ export default function FloatingImagesBackground({ items = [] }) {
                 src={item.file_url}
                 alt={item.title}
                 className="w-full h-full object-cover blur-sm hover:blur-none transition-all duration-300"
+                style={{ mixBlendMode: 'multiply' }}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
