@@ -70,8 +70,17 @@ export default function Memory() {
   }), [items, activeTag, search]);
 
   useEffect(() => {
-    setColumnItems(distributeToColumns(filtered, NUM_COLS));
-  }, [filtered]);
+    const onResize = () => {
+      const cols = getNumCols(window.innerWidth);
+      setNumCols(cols);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    setColumnItems(distributeToColumns(filtered, numCols));
+  }, [filtered, numCols]);
 
   useEffect(() => {
     const handler = () => {
