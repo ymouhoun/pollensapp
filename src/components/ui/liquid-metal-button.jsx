@@ -1,23 +1,15 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-interface LiquidMetalButtonProps {
-  label?: string;
-  onClick?: () => void;
-  viewMode?: "text" | "icon";
-}
-
 export function LiquidMetalButton({
   label = "Get Started",
   onClick,
   viewMode = "text",
-}: LiquidMetalButtonProps) {
+}) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const [ripples, setRipples] = useState<
-    Array<{ x: number; y: number; id: number }>
-  >([]);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [ripples, setRipples] = useState([]);
+  const buttonRef = useRef(null);
   const rippleId = useRef(0);
 
   const dimensions = useMemo(() => {
