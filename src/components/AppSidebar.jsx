@@ -76,6 +76,13 @@ export default function AppSidebar() {
         >
           <Shuffle className="w-4 h-4" strokeWidth={1.5} />
         </button>
+        <a
+          href="/Settings"
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          title="Settings"
+        >
+          <Settings className="w-4 h-4" strokeWidth={1.5} />
+        </a>
       </div>
     </nav>);
 
