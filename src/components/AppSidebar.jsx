@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Brain, Sparkles, Shuffle, Settings, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
