@@ -49,7 +49,7 @@ export default function AppSidebar() {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={toggleDark} className={cn("p-2 transition-colors", dark ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
           <Moon className="w-4 h-4" strokeWidth={1.5} />
         </button>
         <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
