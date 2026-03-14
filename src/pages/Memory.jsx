@@ -8,8 +8,7 @@ import TextCard from '@/components/memory/TextCard';
 import AddNoteCard from '@/components/memory/AddNoteCard';
 import UploadModal from '@/components/memory/UploadModal';
 
-const FILTERS = ['everything', 'spaces', 'serendipity'];
-const ALL_TAGS = ['ia', 'design', 'photography', 'eros', '3d', 'peinture', 'littérature', 'art direction', 'films'];
+const ALL_TAGS = ['ia', 'design', 'photography', 'eros', '3d', 'peinture', 'littérature', 'art direction', 'films', 'portrait', 'nature', 'architecture', 'abstract', 'urban', 'fashion', 'minimal', 'texture', 'experimental'];
 const NUM_COLS = 5;
 
 function distributeToColumns(items, numCols) {
@@ -19,7 +18,6 @@ function distributeToColumns(items, numCols) {
 }
 
 export default function Memory() {
-  const [activeFilter, setActiveFilter] = useState('everything');
   const [activeTag, setActiveTag] = useState(null);
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
@@ -43,7 +41,6 @@ export default function Memory() {
     return true;
   }), [items, activeTag, search]);
 
-  // Re-distribute when filtered changes
   useEffect(() => {
     setColumnItems(distributeToColumns(filtered, NUM_COLS));
   }, [filtered]);
@@ -60,7 +57,6 @@ export default function Memory() {
     if (!destination) return;
     const srcCol = parseInt(source.droppableId);
     const dstCol = parseInt(destination.droppableId);
-
     const newCols = columnItems.map(col => [...col]);
     const [moved] = newCols[srcCol].splice(source.index, 1);
     newCols[dstCol].splice(destination.index, 0, moved);
@@ -68,132 +64,103 @@ export default function Memory() {
   };
 
   return (
-    <div className="min-h-screen px-6 md:px-8 py-6 relative">
-      {/* Progressive blur — top */}
+    <div className="min-h-screen bg-background relative">
+      {/* Glass fade — top */}
       <div
-        className="pointer-events-none fixed top-0 left-14 right-0 h-28 z-30"
-        style={{ background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 50%, transparent 100%)' }}
+        className="pointer-events-none fixed top-0 left-14 right-0 h-36 z-30"
+        style={{
+          background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 40%, hsl(var(--background) / 0.6) 70%, transparent 100%)',
+          backdropFilter: 'blur(0px)',
+        }}
       />
-      {/* Progressive blur — bottom */}
+      {/* Glass fade — bottom */}
       <div
-        className="pointer-events-none fixed bottom-0 left-14 right-0 h-28 z-30"
-        style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 50%, transparent 100%)' }}
+        className="pointer-events-none fixed bottom-0 left-14 right-0 h-36 z-30"
+        style={{
+          background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 40%, hsl(var(--background) / 0.6) 70%, transparent 100%)',
+        }}
       />
 
-      {/* Top filters */}
-      <div className="flex items-center justify-end gap-5 mb-6 relative z-10">
-        {FILTERS.map(f => (
+      {/* Sticky header */}
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md pt-5 pb-3 px-8">
+        {/* Nav tabs */}
+        <div className="flex items-center justify-center gap-6 mb-4">
+          <span className="flex items-center gap-1.5 text-[11px] tracking-widest text-foreground font-medium uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-foreground inline-block" />
+            MEMORY
+          </span>
           <button
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            className={`text-xs tracking-wide transition-colors font-light ${
-              activeFilter === f ? 'text-foreground' : 'text-muted-foreground/50 hover:text-muted-foreground'
-            }`}
+            onClick={() => window.location.href = '/Entropy'}
+            className="flex items-center gap-1 text-[11px] tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors uppercase font-light"
           >
-            {f}
+            ↗ ENTROPY
           </button>
-        ))}
-      </div>
-
-      {/* Search heading */}
-      <div className="mb-6 relative z-10">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="search my mind..."
-          className="bg-transparent border-none outline-none font-display italic text-4xl md:text-5xl text-muted-foreground/50 placeholder:text-muted-foreground/30 w-full max-w-xl"
-        />
-      </div>
-
-      {/* Tag pills */}
-      <div className="flex items-center gap-2 flex-wrap mb-6 relative z-10">
-        {usedTags.map(tag => (
-          <button
-            key={tag}
-            onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-light transition-all duration-200 ${
-              activeTag === tag
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border/50 text-muted-foreground hover:border-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${activeTag === tag ? 'bg-background' : 'bg-muted-foreground/50'}`} />
-            {tag}
-          </button>
-        ))}
-        <button
-          onClick={() => setShowUpload(true)}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-dashed border-border/40 text-xs font-light text-muted-foreground/50 hover:text-foreground hover:border-border transition-all duration-200 ml-2"
-        >
-          <Plus className="w-3 h-3" strokeWidth={1.5} />
-          add
-        </button>
-      </div>
-
-      {/* Drag-and-drop masonry grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-5 h-5 border-2 border-muted-foreground/20 border-t-foreground rounded-full animate-spin" />
         </div>
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-3">
-            {/* First column: AddNoteCard + items */}
-            <div className="flex-1 min-w-0">
-              <AddNoteCard />
-              <Droppable droppableId="0">
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`min-h-[40px] transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
-                  >
-                    {columnItems[0]?.map((item, index) => (
-                      <Draggable key={item.id} draggableId={item.id} index={index}>
-                        {(prov, snap) => (
-                          <div
-                            ref={prov.innerRef}
-                            {...prov.draggableProps}
-                            {...prov.dragHandleProps}
-                            style={{
-                              ...prov.draggableProps.style,
-                              opacity: snap.isDragging ? 0.85 : 1,
-                            }}
-                          >
-                            {item.content_type === 'text'
-                              ? <TextCard item={item} index={index} />
-                              : <MediaCard item={item} index={index} />}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </div>
 
-            {/* Remaining columns */}
-            {[1, 2, 3, 4].map(colIdx => (
-              <div key={colIdx} className="flex-1 min-w-0">
-                <Droppable droppableId={String(colIdx)}>
+        {/* Search heading */}
+        <div className="text-center mb-4">
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="SEARCH MEMORY..."
+            className="bg-transparent border-none outline-none font-display text-3xl md:text-4xl text-foreground placeholder:text-foreground/40 text-center w-full tracking-widest uppercase"
+          />
+        </div>
+
+        {/* Tag pills row */}
+        <div className="flex items-center gap-0 flex-wrap justify-center border-t border-border/30 pt-3">
+          <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest mr-3 font-light">Filter</span>
+          {usedTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={`px-2 py-0.5 text-[10px] uppercase tracking-widest font-light transition-colors ${
+                activeTag === tag
+                  ? 'text-foreground font-medium'
+                  : 'text-muted-foreground/50 hover:text-foreground'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowUpload(true)}
+            className="flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-2"
+          >
+            <Plus className="w-2.5 h-2.5" strokeWidth={2} />
+            add
+          </button>
+        </div>
+      </div>
+
+      {/* Masonry grid */}
+      <div className="px-4 pb-24 pt-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-5 h-5 border-2 border-muted-foreground/20 border-t-foreground rounded-full animate-spin" />
+          </div>
+        ) : (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="flex gap-1.5">
+              {/* First column: AddNoteCard + items */}
+              <div className="flex-1 min-w-0">
+                <AddNoteCard />
+                <Droppable droppableId="0">
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-[40px] transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
+                      className={`min-h-[40px] ${snapshot.isDraggingOver ? 'bg-primary/5 rounded' : ''}`}
                     >
-                      {columnItems[colIdx]?.map((item, index) => (
+                      {columnItems[0]?.map((item, index) => (
                         <Draggable key={item.id} draggableId={item.id} index={index}>
                           {(prov, snap) => (
                             <div
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              style={{
-                                ...prov.draggableProps.style,
-                                opacity: snap.isDragging ? 0.85 : 1,
-                              }}
+                              style={{ ...prov.draggableProps.style, opacity: snap.isDragging ? 0.85 : 1 }}
+                              className="mb-1.5"
                             >
                               {item.content_type === 'text'
                                 ? <TextCard item={item} index={index} />
@@ -207,12 +174,43 @@ export default function Memory() {
                   )}
                 </Droppable>
               </div>
-            ))}
-          </div>
-        </DragDropContext>
-      )}
 
-      <div className="h-16" /> {/* bottom padding for blur */}
+              {[1, 2, 3, 4].map(colIdx => (
+                <div key={colIdx} className="flex-1 min-w-0">
+                  <Droppable droppableId={String(colIdx)}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`min-h-[40px] ${snapshot.isDraggingOver ? 'bg-primary/5 rounded' : ''}`}
+                      >
+                        {columnItems[colIdx]?.map((item, index) => (
+                          <Draggable key={item.id} draggableId={item.id} index={index}>
+                            {(prov, snap) => (
+                              <div
+                                ref={prov.innerRef}
+                                {...prov.draggableProps}
+                                {...prov.dragHandleProps}
+                                style={{ ...prov.draggableProps.style, opacity: snap.isDragging ? 0.85 : 1 }}
+                                className="mb-1.5"
+                              >
+                                {item.content_type === 'text'
+                                  ? <TextCard item={item} index={index} />
+                                  : <MediaCard item={item} index={index} />}
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              ))}
+            </div>
+          </DragDropContext>
+        )}
+      </div>
 
       <UploadModal
         open={showUpload}
