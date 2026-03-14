@@ -69,8 +69,12 @@ export default function AppSidebar() {
             </div>
           </div>
         </button>
-        <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-          <Settings className="w-4 h-4" strokeWidth={1.5} />
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          title="Randomize order"
+        >
+          <Shuffle className="w-4 h-4" strokeWidth={1.5} />
         </button>
       </div>
     </nav>);
