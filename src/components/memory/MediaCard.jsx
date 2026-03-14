@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,16 +37,21 @@ export default function MediaCard({ item, index, onClick }) {
         className="group relative cursor-pointer break-inside-avoid"
         onClick={() => onClick?.(item)}
         onContextMenu={handleContextMenu}
+        onMouseEnter={() => handleVideoHover(true)}
+        onMouseLeave={() => handleVideoHover(false)}
       >
         <div className="relative overflow-hidden rounded-sm bg-muted/20">
           {isVideo ? (
             <video
+              ref={videoRef}
               src={item.file_url}
               className={cn(
                 "w-full h-full object-cover transition-all duration-700",
                 loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
               )}
               onLoadedMetadata={() => setLoaded(true)}
+              muted
+              loop
             />
           ) : (
             <img
