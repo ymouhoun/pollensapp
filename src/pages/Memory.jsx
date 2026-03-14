@@ -7,6 +7,7 @@ import MediaCard from '@/components/memory/MediaCard';
 import TextCard from '@/components/memory/TextCard';
 import AddNoteCard from '@/components/memory/AddNoteCard';
 import UploadModal from '@/components/memory/UploadModal';
+import MediaOverlay from '@/components/memory/MediaOverlay';
 
 const ALL_TAGS = ['ia', 'design', 'photography', 'eros', '3d', 'peinture', 'littérature', 'art direction', 'films', 'portrait', 'nature', 'architecture', 'abstract', 'urban', 'fashion', 'minimal', 'texture', 'experimental'];
 const NUM_COLS = 5;
