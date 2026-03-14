@@ -63,52 +63,8 @@ export default function Entropy() {
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden" style={{ left: 56 }}>
-      {/* Masonry grid background */}
-      <div
-        className="absolute inset-0 grid gap-1 p-1 overflow-hidden"
-        style={{ gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gridAutoFlow: 'dense' }}
-      >
-        {gridItems.slice(0, 12).map((item, i) => (
-          <motion.div
-            key={item.url + i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.04, duration: 0.5 }}
-            className={`relative overflow-hidden rounded-lg group cursor-pointer ${ASPECT_CLASSES[i % ASPECT_CLASSES.length]}`}
-            onClick={() => item.prompt && handleSave(item)}
-          >
-            <img
-              src={item.url}
-              alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-            {/* Badge */}
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-white/70 text-[10px] font-light tracking-wide">
-              {i % 3 === 0 ? '1080p · 5s' : i % 3 === 1 ? '720p · 5s' : '540p · 5s'}
-            </div>
-            {history.find(h => h.url === item.url) && (
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-white/10 backdrop-blur-sm text-white/60 text-[9px] tracking-widest uppercase">
-                saved
-              </div>
-            )}
-          </motion.div>
-        ))}
-
-        {/* Loading tile */}
-        {generating && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="col-span-1 row-span-2 relative rounded-lg overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
-              <p className="text-white/30 text-xs font-light">generating...</p>
-            </div>
-          </motion.div>
-        )}
-      </div>
+      {/* Floating images background */}
+      <FloatingImagesBackground items={floatingImages} />
 
       {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
