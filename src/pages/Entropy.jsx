@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Plus, Image as ImageIcon, Infinity, Camera, Square, Upload, ChevronDown } from 'lucide-react';
 import FloatingImagesBackground from '@/components/entropy/FloatingImagesBackground';
+import EvolveGradientBackground from '@/components/entropy/EvolveGradientBackground';
 
 const PLACEHOLDER_IMGS = [
   'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
