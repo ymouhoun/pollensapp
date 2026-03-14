@@ -66,6 +66,15 @@ export default function Memory() {
   }, [filtered]);
 
   useEffect(() => {
+    const handler = () => {
+      const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+      setColumnItems(distributeToColumns(shuffled, NUM_COLS));
+    };
+    window.addEventListener('randomize-memory', handler);
+    return () => window.removeEventListener('randomize-memory', handler);
+  }, [filtered]);
+
+  useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage(); },
