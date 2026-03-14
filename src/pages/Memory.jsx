@@ -68,21 +68,8 @@ export default function Memory() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Glass fade — top */}
-      <div
-        className="pointer-events-none fixed top-0 left-14 right-0 h-36 z-30"
-        style={{
-          background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 40%, hsl(var(--background) / 0.6) 70%, transparent 100%)',
-          backdropFilter: 'blur(0px)',
-        }}
-      />
-      {/* Glass fade — bottom */}
-      <div
-        className="pointer-events-none fixed bottom-0 left-14 right-0 h-36 z-30"
-        style={{
-          background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 40%, hsl(var(--background) / 0.6) 70%, transparent 100%)',
-        }}
-      />
+      <ProgressiveBlur side="top" height={160} />
+      <ProgressiveBlur side="bottom" height={160} />
 
       {/* Sticky header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md pt-5 pb-3 px-8">
