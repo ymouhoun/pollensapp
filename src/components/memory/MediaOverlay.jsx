@@ -71,7 +71,7 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
         {/* Fullscreen blurred + grain image backdrop */}
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src={item.file_url}
+            src={item.content_type === 'video' && backdropImage ? backdropImage : item.file_url}
             alt=""
             className="absolute inset-0 w-full h-full object-cover scale-110"
             style={{ filter: 'blur(40px)', transform: 'scale(1.15)' }}
