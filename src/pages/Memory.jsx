@@ -214,6 +214,7 @@ export default function Memory() {
         )}
       </div>
 
+      <MediaOverlay item={selectedItem} onClose={() => setSelectedItem(null)} />
       <UploadModal
         open={showUpload}
         onOpenChange={setShowUpload}
