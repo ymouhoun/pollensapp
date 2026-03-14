@@ -203,62 +203,8 @@ export default function Memory() {
           </div>
         </div>
       )}
-      {scrolled && <ProgressiveBlur side="top" height={160} />}
+      <ProgressiveBlur side="top" height={160} />
       <ProgressiveBlur side="bottom" height={160} />
-
-      {/* Sticky header */}
-      <div className={`sticky top-0 z-20 pt-5 pb-3 px-8 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-        {/* Nav tabs */}
-        <div className="flex items-center justify-center gap-6 mb-4">
-          <span className="flex items-center gap-1.5 text-[11px] tracking-widest text-foreground font-medium uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground inline-block" />
-            MEMORY
-          </span>
-          <button
-            onClick={() => window.location.href = '/Entropy'}
-            className="flex items-center gap-1 text-[11px] tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors uppercase font-light"
-          >
-            ↗ ENTROPY
-          </button>
-        </div>
-
-        {/* Search heading */}
-        <div className="text-center mb-4">
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="SEARCH MEMORY..."
-            className="bg-transparent border-none outline-none text-3xl md:text-4xl text-foreground placeholder:text-foreground/40 text-center w-full tracking-widest uppercase"
-            style={{ fontFamily: 'Dhampir, serif' }}
-          />
-        </div>
-
-        {/* Tag pills row */}
-        <div className="flex items-center gap-0 flex-wrap justify-center pt-1" style={{ fontFamily: 'BananaGrotesk, sans-serif' }}>
-          <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-light">Filter</span>
-          <span className="mx-2 text-muted-foreground/20">|</span>
-          {usedTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`px-1.5 py-0.5 text-[10px] uppercase tracking-widest font-light transition-colors ${
-                activeTag === tag
-                  ? 'text-foreground font-medium'
-                  : 'text-muted-foreground/50 hover:text-foreground'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-widest font-light text-muted-foreground/30 hover:text-foreground transition-colors ml-1"
-          >
-            <Plus className="w-2.5 h-2.5" strokeWidth={2} />
-            add
-          </button>
-        </div>
-      </div>
 
       {/* Masonry grid */}
       <div className="px-4 pb-24 pt-4">
