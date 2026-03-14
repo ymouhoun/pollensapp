@@ -206,6 +206,17 @@ export default function Memory() {
       <ProgressiveBlur side="top" height={160} />
       <ProgressiveBlur side="bottom" height={160} />
 
+      {/* Sticky search */}
+      <div className="sticky top-0 z-30 py-6 bg-background/50 backdrop-blur-md">
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search memory..."
+          className="mx-auto block bg-transparent border-none outline-none text-3xl text-white placeholder:text-white/40 text-center w-full max-w-2xl px-6 tracking-wide"
+          style={{ fontFamily: 'var(--font-gerstner)' }}
+        />
+      </div>
+
       {/* Masonry grid */}
       <div className="px-4 pb-24 pt-4">
         {isLoading ? (
