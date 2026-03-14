@@ -120,88 +120,42 @@ export default function Entropy() {
       {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-      {/* Floating prompt bar */}
-      <div className="absolute bottom-6 left-6 right-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-            {/* Tab row */}
-            <div className="flex items-center gap-0 px-4 pt-3 pb-0">
-              {TABS.map((tab, i) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 text-[11px] font-medium tracking-widest transition-colors ${
-                    activeTab === tab ? 'text-white' : 'text-white/30 hover:text-white/60'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-              <span className="ml-1 w-5 h-5 rounded bg-white/10 text-white/50 text-[10px] flex items-center justify-center">7</span>
-            </div>
-
-            {/* Input */}
-            <div className="px-4 py-3">
+      {/* Prompt section */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <h1 className="text-white text-3xl font-light mb-12 tracking-wide">What are you thinking about today?</h1>
+        
+        <div className="pointer-events-auto max-w-2xl w-full px-6">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Input area */}
+            <div className="flex items-center gap-3 px-5 py-4">
+              <button className="text-white/40 hover:text-white/60 transition-colors flex-shrink-0">
+                <Plus className="w-5 h-5" strokeWidth={1.5} />
+              </button>
+              
               <input
                 ref={inputRef}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
-                placeholder="What do you want to see..."
-                className="w-full bg-transparent text-white/80 placeholder-white/25 text-sm font-light outline-none"
+                placeholder="How can i help you today?"
+                className="flex-1 bg-transparent text-white/80 placeholder-white/40 text-sm font-light outline-none"
               />
+              
+              <button className="text-white/40 hover:text-white/60 transition-colors flex-shrink-0">
+                <Camera className="w-5 h-5" strokeWidth={1.5} />
+              </button>
             </div>
 
-            {/* Bottom toolbar */}
-            <div className="flex items-center justify-between px-4 pb-3">
-              {/* Left tools */}
-              <div className="flex items-center gap-3 text-white/30">
-                <button className="hover:text-white/60 transition-colors">
-                  <Camera className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-                <button className="hover:text-white/60 transition-colors">
-                  <Plus className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-                <button className="hover:text-white/60 transition-colors">
-                  <Square className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-                <button className="hover:text-white/60 transition-colors">
-                  <Infinity className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-              </div>
-
-              {/* Right controls */}
-              <div className="flex items-center gap-3">
-                {/* Draft toggle */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white/40 text-[11px] tracking-wider">DRAFT</span>
-                  <button
-                    onClick={() => setDraft(!draft)}
-                    className={`relative w-8 h-4 rounded-full transition-colors ${draft ? 'bg-white/30' : 'bg-white/10'}`}
-                  >
-                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${draft ? 'left-4' : 'left-0.5'}`} />
-                  </button>
-                </div>
-
-                {/* Mode selector */}
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
-                  <span className="text-white/50 text-[11px] tracking-wide">IMAGE · FLUX</span>
-                  <ChevronDown className="w-3 h-3 text-white/30" />
-                </button>
-
-                {/* Generate button */}
-                <button
-                  onClick={handleGenerate}
-                  disabled={!prompt.trim() || generating}
-                  className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-                >
-                  {generating ? (
-                    <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
-                  ) : (
-                    <Upload className="w-3.5 h-3.5 text-white" strokeWidth={2} />
-                  )}
-                </button>
-              </div>
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 px-5 pb-4">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 transition-colors border border-white/20 text-white/70 text-xs font-light">
+                <span>💭</span>
+                Thinking
+              </button>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 transition-colors border border-white/20 text-white/70 text-xs font-light">
+                <span>🔍</span>
+                Search
+              </button>
             </div>
           </div>
         </div>
