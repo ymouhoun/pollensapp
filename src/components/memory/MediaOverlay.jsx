@@ -84,13 +84,21 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
           className="relative flex items-center gap-8"
           onClick={e => e.stopPropagation()}
         >
-          {/* Image */}
+          {/* Media */}
           <div className="rounded-lg overflow-hidden shadow-2xl max-h-[75vh] max-w-[45vw]">
-            <img
-              src={item.file_url}
-              alt={item.title || ''}
-              className="max-h-[75vh] max-w-[45vw] object-contain"
-            />
+            {item.content_type === 'video' ? (
+              <video
+                src={item.file_url}
+                controls
+                className="max-h-[75vh] max-w-[45vw] object-contain"
+              />
+            ) : (
+              <img
+                src={item.file_url}
+                alt={item.title || ''}
+                className="max-h-[75vh] max-w-[45vw] object-contain"
+              />
+            )}
           </div>
 
           {/* Sidebar actions */}
