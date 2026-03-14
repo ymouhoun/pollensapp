@@ -66,6 +66,16 @@ export default function Memory() {
   }, [filtered]);
 
   useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage(); },
+      { rootMargin: '300px' }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
     const onScroll = () => {
       const current = window.scrollY;
       setHeaderVisible(current < lastScrollY.current || current < 60);
