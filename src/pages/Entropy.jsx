@@ -87,7 +87,7 @@ export default function Entropy() {
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
       {/* Prompt section */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
         <h1 className="text-white text-3xl font-light mb-12 tracking-wide" style={{ fontFamily: "var(--font-gerstner)" }}>What are you thinking about today?</h1>
         
         <div className="pointer-events-auto max-w-2xl w-full px-6">
