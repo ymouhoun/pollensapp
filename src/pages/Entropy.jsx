@@ -33,7 +33,10 @@ const PLACEHOLDER_IMGS = [
 const TABS = ['KEYFRAME', 'REFERENCE', 'MODIFY'];
 
 export default function Entropy() {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('prompt') || '';
+  });
   const [generating, setGenerating] = useState(false);
   const [history, setHistory] = useState([]);
   const [activeTab, setActiveTab] = useState('KEYFRAME');

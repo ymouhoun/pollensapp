@@ -28,9 +28,12 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
     onClose();
   };
 
-  const handleUseAsPrompt = () => {
-    const text = item.title || item.text_content || filename;
-    window.location.href = `/Entropy?prompt=${encodeURIComponent(text)}`;
+  const handleUseAsPrompt = async () => {
+    const caption = await base44.integrations.Core.InvokeLLM({
+      prompt: `Provide a detailed, vivid visual description of this image. Focus on composition, colors, mood, and key elements. Keep it concise but evocative.`,
+      file_urls: [item.file_url]
+    });
+    window.location.href = `/Entropy?prompt=${encodeURIComponent(caption)}`;
   };
 
   return (
@@ -95,7 +98,8 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
             <p className="text-foreground/70 text-sm font-light truncate max-w-[160px]">{filename}</p>
             <button
               onClick={handleUseAsPrompt}
-              className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors text-sm font-light"
+              className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors text-sm font-light disabled:opacity-50"
+              disabled={false}
             >
               <Zap className="w-3.5 h-3.5" strokeWidth={1.5} />
               use as prompt
