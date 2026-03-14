@@ -16,10 +16,8 @@ export default function ItemContextMenu({ item, position, onClose }) {
       if (ref.current && !ref.current.contains(e.target)) onClose();
     };
     document.addEventListener('mousedown', handler);
-    document.addEventListener('contextmenu', handler);
     return () => {
       document.removeEventListener('mousedown', handler);
-      document.removeEventListener('contextmenu', handler);
     };
   }, [onClose]);
 
