@@ -56,12 +56,17 @@ export default function AppSidebar() {
         >
           <div className={cn(
             "relative w-5 h-9 rounded-full border transition-colors duration-300",
-            dark ? "bg-foreground/20 border-foreground/40" : "bg-muted border-border"
+            dark ? "bg-purple-600 border-purple-500" : "bg-muted border-border"
           )}>
             <div className={cn(
-              "absolute left-0.5 w-4 h-4 rounded-full transition-all duration-300",
-              dark ? "top-0.5 bg-foreground" : "top-4 bg-muted-foreground/40"
-            )} />
+              "absolute left-0.5 w-4 h-4 rounded-full transition-all duration-300 flex items-center justify-center",
+              dark ? "top-0.5 bg-white" : "top-4 bg-muted-foreground/40"
+            )}>
+              {dark
+                ? <Moon className="w-2.5 h-2.5 text-purple-600" strokeWidth={2} />
+                : <Sun className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={2} />
+              }
+            </div>
           </div>
         </button>
         <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
