@@ -50,6 +50,16 @@ export default function Memory() {
     setColumnItems(distributeToColumns(filtered, NUM_COLS));
   }, [filtered]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const current = window.scrollY;
+      setHeaderVisible(current < lastScrollY.current || current < 60);
+      lastScrollY.current = current;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const usedTags = ALL_TAGS;
 
   const handleDragEnd = (result) => {
