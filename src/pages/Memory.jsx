@@ -236,7 +236,7 @@ export default function Memory() {
                 </Droppable>
               </div>
 
-              {[1, 2, 3, 4].map(colIdx => (
+              {Array.from({ length: numCols - 1 }, (_, i) => i + 1).map(colIdx => (
                 <div key={colIdx} className="flex-1 min-w-0">
                   <Droppable droppableId={String(colIdx)}>
                     {(provided, snapshot) => (
