@@ -99,6 +99,7 @@ export default function Memory() {
     const onScroll = () => {
       const current = window.scrollY;
       setHeaderVisible(current < lastScrollY.current || current < 60);
+      setScrolled(current > 60);
       lastScrollY.current = current;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
