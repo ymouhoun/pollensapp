@@ -2,10 +2,19 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ItemContextMenu from './ItemContextMenu';
 
 export default function MediaCard({ item, index, onClick }) {
   const [loaded, setLoaded] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
   const isVideo = item.media_type === 'video';
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    const x = Math.min(e.clientX, window.innerWidth - 240);
+    const y = Math.min(e.clientY, window.innerHeight - 320);
+    setContextMenu({ x, y });
+  };
 
   return (
     <motion.div
