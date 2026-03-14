@@ -4,10 +4,10 @@ import { Brain, Sparkles, Shuffle, Settings, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { path: '/Memory', icon: Brain, label: 'my mind' },
-  { path: '/Entropy', icon: Shuffle, label: 'entropy' },
-  { path: '/Iterate', icon: Sparkles, label: 'iterate' },
-];
+{ path: '/Memory', icon: Brain, label: 'my mind' },
+{ path: '/Entropy', icon: Shuffle, label: 'entropy' },
+{ path: '/Iterate', icon: Sparkles, label: 'iterate' }];
+
 
 export default function AppSidebar() {
   const location = useLocation();
@@ -24,27 +24,27 @@ export default function AppSidebar() {
       <div className="flex flex-col items-center gap-1">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
-          return (
-            <Link
-              key={path}
-              to={path}
-              className={cn(
-                "group relative flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all duration-300",
-                isActive 
-                  ? "text-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.5} />
-              <span className="text-[9px] tracking-wider font-light writing-vertical"
-                style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
-                {label}
-              </span>
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-foreground rounded-full" />
-              )}
-            </Link>
-          );
+          return null;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         })}
       </div>
 
@@ -52,8 +52,8 @@ export default function AppSidebar() {
         <button
           onClick={toggleDark}
           className="flex flex-col items-center gap-1 group"
-          title={dark ? 'Switch to day' : 'Switch to night'}
-        >
+          title={dark ? 'Switch to day' : 'Switch to night'}>
+
           <div className={cn(
             "relative w-5 h-9 rounded-full border transition-colors duration-300",
             dark ? "bg-purple-600 border-purple-500" : "bg-muted border-border"
@@ -62,9 +62,9 @@ export default function AppSidebar() {
               "absolute left-0 right-0 mx-auto w-4 h-4 rounded-full transition-all duration-300 flex items-center justify-center",
               dark ? "top-0.5 bg-white" : "top-4 bg-muted-foreground/40"
             )}>
-              {dark
-                ? <Moon className="w-2.5 h-2.5 text-purple-600" strokeWidth={2} />
-                : <Sun className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={2} />
+              {dark ?
+              <Moon className="w-2.5 h-2.5 text-purple-600" strokeWidth={2} /> :
+              <Sun className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={2} />
               }
             </div>
           </div>
@@ -73,6 +73,6 @@ export default function AppSidebar() {
           <Settings className="w-4 h-4" strokeWidth={1.5} />
         </button>
       </div>
-    </nav>
-  );
+    </nav>);
+
 }
