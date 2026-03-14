@@ -105,7 +105,8 @@ export default function Memory() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="SEARCH MEMORY..."
-            className="bg-transparent border-none outline-none font-display text-3xl md:text-4xl text-foreground placeholder:text-foreground/40 text-center w-full tracking-widest uppercase"
+            className="bg-transparent border-none outline-none text-3xl md:text-4xl text-foreground placeholder:text-foreground/40 text-center w-full tracking-widest uppercase"
+            style={{ fontFamily: 'CustomSearch, serif' }}
           />
         </div>
 
