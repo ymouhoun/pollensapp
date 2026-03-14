@@ -4,8 +4,19 @@ import { Download, Trash2, Zap, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-export default function MediaOverlay({ item, onClose }) {
+export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!item) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') onPrev?.();
+      if (e.key === 'ArrowRight') onNext?.();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [item, onClose, onPrev, onNext]);
 
   if (!item) return null;
 
