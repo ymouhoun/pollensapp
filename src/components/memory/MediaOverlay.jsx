@@ -68,7 +68,10 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
         onClick={onClose}
       >
         {/* Blurred backdrop */}
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-xl" />
+        <div
+          className="absolute inset-0 backdrop-blur-xl transition-colors duration-700"
+          style={{ backgroundColor: dominantColor ? `color-mix(in srgb, ${dominantColor} 18%, hsl(var(--background) / 0.55))` : 'hsl(var(--background) / 0.40)' }}
+        />
 
         {/* Close button */}
         <button
