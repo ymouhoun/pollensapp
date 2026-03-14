@@ -121,7 +121,7 @@ export default function Memory() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <ProgressiveBlur side="top" height={160} />
+      {scrolled && <ProgressiveBlur side="top" height={160} />}
       <ProgressiveBlur side="bottom" height={160} />
 
       {/* Sticky header */}
