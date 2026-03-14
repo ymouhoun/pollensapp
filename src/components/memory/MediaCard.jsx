@@ -12,7 +12,7 @@ export default function MediaCard({ item, index, onClick }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.04 }}
-      className="group relative cursor-pointer break-inside-avoid mb-3"
+      className="group relative cursor-pointer break-inside-avoid"
       onClick={() => onClick?.(item)}
     >
       <div className="relative overflow-hidden rounded-xl bg-muted/30">
