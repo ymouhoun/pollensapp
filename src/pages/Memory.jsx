@@ -29,10 +29,24 @@ export default function Memory() {
   const lastScrollY = useRef(0);
   const queryClient = useQueryClient();
 
-  const { data: items = [], isLoading } = useQuery({
+  const PAGE_SIZE = 40;
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ['media-items'],
-    queryFn: () => base44.entities.MediaItem.list('-created_date', 200),
+    queryFn: ({ pageParam = 0 }) =>
+      base44.entities.MediaItem.list('-created_date', PAGE_SIZE, pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.flat().length : undefined,
+    initialPageParam: 0,
   });
+
+  const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
   const filtered = useMemo(() => items.filter(item => {
     if (item.is_forgotten) return false;
