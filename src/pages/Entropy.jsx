@@ -122,7 +122,7 @@ export default function Entropy() {
 
       {/* Prompt section */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-white text-3xl font-light mb-12 tracking-wide">What are you thinking about today?</h1>
+        <h1 className="text-white text-3xl font-light mb-12 tracking-wide" style={{ fontFamily: "var(--font-gertsner)" }}>What are you thinking about today?</h1>
         
         <div className="pointer-events-auto max-w-2xl w-full px-6">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
