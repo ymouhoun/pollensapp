@@ -55,13 +55,7 @@ export default function MediaCard({ item, index, onClick }) {
             />
           )}
 
-          {isVideo && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
-                <Play className="w-4 h-4 fill-foreground text-foreground ml-0.5" />
-              </div>
-            </div>
-          )}
+
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
