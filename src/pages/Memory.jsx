@@ -26,6 +26,7 @@ export default function Memory() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [columnItems, setColumnItems] = useState(Array.from({ length: NUM_COLS }, () => []));
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
   const lastScrollY = useRef(0);
   const sentinelRef = useRef(null);
   const queryClient = useQueryClient();
