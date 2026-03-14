@@ -235,6 +235,14 @@ export default function Memory() {
         )}
       </div>
 
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-1" />
+      {isFetchingNextPage && (
+        <div className="flex justify-center pb-8">
+          <div className="w-4 h-4 border-2 border-muted-foreground/20 border-t-foreground rounded-full animate-spin" />
+        </div>
+      )}
+
       <MediaOverlay
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
