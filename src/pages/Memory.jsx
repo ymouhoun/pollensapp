@@ -125,6 +125,48 @@ export default function Memory() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const onDragEnter = (e) => {
+      if (e.dataTransfer.types.includes('Files')) {
+        dragCounter.current += 1;
+        setIsDraggingFiles(true);
+      }
+    };
+    const onDragLeave = () => {
+      dragCounter.current -= 1;
+      if (dragCounter.current === 0) setIsDraggingFiles(false);
+    };
+    const onDragOver = (e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); };
+    const onDrop = async (e) => {
+      e.preventDefault();
+      dragCounter.current = 0;
+      setIsDraggingFiles(false);
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+      if (files.length === 0) return;
+      setUploadingDrop(true);
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        await base44.entities.MediaItem.create({
+          title: file.name.split('.')[0],
+          file_url,
+          content_type: file.type.startsWith('video/') ? 'video' : 'image',
+        });
+      }
+      setUploadingDrop(false);
+      queryClient.invalidateQueries({ queryKey: ['media-items'] });
+    };
+    window.addEventListener('dragenter', onDragEnter);
+    window.addEventListener('dragleave', onDragLeave);
+    window.addEventListener('dragover', onDragOver);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter);
+      window.removeEventListener('dragleave', onDragLeave);
+      window.removeEventListener('dragover', onDragOver);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [queryClient]);
+
   const usedTags = ALL_TAGS;
 
   const handleDragEnd = (result) => {
