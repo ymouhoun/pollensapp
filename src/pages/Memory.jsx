@@ -214,7 +214,20 @@ export default function Memory() {
         )}
       </div>
 
-      <MediaOverlay item={selectedItem} onClose={() => setSelectedItem(null)} />
+      <MediaOverlay
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onPrev={() => {
+          const navigable = filtered.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx > 0) setSelectedItem(navigable[idx - 1]);
+        }}
+        onNext={() => {
+          const navigable = filtered.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx < navigable.length - 1) setSelectedItem(navigable[idx + 1]);
+        }}
+      />
       <UploadModal
         open={showUpload}
         onOpenChange={setShowUpload}
