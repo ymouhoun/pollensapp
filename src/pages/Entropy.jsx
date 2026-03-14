@@ -63,7 +63,10 @@ export default function Entropy() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden" style={{ left: 56 }}>
+    <div className="fixed inset-0 overflow-hidden" style={{ left: 56 }}>
+      {/* Evolving gradient background */}
+      <EvolveGradientBackground />
+
       {/* Floating images background */}
       <FloatingImagesBackground items={floatingImages} />
 
