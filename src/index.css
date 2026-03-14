@@ -15,7 +15,7 @@
   :root {
     --font-sans: 'Inter', sans-serif;
     --font-display: 'Playfair Display', serif;
-    --font-gerstner: 'IBM Plex Mono', monospace;
+    --font-gerstner: 'Gerstner', monospace;
 
     --background: 230 25% 95%;
     --foreground: 230 15% 15%;
