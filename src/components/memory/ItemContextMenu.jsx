@@ -53,7 +53,7 @@ export default function ItemContextMenu({ item, position, onClose }) {
   return (
     <div
       ref={ref}
-      className="fixed z-[200] w-56 rounded-xl overflow-hidden shadow-2xl border border-white/10"
+      className="fixed z-[200] w-40 rounded-lg overflow-hidden shadow-lg border border-white/10"
       style={{
         top: position.y,
         left: position.x,
