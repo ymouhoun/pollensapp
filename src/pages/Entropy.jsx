@@ -148,11 +148,11 @@ export default function Entropy() {
 
             {/* Action buttons */}
             <div className="flex items-center gap-2 px-5 pb-4">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 transition-colors border border-white/20 text-white/70 text-xs font-light">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/12 transition-colors border border-white/30 text-white/70 text-xs font-light backdrop-blur-md">
                 <span>💭</span>
                 Thinking
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 transition-colors border border-white/20 text-white/70 text-xs font-light">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/12 transition-colors border border-white/30 text-white/70 text-xs font-light backdrop-blur-md">
                 <span>🔍</span>
                 Search
               </button>
