@@ -63,37 +63,37 @@ export default function ItemContextMenu({ item, position, onClose }) {
       }}
     >
       {renaming ? (
-        <div className="p-2">
+        <div className="p-1.5">
           <input
             autoFocus
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenaming(false); }}
             placeholder="New name..."
-            className="w-full bg-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none placeholder:text-white/30"
+            className="w-full bg-white/10 text-white text-[11px] rounded px-2 py-1 outline-none placeholder:text-white/30"
           />
-          <div className="flex gap-1 mt-1.5">
-            <button onClick={handleRename} className="flex-1 text-[10px] py-1.5 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors">Save</button>
-            <button onClick={() => setRenaming(false)} className="flex-1 text-[10px] py-1.5 rounded-lg text-white/40 hover:bg-white/10 transition-colors">Cancel</button>
+          <div className="flex gap-1 mt-1">
+            <button onClick={handleRename} className="flex-1 text-[10px] py-0.5 rounded bg-white/10 text-white/70 hover:bg-white/20 transition-colors">Save</button>
+            <button onClick={() => setRenaming(false)} className="flex-1 text-[10px] py-0.5 rounded text-white/40 hover:bg-white/10 transition-colors">Cancel</button>
           </div>
         </div>
       ) : addingTag ? (
-        <div className="p-2">
+        <div className="p-1.5">
           <input
             autoFocus
             value={newTag}
             onChange={e => setNewTag(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAddTag(); if (e.key === 'Escape') setAddingTag(false); }}
             placeholder="Tag name..."
-            className="w-full bg-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none placeholder:text-white/30"
+            className="w-full bg-white/10 text-white text-[11px] rounded px-2 py-1 outline-none placeholder:text-white/30"
           />
-          <div className="flex gap-1 mt-1.5">
-            <button onClick={handleAddTag} className="flex-1 text-[10px] py-1.5 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors">Add</button>
-            <button onClick={() => setAddingTag(false)} className="flex-1 text-[10px] py-1.5 rounded-lg text-white/40 hover:bg-white/10 transition-colors">Cancel</button>
+          <div className="flex gap-1 mt-1">
+            <button onClick={handleAddTag} className="flex-1 text-[10px] py-0.5 rounded bg-white/10 text-white/70 hover:bg-white/20 transition-colors">Add</button>
+            <button onClick={() => setAddingTag(false)} className="flex-1 text-[10px] py-0.5 rounded text-white/40 hover:bg-white/10 transition-colors">Cancel</button>
           </div>
         </div>
       ) : (
-        <div className="py-1">
+        <div className="py-0.5">
           <MenuItem icon={Pencil} label="Rename" onClick={() => setRenaming(true)} />
           <MenuItem icon={Zap} label="Use as prompt" onClick={handleUseAsPrompt} />
           <MenuItem icon={Tag} label="Add tag" onClick={() => setAddingTag(true)} />
