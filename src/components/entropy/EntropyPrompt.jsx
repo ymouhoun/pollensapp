@@ -24,6 +24,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onGenerate()}
             placeholder="What do you want to create..."
             className="flex-1 bg-transparent text-white/80 placeholder-white/40 text-sm font-light outline-none"
+            style={{ fontFamily: "var(--font-gerstner)" }}
           />
           
           <button className="text-white/40 hover:text-white/60 transition-colors flex-shrink-0">
