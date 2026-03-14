@@ -8,7 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
-import Iterate from '@/pages/Iterate';
+import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
@@ -36,7 +36,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Navigate to="/Memory" replace />} />
       <Route element={<AppLayout />}>
         <Route path="/Memory" element={<Memory />} />
-        <Route path="/Iterate" element={<Iterate />} />
+        <Route path="/Entropy" element={<Entropy />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

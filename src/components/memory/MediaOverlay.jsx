@@ -30,7 +30,7 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
 
   const handleUseAsPrompt = () => {
     const text = item.title || item.text_content || filename;
-    window.location.href = `/Iterate?prompt=${encodeURIComponent(text)}`;
+    window.location.href = `/Entropy?prompt=${encodeURIComponent(text)}`;
   };
 
   return (
