@@ -93,9 +93,15 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
           {/* Image */}
           <div className="rounded-lg overflow-hidden shadow-2xl max-h-[75vh] max-w-[45vw]">
             <img
+              ref={imgRef}
               src={item.file_url}
               alt={item.title || ''}
               className="max-h-[75vh] max-w-[45vw] object-contain"
+              crossOrigin="anonymous"
+              onLoad={(e) => {
+                const color = getDominantColor(e.target);
+                if (color) setDominantColor(color);
+              }}
             />
           </div>
 
