@@ -85,7 +85,7 @@ export default function Memory() {
   useEffect(() => {
     const handler = () => {
       const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-      setColumnItems(distributeToColumns(shuffled, NUM_COLS));
+      setColumnItems(distributeToColumns(shuffled, numCols));
     };
     const keyHandler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
