@@ -11,7 +11,13 @@ import MediaOverlay from '@/components/memory/MediaOverlay';
 import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
-const NUM_COLS = 5;
+
+function getNumCols(width) {
+  if (width < 640) return 2;
+  if (width < 1024) return 3;
+  if (width < 1440) return 4;
+  return 5;
+}
 
 function distributeToColumns(items, numCols) {
   const cols = Array.from({ length: numCols }, () => []);
