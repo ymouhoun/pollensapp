@@ -74,7 +74,7 @@ export function LiquidMetalButton({
     }
   }, []);
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e) => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
