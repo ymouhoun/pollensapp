@@ -8,7 +8,6 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
-import Entropy from '@/pages/Entropy';
 import Iterate from '@/pages/Iterate';
 import Settings from '@/pages/Settings';
 
