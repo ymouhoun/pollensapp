@@ -10,16 +10,7 @@ export default function MediaCard({ item, index, onClick }) {
   const videoRef = React.useRef(null);
   const isVideo = item.content_type === 'video';
 
-  const handleVideoHover = (isHovering) => {
-    if (videoRef.current) {
-      if (isHovering) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
-    }
-  };
+
 
   const handleContextMenu = (e) => {
     e.preventDefault();
