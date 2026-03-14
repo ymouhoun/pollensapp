@@ -70,8 +70,18 @@ export default function Memory() {
       const shuffled = [...filtered].sort(() => Math.random() - 0.5);
       setColumnItems(distributeToColumns(shuffled, NUM_COLS));
     };
+    const keyHandler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        handler();
+      }
+    };
     window.addEventListener('randomize-memory', handler);
-    return () => window.removeEventListener('randomize-memory', handler);
+    window.addEventListener('keydown', keyHandler);
+    return () => {
+      window.removeEventListener('randomize-memory', handler);
+      window.removeEventListener('keydown', keyHandler);
+    };
   }, [filtered]);
 
   useEffect(() => {
