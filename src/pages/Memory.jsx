@@ -25,6 +25,8 @@ export default function Memory() {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [columnItems, setColumnItems] = useState(Array.from({ length: NUM_COLS }, () => []));
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = React.useRef(0);
   const queryClient = useQueryClient();
 
   const { data: items = [], isLoading } = useQuery({
