@@ -38,6 +38,10 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
     return () => window.removeEventListener('keydown', handler);
   }, [item, onClose, onPrev, onNext]);
 
+  useEffect(() => {
+    setDominantColor(null);
+  }, [item]);
+
   if (!item) return null;
 
   const filename = item.file_url ? item.file_url.split('/').pop().split('?')[0] : item.title || 'untitled';
