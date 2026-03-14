@@ -1,31 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Trash2, Zap, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-function getDominantColor(imgEl) {
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 16;
-    canvas.height = 16;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(imgEl, 0, 0, 16, 16);
-    const data = ctx.getImageData(0, 0, 16, 16).data;
-    let r = 0, g = 0, b = 0, count = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
-    }
-    return `rgb(${Math.round(r/count)},${Math.round(g/count)},${Math.round(b/count)})`;
-  } catch {
-    return null;
-  }
-}
-
 export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
   const queryClient = useQueryClient();
-  const [dominantColor, setDominantColor] = useState(null);
-  const imgRef = useRef(null);
 
   useEffect(() => {
     if (!item) return;
@@ -37,10 +17,6 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [item, onClose, onPrev, onNext]);
-
-  useEffect(() => {
-    setDominantColor(null);
-  }, [item]);
 
   if (!item) return null;
 
@@ -68,10 +44,7 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
         onClick={onClose}
       >
         {/* Blurred backdrop */}
-        <div
-          className="absolute inset-0 backdrop-blur-xl transition-colors duration-700"
-          style={{ backgroundColor: dominantColor ? `color-mix(in srgb, ${dominantColor} 18%, hsl(var(--background) / 0.55))` : 'hsl(var(--background) / 0.40)' }}
-        />
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-xl" />
 
         {/* Close button */}
         <button
@@ -93,15 +66,9 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
           {/* Image */}
           <div className="rounded-lg overflow-hidden shadow-2xl max-h-[75vh] max-w-[45vw]">
             <img
-              ref={imgRef}
               src={item.file_url}
               alt={item.title || ''}
               className="max-h-[75vh] max-w-[45vw] object-contain"
-              crossOrigin="anonymous"
-              onLoad={(e) => {
-                const color = getDominantColor(e.target);
-                if (color) setDominantColor(color);
-              }}
             />
           </div>
 
