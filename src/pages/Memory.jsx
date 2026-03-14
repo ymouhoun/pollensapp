@@ -197,20 +197,20 @@ export default function Memory() {
                                 className="mb-1.5"
                               >
                                 {item.content_type === 'text'
-                                  ? <TextCard item={item} index={index} />
-                                  : <MediaCard item={item} index={index} />}
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              ))}
-            </div>
-          </DragDropContext>
+                                    ? <TextCard item={item} index={index} />
+                                    : <MediaCard item={item} index={index} onClick={setSelectedItem} />}
+                                </div>
+                                )}
+                                </Draggable>
+                                ))}
+                                {provided.placeholder}
+                                </div>
+                                )}
+                                </Droppable>
+                                </div>
+                                ))}
+                                </div>
+                                </DragDropContext>
         )}
       </div>
 
