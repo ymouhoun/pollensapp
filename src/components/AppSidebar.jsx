@@ -59,7 +59,7 @@ export default function AppSidebar() {
             dark ? "bg-purple-600 border-purple-500" : "bg-muted border-border"
           )}>
             <div className={cn(
-              "absolute left-0.5 w-4 h-4 rounded-full transition-all duration-300 flex items-center justify-center",
+              "absolute left-0 right-0 mx-auto w-4 h-4 rounded-full transition-all duration-300 flex items-center justify-center",
               dark ? "top-0.5 bg-white" : "top-4 bg-muted-foreground/40"
             )}>
               {dark
