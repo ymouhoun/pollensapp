@@ -41,6 +41,7 @@ export default function MediaCard({ item, index, onClick }) {
               onLoadedMetadata={() => setLoaded(true)}
               muted
               loop
+              autoPlay
             />
           ) : (
             <img
