@@ -69,5 +69,13 @@ export default function MediaCard({ item, index, onClick }) {
         )}
       </div>
     </motion.div>
+    {contextMenu && (
+      <ItemContextMenu
+        item={item}
+        position={contextMenu}
+        onClose={() => setContextMenu(null)}
+      />
+    )}
+    </>
   );
 }
