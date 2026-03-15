@@ -11,14 +11,6 @@ const navItems = [
 
 export default function AppSidebar() {
   const location = useLocation();
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
-
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-  };
-
   return (
     <nav className="fixed left-0 top-0 bottom-0 w-14 flex flex-col items-center justify-between py-6 z-50">
       <div className="flex flex-col items-center gap-1">
