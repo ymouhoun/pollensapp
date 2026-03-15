@@ -333,7 +333,7 @@ export default function Memory() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search memory..."
-            className="bg-transparent border-none outline-none text-2xl text-center tracking-wide bg-[linear-gradient(110deg,rgba(255,255,255,0.5),35%,#fff,50%,rgba(255,255,255,0.5),75%,rgba(255,255,255,0.5))] bg-[length:200%_100%] bg-clip-text text-transparent placeholder:text-white/40"
+            className="bg-transparent border-none outline-none text-2xl text-center tracking-wide bg-[linear-gradient(110deg,rgba(255,255,255,0.15),35%,#fff,50%,rgba(255,255,255,0.15),75%,rgba(255,255,255,0.15))] bg-[length:200%_100%] bg-clip-text text-transparent placeholder:text-white/40"
             style={{ 
               fontFamily: 'Dhampir, serif', 
               width: 'auto', 
