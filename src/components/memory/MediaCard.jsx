@@ -4,7 +4,7 @@ import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ItemContextMenu from './ItemContextMenu';
 
-export default function MediaCard({ item, index, onClick }) {
+export default function MediaCard({ item, index, onClick, onSameVibe }) {
   const [loaded, setLoaded] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const videoRef = React.useRef(null);
