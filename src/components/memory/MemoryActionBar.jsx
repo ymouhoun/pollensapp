@@ -26,7 +26,7 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
 
       {/* Pill-shaped action bar with liquid glass effect */}
       <div
-        className="flex items-center gap-4 px-6 py-3 rounded-full shadow-2xl border border-white/20 backdrop-blur-xl"
+        className="flex items-center gap-3 px-4 py-3 rounded-full shadow-2xl border border-white/20 backdrop-blur-xl"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 50%, rgba(180,160,210,0.12) 100%)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.1)',
@@ -44,7 +44,6 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
             style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }}
             strokeWidth={1.5}
           />
-          <span className="text-xs font-light tracking-wide overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">Randomize</span>
         </button>
 
         <button
@@ -57,13 +56,9 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
             style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }}
             strokeWidth={1.5}
           />
-          <span className="text-xs font-light tracking-wide overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">Galaxy</span>
         </button>
 
-        <div
-          className="w-px h-5"
-          style={{ background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent)' }}
-        />
+
 
         <button
           onClick={toggleDark}
@@ -74,7 +69,6 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
             ? <Sun className="w-4 h-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-45" style={{ filter: 'drop-shadow(0 0 4px rgba(255,220,100,0.4))' }} strokeWidth={1.5} />
             : <Moon className="w-4 h-4 transition-all duration-300 group-hover:scale-110" style={{ filter: 'drop-shadow(0 0 4px rgba(180,180,255,0.4))' }} strokeWidth={1.5} />
           }
-          <span className="text-xs font-light tracking-wide overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">{dark ? 'Light' : 'Dark'}</span>
         </button>
       </div>
     </div>
