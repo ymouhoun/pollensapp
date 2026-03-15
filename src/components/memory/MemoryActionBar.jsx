@@ -40,7 +40,7 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
       <div 
         className="flex items-center gap-4 px-6 py-3 rounded-full shadow-2xl border border-white/10 backdrop-blur-xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(30,30,35,0.6) 0%, rgba(60,30,50,0.4) 100%)',
+          background: 'linear-gradient(135deg, rgba(30,30,35,0.25) 0%, rgba(60,30,50,0.15) 100%)',
         }}
       >
         <button
