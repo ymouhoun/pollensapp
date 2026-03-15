@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ItemCircularMenu from './ItemCircularMenu';
+import ItemContextMenu from './ItemContextMenu';
 
 export default function MediaCard({ item, index, onClick, onSameVibe }) {
   const [loaded, setLoaded] = useState(false);
@@ -114,7 +114,7 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
       </div>
 
       {contextMenu && (
-        <ItemCircularMenu
+        <ItemContextMenu
           item={item}
           position={contextMenu}
           onClose={() => setContextMenu(null)}
