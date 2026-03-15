@@ -107,6 +107,12 @@ export default function Galaxy({ onSelectItem }) {
     };
   }, [isDragging, dragStart, camera]);
 
+  useEffect(() => {
+    const handleRandomize = () => setRandomizeCount(c => c + 1);
+    window.addEventListener('randomize-memory', handleRandomize);
+    return () => window.removeEventListener('randomize-memory', handleRandomize);
+  }, []);
+
   return (
     <div
       ref={containerRef}
