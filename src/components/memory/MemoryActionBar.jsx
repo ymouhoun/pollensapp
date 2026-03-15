@@ -5,6 +5,13 @@ import { cn } from '@/lib/utils';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 
+const TAG_CATEGORIES = {
+  colors: { label: 'Colors', icon: Palette },
+  moods: { label: 'Moods', icon: Tag },
+  objects: { label: 'Objects', icon: Tag },
+  style: { label: 'Style', icon: Tag },
+};
+
 const DATE_OPTIONS = [
   { label: 'All time', value: 'all' },
   { label: 'Today', value: 'today' },
