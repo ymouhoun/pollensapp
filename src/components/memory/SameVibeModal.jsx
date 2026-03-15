@@ -50,10 +50,10 @@ export default function SameVibeModal({ item, onClose, onSelectItem }) {
           <motion.div
             className="relative w-full max-h-[70vh] rounded-t-2xl overflow-hidden"
             style={{
-              background: 'rgba(15, 15, 20, 0.92)',
-              backdropFilter: 'blur(40px)',
-              WebkitBackdropFilter: 'blur(40px)',
-              borderTop: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderTop: '1px solid rgba(255,255,255,0.2)',
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
