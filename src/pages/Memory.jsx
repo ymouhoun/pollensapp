@@ -221,6 +221,7 @@ export default function Memory() {
           </div>
         </div>
       )}
+      <LoadingBeam visible={isLoading || isFetchingNextPage} />
       <ProgressiveBlur side="top" height={160} />
       <ProgressiveBlur side="bottom" height={160} />
 
