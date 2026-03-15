@@ -268,7 +268,7 @@ export default function Memory() {
               alt="logo"
               className="relative"
               style={{
-                height: '48px',
+                height: '72px',
                 width: 'auto',
                 filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(210,190,255,0.8)) drop-shadow(0 0 36px rgba(180,150,255,0.5))',
               }}
