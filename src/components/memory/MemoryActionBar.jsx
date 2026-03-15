@@ -52,7 +52,7 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
           className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           title="Galaxy View"
         >
-          <Lightbulb className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <Saturn className="w-3.5 h-3.5" strokeWidth={1.5} />
         </button>
         <button
           onClick={toggleDark}
