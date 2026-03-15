@@ -110,7 +110,7 @@ export default function ItemContextMenu({ item, position, onClose, onSameVibe })
           <MenuItem icon={Pencil} label="Rename" onClick={() => setRenaming(true)} isDark={isDark} />
           <MenuItem icon={Bolt} label="Same Vibe" onClick={() => { onSameVibe?.(item); onClose(); }} isDark={isDark} />
           <MenuItem icon={Copy} label="Use as prompt" onClick={handleUseAsPrompt} isDark={isDark} />
-          <MenuItem icon={Tag} label="Add tag" onClick={() => setAddingTag(true)} isDark={isDark} />
+          <MenuItem icon={Tally5} label="Add tag" onClick={() => setAddingTag(true)} isDark={isDark} />
           {item.file_url && (
            <a
              href={item.file_url}
