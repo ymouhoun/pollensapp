@@ -293,7 +293,7 @@ export default function Memory() {
       {appLogo && (
         <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
           <div className="relative flex items-center justify-center pointer-events-auto" onMouseEnter={() => setHoverGlow(true)} onMouseLeave={() => setHoverGlow(false)}>
-            {(isLoading || introGlow || hoverGlow) && (
+            {(introGlow || hoverGlow) && (
               <div
                 className="absolute rounded-full"
                 style={{
