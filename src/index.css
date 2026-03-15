@@ -13,7 +13,7 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', sans-serif;
+    --font-sans: 'ModeratRegular', sans-serif;
     --font-display: 'Playfair Display', serif;
     --font-gerstner: 'Gerstner', monospace;
 
