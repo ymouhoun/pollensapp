@@ -240,19 +240,6 @@ export default function Memory() {
         </div>
       </div>
 
-      {/* Centered fixed logo */}
-      <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
-        <div style={{ width: 320, height: 48, '--gradient-wave-base': 'rgb(255,255,255)' }}>
-          <GradientWaveText
-            repeat
-            speed={0.6}
-            className="text-3xl tracking-[0.25em] font-light"
-            customColors={["#c9b8d8", "#8fa8c8", "#d4b8c4", "#a8c4d4", "#d4c8a8", "#b8a8c8"]}
-          >
-            SOLWEIG & IZAR
-          </GradientWaveText>
-        </div>
-      </div>
 
       <MemoryActionBar
         activeTag={activeTag}
