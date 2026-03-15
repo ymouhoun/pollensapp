@@ -227,7 +227,7 @@ export default function Memory() {
 
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
-        <div className="flex justify-center pointer-events-auto">
+        <div className="flex flex-col items-center gap-3 pointer-events-auto">
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -235,6 +235,28 @@ export default function Memory() {
             className="bg-transparent border-none outline-none text-2xl text-white/80 placeholder:text-white/40 text-center tracking-wide"
             style={{ fontFamily: 'Dhampir, serif', width: 'auto', maxWidth: '90vw' }}
           />
+          {/* Logo with diffused glow */}
+          <div className="relative flex items-center justify-center pointer-events-none">
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%)',
+                filter: 'blur(12px)',
+                transform: 'scale(2.2)',
+              }}
+            />
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b2e952528daefdb8ba4906/1f8f76e3d_teston2.png"
+              alt="logo"
+              className="relative"
+              style={{
+                height: '48px',
+                width: 'auto',
+                opacity: 0.85,
+                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 0 20px rgba(255,255,255,0.25)) drop-shadow(0 0 40px rgba(255,255,255,0.1))',
+              }}
+            />
+          </div>
         </div>
       </div>
 
