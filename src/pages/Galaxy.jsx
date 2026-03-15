@@ -192,6 +192,10 @@ export default function Galaxy({ onSelectItem }) {
             }}
             whileHover={{ scale: 1.1 }}
             onClick={() => onSelectItem?.(item)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({ item, x: e.clientX, y: e.clientY });
+            }}
             data-interactive
           >
             <div className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors">
