@@ -27,9 +27,11 @@ export default function Galaxy() {
     if (orderMode === 'color') {
       const colorOrder = ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'];
       orderedItems = [...filtered].sort((a, b) => {
-        const aIdx = colorOrder.indexOf(a.color_palette || '');
-        const bIdx = colorOrder.indexOf(b.color_palette || '');
-        return aIdx - bIdx;
+        const aColor = a.color_palette || 'unknown';
+        const bColor = b.color_palette || 'unknown';
+        const aIdx = colorOrder.indexOf(aColor);
+        const bIdx = colorOrder.indexOf(bColor);
+        return (aIdx === -1 ? colorOrder.length : aIdx) - (bIdx === -1 ? colorOrder.length : bIdx);
       });
     } else if (orderMode === 'similarity') {
       orderedItems = [...filtered].sort((a, b) => {
