@@ -1,24 +1,6 @@
-"use client"
-
-import { useState, useEffect, useCallback, type ReactNode } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-
-export interface CommandItem {
-  id: string
-  icon: ReactNode
-  label: string
-  shortcut?: string
-  onClick?: () => void
-}
-
-export interface CircularCommandMenuProps {
-  items?: CommandItem[]
-  trigger?: ReactNode
-  className?: string
-  radius?: number
-  onSelect?: (item: CommandItem) => void
-}
 
 function CircularCommandMenu({
   items = [],
@@ -26,7 +8,7 @@ function CircularCommandMenu({
   className,
   radius = 120,
   onSelect,
-}: CircularCommandMenuProps) {
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -205,4 +187,3 @@ function CircularCommandMenu({
 }
 
 export { CircularCommandMenu }
-export type { CircularCommandMenuProps, CommandItem }
