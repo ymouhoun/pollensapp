@@ -105,7 +105,9 @@ export default function SameVibeModal({ item, onClose, onSelectItem }) {
                             <video
                               src={vItem.file_url}
                               className="w-full h-full object-cover"
-                              muted autoPlay loop
+                              muted loop playsInline preload="metadata"
+                              onMouseEnter={e => e.target.play()}
+                              onMouseLeave={e => e.target.pause()}
                             />
                           ) : (
                             <img
