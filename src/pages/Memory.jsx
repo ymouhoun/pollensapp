@@ -477,7 +477,7 @@ export default function Memory() {
       />
       
       {showGalaxy && (
-        <div className="fixed inset-0 z-[200] bg-black/80">
+        <div className="fixed inset-0 z-[20] bg-black/80">
           <button
             onClick={() => setShowGalaxy(false)}
             className="absolute top-4 right-4 z-50 p-2 text-white/60 hover:text-white transition-colors"
