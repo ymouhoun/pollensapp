@@ -236,7 +236,7 @@ export default function Memory() {
             style={{ fontFamily: 'Dhampir, serif', width: 'auto', maxWidth: '90vw' }}
           />
           {/* Logo with diffused glow */}
-          <div className="relative flex items-center justify-center pointer-events-none" style={{ width: 240, height: 90 }}>
+          <div className="relative flex items-center justify-center pointer-events-none" style={{ width: 200, height: 70 }}>
             {/* Outer bloom */}
             <div
               className="absolute"
