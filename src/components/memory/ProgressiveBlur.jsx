@@ -27,7 +27,7 @@ export default function ProgressiveBlur({ side = 'top', height = 160 }) {
             ? `linear-gradient(to bottom, black 0%, black ${coverage * 0.5}%, transparent ${coverage}%)`
             : `linear-gradient(to top, black 0%, black ${coverage * 0.5}%, transparent ${coverage}%)`;
 
-        const distortion = (i / LAYERS) * 0.15; // 0 to 0.15 skew
+        const stretch = 1 + (i / LAYERS) * 0.5; // 1 to 1.5x scale
         const direction = side === 'top' ? 1 : -1;
 
         return (
@@ -39,8 +39,8 @@ export default function ProgressiveBlur({ side = 'top', height = 160 }) {
               WebkitBackdropFilter: `blur(${blur}px)`,
               maskImage: gradient,
               WebkitMaskImage: gradient,
-              transform: `skewY(${distortion * direction}rad)`,
-              transformOrigin: side === 'top' ? 'center bottom' : 'center top',
+              transform: `scaleY(${stretch}) translateY(${-20 * (i / LAYERS) * direction}px)`,
+              transformOrigin: side === 'top' ? 'center top' : 'center bottom',
             }}
           />
         );
