@@ -200,7 +200,6 @@ export default function Galaxy({ onSelectItem }) {
           >
             <motion.div
               className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors"
-              style={{ mixBlendMode: 'multiply' }}
               whileHover={{ scale: 1.1 }}
               onClick={() => onSelectItem?.(item)}
               onContextMenu={(e) => {
