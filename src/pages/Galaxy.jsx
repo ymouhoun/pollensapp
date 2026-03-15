@@ -27,10 +27,12 @@ export default function Galaxy() {
       const distance = 100 + (idx % 10) * 80;
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
+      const sizeVariation = 0.6 + (Math.sin(idx * 0.7) * 0.4); // Varies from 0.6 to 1.0
       return {
         ...item,
         galaxyX: x,
         galaxyY: y,
+        sizeMultiplier: sizeVariation,
       };
     });
     
@@ -157,19 +159,19 @@ export default function Galaxy() {
             style={{
               left: item.galaxyX * camera.zoom,
               top: item.galaxyY * camera.zoom,
-              width: 120 * camera.zoom,
-              height: 120 * camera.zoom,
+              width: 120 * camera.zoom * item.sizeMultiplier,
+              height: 120 * camera.zoom * item.sizeMultiplier,
               transform: 'translate(-50%, -50%)',
             }}
             whileHover={{ scale: 1.1 }}
             onClick={() => setSelectedItem(item)}
             data-interactive
           >
-            <div className="relative w-full h-full rounded-lg overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors">
+            <div className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors">
               {item.content_type === 'video' ? (
                 <video
                   src={item.file_url}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   muted
                   preload="metadata"
                 />
@@ -177,7 +179,7 @@ export default function Galaxy() {
                 <img
                   src={item.file_url}
                   alt={item.title || ''}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               )}
               <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -216,7 +218,7 @@ export default function Galaxy() {
             {selectedItem.content_type === 'video' ? (
               <video
                 src={selectedItem.file_url}
-                className="w-full rounded-lg"
+                className="w-full"
                 controls
                 autoPlay
               />
@@ -224,7 +226,7 @@ export default function Galaxy() {
               <img
                 src={selectedItem.file_url}
                 alt={selectedItem.title || ''}
-                className="w-full rounded-lg"
+                className="w-full"
               />
             )}
 
