@@ -157,3 +157,52 @@
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
 }
+
+/* Theme Switcher */
+.switcher {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.switcher__legend {
+  display: none;
+}
+
+.switcher__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.switcher__option:hover {
+  transform: scale(1.1);
+}
+
+.switcher__input {
+  display: none;
+}
+
+.switcher__icon {
+  width: 20px;
+  height: 20px;
+  --c: rgb(255, 255, 255);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.switcher__option:hover .switcher__icon {
+  opacity: 1;
+}
+
+.switcher__input:checked + .switcher__icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+.switcher__filter {
+  display: none;
+}
