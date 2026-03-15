@@ -43,12 +43,24 @@ export default function Galaxy() {
       orderedItems = [...filtered].sort(() => Math.random() - 0.5);
     }
     
-    // Distribute items in a galaxy-like pattern
+    // Distribute items in a galaxy-like pattern or spectrum layout
     const galaxyItems = orderedItems.map((item, idx) => {
-      const angle = (idx / orderedItems.length) * Math.PI * 2;
-      const distance = 100 + (idx % 10) * 80;
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
+      let x, y;
+      
+      if (orderMode === 'color') {
+        // Horizontal spectrum layout
+        const totalItems = orderedItems.length;
+        const spacing = 250;
+        x = (idx - totalItems / 2) * spacing;
+        y = (Math.sin(idx * 0.5) * 80); // Slight wave for visual interest
+      } else {
+        // Original galaxy pattern
+        const angle = (idx / orderedItems.length) * Math.PI * 2;
+        const distance = 100 + (idx % 10) * 80;
+        x = Math.cos(angle) * distance;
+        y = Math.sin(angle) * distance;
+      }
+      
       const sizeVariation = 0.6 + (Math.sin(idx * 0.7) * 0.4);
       return {
         ...item,
