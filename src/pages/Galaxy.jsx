@@ -215,16 +215,14 @@ export default function Galaxy({ onSelectItem }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: idx * 0.03 }}
+            whileHover={{ scale: 1.1 }}
+            onClick={() => onSelectItem?.(item)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({ item, x: e.clientX, y: e.clientY });
+            }}
           >
-            <motion.div
-              className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              onClick={() => onSelectItem?.(item)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenu({ item, x: e.clientX, y: e.clientY });
-              }}
-            >
+            <div className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 transition-colors">
               {item.content_type === 'video' ? (
                 <video
                   src={item.file_url}
@@ -241,7 +239,7 @@ export default function Galaxy({ onSelectItem }) {
                   style={{ mixBlendMode: 'multiply' }}
                 />
               )}
-            </motion.div>
+            </div>
           </motion.div>
         ))}
       </div>
