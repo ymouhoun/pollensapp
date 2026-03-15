@@ -13,7 +13,7 @@ export default function ProgressiveBlur({ side = 'top', height = 160 }) {
       className="pointer-events-none fixed z-30"
       style={{
         [side]: 0,
-        left: '3.5rem',
+        left: 0,
         right: 0,
         height,
       }}
