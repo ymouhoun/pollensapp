@@ -12,6 +12,7 @@ export default function Galaxy() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [orderMode, setOrderMode] = useState('random'); // 'color', 'similarity', 'random'
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
@@ -21,13 +22,32 @@ export default function Galaxy() {
   useEffect(() => {
     const filtered = mediaItems.filter(i => !i.is_forgotten && (i.content_type === 'image' || i.content_type === 'video'));
     
+    let orderedItems = filtered;
+    
+    if (orderMode === 'color') {
+      const colorOrder = ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'];
+      orderedItems = [...filtered].sort((a, b) => {
+        const aIdx = colorOrder.indexOf(a.color_palette || '');
+        const bIdx = colorOrder.indexOf(b.color_palette || '');
+        return aIdx - bIdx;
+      });
+    } else if (orderMode === 'similarity') {
+      orderedItems = [...filtered].sort((a, b) => {
+        const aTagCount = (a.tags || []).length;
+        const bTagCount = (b.tags || []).length;
+        return bTagCount - aTagCount;
+      });
+    } else if (orderMode === 'random') {
+      orderedItems = [...filtered].sort(() => Math.random() - 0.5);
+    }
+    
     // Distribute items in a galaxy-like pattern
-    const galaxyItems = filtered.map((item, idx) => {
-      const angle = (idx / filtered.length) * Math.PI * 2;
+    const galaxyItems = orderedItems.map((item, idx) => {
+      const angle = (idx / orderedItems.length) * Math.PI * 2;
       const distance = 100 + (idx % 10) * 80;
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
-      const sizeVariation = 0.6 + (Math.sin(idx * 0.7) * 0.4); // Varies from 0.6 to 1.0
+      const sizeVariation = 0.6 + (Math.sin(idx * 0.7) * 0.4);
       return {
         ...item,
         galaxyX: x,
@@ -38,7 +58,7 @@ export default function Galaxy() {
     
     setItems(galaxyItems);
     setIsLoading(false);
-  }, [mediaItems]);
+  }, [mediaItems, orderMode]);
 
   const handleMouseDown = (e) => {
     if (e.target.closest('[data-interactive]')) return;
@@ -95,6 +115,40 @@ export default function Galaxy() {
       <div className="fixed top-6 left-6 z-10 text-[10px] tracking-widest uppercase text-foreground/40 pointer-events-none">
         <div>Drag to move</div>
         <div>Scroll to zoom</div>
+      </div>
+
+      {/* Order controls */}
+      <div className="fixed bottom-6 left-6 z-20 flex gap-2">
+        <button
+          onClick={() => setOrderMode('color')}
+          className={`px-3 py-1.5 text-[10px] tracking-widest uppercase rounded-full transition-all ${
+            orderMode === 'color'
+              ? 'bg-foreground text-background'
+              : 'bg-border/20 text-foreground/60 hover:text-foreground'
+          }`}
+        >
+          Color
+        </button>
+        <button
+          onClick={() => setOrderMode('similarity')}
+          className={`px-3 py-1.5 text-[10px] tracking-widest uppercase rounded-full transition-all ${
+            orderMode === 'similarity'
+              ? 'bg-foreground text-background'
+              : 'bg-border/20 text-foreground/60 hover:text-foreground'
+          }`}
+        >
+          Similarity
+        </button>
+        <button
+          onClick={() => setOrderMode('random')}
+          className={`px-3 py-1.5 text-[10px] tracking-widest uppercase rounded-full transition-all ${
+            orderMode === 'random'
+              ? 'bg-foreground text-background'
+              : 'bg-border/20 text-foreground/60 hover:text-foreground'
+          }`}
+        >
+          Random
+        </button>
       </div>
 
       {/* Close button */}
