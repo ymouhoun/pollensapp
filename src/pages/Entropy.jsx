@@ -59,7 +59,7 @@ export default function Entropy() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ left: 56 }}>
+    <div className="fixed inset-0 overflow-hidden">
       {/* Background */}
       <EntropyBackground />
 
