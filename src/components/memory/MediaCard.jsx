@@ -1,5 +1,4 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ItemContextMenu from './ItemContextMenu';
@@ -7,10 +6,32 @@ import ItemContextMenu from './ItemContextMenu';
 export default function MediaCard({ item, index, onClick, onSameVibe }) {
   const [loaded, setLoaded] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
-  const videoRef = React.useRef(null);
+  const [inView, setInView] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
   const isVideo = item.content_type === 'video';
 
-
+  // Intersection observer: load & show when in viewport, pause video when out
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          setVisible(true);
+          if (videoRef.current) videoRef.current.play().catch(() => {});
+        } else {
+          setVisible(false);
+          if (videoRef.current) videoRef.current.pause();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -19,21 +40,27 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
     setContextMenu({ x, y });
   };
 
+  // Cap animation delay so it never gets ridiculous
+  const delay = Math.min(index * 0.04, 0.6);
+
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: index * 0.04 }}
-        className="group relative cursor-pointer break-inside-avoid"
+      <div
+        ref={containerRef}
+        className={cn(
+          "group relative cursor-pointer break-inside-avoid transition-all duration-500",
+          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        )}
+        style={{ transitionDelay: visible ? `${delay}s` : '0s' }}
         onClick={() => onClick?.(item)}
         onContextMenu={handleContextMenu}
       >
         <div className="relative overflow-hidden rounded-sm bg-muted/20">
           {isVideo ? (
+            // Only set src once in viewport to avoid loading thousands of videos
             <video
               ref={videoRef}
-              src={item.file_url}
+              src={inView ? item.file_url : undefined}
               className={cn(
                 "w-full h-full object-cover transition-all duration-700",
                 loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
@@ -41,12 +68,15 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
               onLoadedMetadata={() => setLoaded(true)}
               muted
               loop
-              autoPlay
+              playsInline
             />
           ) : (
+            // Only set src once in viewport
             <img
-              src={item.file_url}
+              src={inView ? item.file_url : undefined}
               alt={item.title || ''}
+              loading="lazy"
+              decoding="async"
               className={cn(
                 "w-full object-cover transition-all duration-700",
                 loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
@@ -55,7 +85,13 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
             />
           )}
 
-
+          {/* Skeleton placeholder while not loaded */}
+          {!loaded && inView && (
+            <div className="absolute inset-0 bg-muted/30 animate-pulse min-h-[120px]" />
+          )}
+          {!inView && (
+            <div className="min-h-[120px] bg-muted/10" />
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -80,7 +116,7 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
       {contextMenu && (
         <ItemContextMenu
