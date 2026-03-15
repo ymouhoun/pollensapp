@@ -330,6 +330,7 @@ export default function Memory() {
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
         <div className="flex flex-col items-center gap-0 pointer-events-auto">
+          {!search && <ShiningText text="Search memory..." />}
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
