@@ -35,37 +35,42 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
 
 
   return (
-    <div ref={barRef} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col-reverse items-center gap-2">
-      {/* Main pill bar */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border/40 shadow-lg">
-
-
+    <div ref={barRef} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
+      {/* Pill-shaped action bar */}
+      <div 
+        className="flex items-center gap-4 px-6 py-3 rounded-full shadow-2xl border border-white/10 backdrop-blur-xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(30,30,35,0.6) 0%, rgba(60,30,50,0.4) 100%)',
+        }}
+      >
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
-          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-2 text-white/70 hover:text-white transition-all duration-200 group"
           title="Randomize"
         >
-          <Shuffle className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <Shuffle className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+          <span className="text-xs font-light tracking-wide opacity-0 group-hover:opacity-100 transition-opacity w-0 group-hover:w-16">Randomize</span>
         </button>
         <button
           onClick={() => onToggleGalaxy?.()}
-          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-2 text-white/70 hover:text-white transition-all duration-200 group"
           title="Galaxy View"
         >
-          <Blend className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <Blend className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+          <span className="text-xs font-light tracking-wide opacity-0 group-hover:opacity-100 transition-opacity w-0 group-hover:w-16">Galaxy</span>
         </button>
+        <div className="w-px h-5 bg-white/10" />
         <button
           onClick={toggleDark}
-          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-2 text-white/70 hover:text-white transition-all duration-200 group"
           title={dark ? 'Day mode' : 'Night mode'}
         >
           {dark
-            ? <Sun className="w-3.5 h-3.5" strokeWidth={1.5} />
-            : <Moon className="w-3.5 h-3.5" strokeWidth={1.5} />}
+            ? <Sun className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            : <Moon className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />}
+          <span className="text-xs font-light tracking-wide opacity-0 group-hover:opacity-100 transition-opacity w-0 group-hover:w-12">{dark ? 'Light' : 'Dark'}</span>
         </button>
       </div>
-
-
     </div>
   );
 }
