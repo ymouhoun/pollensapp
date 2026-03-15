@@ -88,6 +88,39 @@ export default function Memory() {
 
   const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
+  const [semanticMatches, setSemanticMatches] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!search || search.length < 3) {
+      setSemanticMatches([]);
+      return;
+    }
+
+    const isSemanticQuery = /\b(mood|light|style|vibe|atmosphere|feeling|aesthetic|composition)\b/i.test(search);
+    if (!isSemanticQuery) {
+      setSemanticMatches([]);
+      return;
+    }
+
+    const runSemanticSearch = async () => {
+      setIsSearching(true);
+      try {
+        const response = await base44.functions.invoke('semanticSearch', {
+          query: search,
+          itemIds: items.filter(i => !i.is_forgotten && i.text_content).map(i => i.id),
+        });
+        setSemanticMatches(response.data.matches?.map(m => m.id) || []);
+      } catch (error) {
+        console.error('Semantic search error:', error);
+      }
+      setIsSearching(false);
+    };
+
+    const debounce = setTimeout(runSemanticSearch, 500);
+    return () => clearTimeout(debounce);
+  }, [search, items]);
+
   const filtered = useMemo(() => items.filter(item => {
     if (item.is_forgotten) return false;
     if (activeTag && !item.tags?.includes(activeTag)) return false;
@@ -107,12 +140,19 @@ export default function Memory() {
     if (colorFilter && item.color_palette !== colorFilter) return false;
     if (search) {
       const s = search.toLowerCase();
-      return item.title?.toLowerCase().includes(s) ||
-             item.text_content?.toLowerCase().includes(s) ||
-             item.tags?.some(t => t.toLowerCase().includes(s));
+      const lexicalMatch = item.title?.toLowerCase().includes(s) ||
+                          item.text_content?.toLowerCase().includes(s) ||
+                          item.tags?.some(t => t.toLowerCase().includes(s));
+      
+      const isSemanticQuery = /\b(mood|light|style|vibe|atmosphere|feeling|aesthetic|composition)\b/i.test(search);
+      if (isSemanticQuery && semanticMatches.length > 0) {
+        return semanticMatches.includes(item.id);
+      }
+      
+      return lexicalMatch;
     }
     return true;
-  }), [items, activeTag, dateFilter, colorFilter, search]);
+  }), [items, activeTag, dateFilter, colorFilter, search, semanticMatches]);
 
   useEffect(() => {
     const onResize = () => {
