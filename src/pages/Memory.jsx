@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { base44 } from '@/api/base44Client';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
+import { ShiningText } from '@/components/ui/shining-text';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import MediaCard from '@/components/memory/MediaCard';
 import TextCard from '@/components/memory/TextCard';
