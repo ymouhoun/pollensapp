@@ -236,13 +236,31 @@ export default function Memory() {
             style={{ fontFamily: 'Dhampir, serif', width: 'auto', maxWidth: '90vw' }}
           />
           {/* Logo with diffused glow */}
-          <div className="relative flex items-center justify-center pointer-events-none">
+          <div className="relative flex items-center justify-center pointer-events-none" style={{ width: 160, height: 60 }}>
+            {/* Outer bloom */}
             <div
-              className="absolute inset-0 rounded-full"
+              className="absolute"
               style={{
-                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%)',
-                filter: 'blur(12px)',
-                transform: 'scale(2.2)',
+                width: 200,
+                height: 80,
+                background: 'radial-gradient(ellipse at center, rgba(200,180,255,0.45) 0%, rgba(180,150,255,0.15) 50%, transparent 75%)',
+                filter: 'blur(18px)',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+            {/* Inner tight glow */}
+            <div
+              className="absolute"
+              style={{
+                width: 140,
+                height: 50,
+                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.6) 0%, transparent 70%)',
+                filter: 'blur(8px)',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
               }}
             />
             <img
@@ -252,8 +270,7 @@ export default function Memory() {
               style={{
                 height: '48px',
                 width: 'auto',
-                opacity: 0.85,
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 0 20px rgba(255,255,255,0.25)) drop-shadow(0 0 40px rgba(255,255,255,0.1))',
+                filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(210,190,255,0.8)) drop-shadow(0 0 36px rgba(180,150,255,0.5))',
               }}
             />
           </div>
