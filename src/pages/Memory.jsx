@@ -307,6 +307,7 @@ export default function Memory() {
         setDateFilter={setDateFilter}
         colorFilter={colorFilter}
         setColorFilter={setColorFilter}
+        allTags={items.flatMap(item => item.tags || []).filter((tag, i, arr) => arr.indexOf(tag) === i)}
       />
 
       {/* Masonry grid */}
