@@ -212,6 +212,7 @@ export default function Galaxy({ onSelectItem }) {
                 <video
                   src={item.file_url}
                   className="w-full h-full object-contain"
+                  style={{ mixBlendMode: 'multiply' }}
                   muted
                   preload="metadata"
                 />
@@ -220,6 +221,7 @@ export default function Galaxy({ onSelectItem }) {
                   src={item.file_url}
                   alt={item.title || ''}
                   className="w-full h-full object-contain"
+                  style={{ mixBlendMode: 'multiply' }}
                 />
               )}
             </motion.div>
