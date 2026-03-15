@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import MediaCard from './MediaCard';
 
 export default function SameVibeModal({ item, onClose, onSelectItem }) {
   const [vibeItems, setVibeItems] = useState([]);
