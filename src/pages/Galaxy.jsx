@@ -242,7 +242,7 @@ export default function Galaxy({ onSelectItem }) {
                 />
               )}
             </motion.div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
