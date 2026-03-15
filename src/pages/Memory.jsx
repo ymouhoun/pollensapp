@@ -28,6 +28,8 @@ function distributeToColumns(items, numCols) {
 
 export default function Memory() {
   const [activeTag, setActiveTag] = useState(null);
+  const [dateFilter, setDateFilter] = useState('all');
+  const [colorFilter, setColorFilter] = useState(null);
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
