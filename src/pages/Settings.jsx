@@ -115,6 +115,23 @@ export default function Settings() {
               onChange={e => setLogoFile(e.target.files[0] || null)}
             />
           </div>
+          <div className="flex items-center gap-3">
+            <label className="text-[11px] tracking-widest uppercase text-muted-foreground/60 w-16">Size</label>
+            <input
+              type="range"
+              min="24"
+              max="160"
+              value={logoSize}
+              onChange={e => {
+                const val = parseInt(e.target.value);
+                setLogoSize(val);
+                localStorage.setItem('logo-size', val);
+                window.dispatchEvent(new CustomEvent('logo-size-change', { detail: val }));
+              }}
+              className="flex-1"
+            />
+            <span className="text-[11px] text-muted-foreground/60 w-8">{logoSize}px</span>
+          </div>
           <button
             onClick={handleLogoUpload}
             disabled={logoUploading || !logoFile}
