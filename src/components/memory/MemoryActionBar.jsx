@@ -73,11 +73,7 @@ export default function MemoryActionBar({ activeTag, setActiveTag, dateFilter, s
     <div ref={barRef} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col-reverse items-center gap-2">
       {/* Main pill bar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border/40 shadow-lg">
-        <FilterButton icon={Tag} label="Tags" active={!!activeTag} isOpen={openPanel === 'tags'} onClick={() => togglePanel('tags')} />
-        <FilterButton icon={Calendar} label="Date" active={dateFilter !== 'all'} isOpen={openPanel === 'date'} onClick={() => togglePanel('date')} />
-        <FilterButton icon={Palette} label="Color" active={!!colorFilter} isOpen={openPanel === 'color'} onClick={() => togglePanel('color')} />
 
-        <div className="w-px h-4 bg-border/60 mx-1" />
 
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
