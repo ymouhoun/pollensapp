@@ -245,7 +245,7 @@ export default function Memory() {
       {/* Centered logo */}
       {appLogo && (
         <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
-          <img src={appLogo.file_url} alt="Logo" className="max-h-16 max-w-xs object-contain opacity-90" />
+          <img src={appLogo.file_url} alt="Logo" style={{ maxHeight: logoSize, maxWidth: '80vw' }} className="object-contain opacity-90" />
         </div>
       )}
 
