@@ -214,7 +214,7 @@ export default function Galaxy({ onSelectItem }) {
             data-interactive
           >
             <motion.div
-              className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors"
+              className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 transition-colors"
               whileHover={{ scale: 1.1 }}
               onClick={() => onSelectItem?.(item)}
               onContextMenu={(e) => {
