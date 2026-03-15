@@ -16,6 +16,7 @@ export default function Galaxy({ onSelectItem }) {
   const [orderMode, setOrderMode] = useState('random');
   const [selectedHueRanges, setSelectedHueRanges] = useState(['All']);
   const [contextMenu, setContextMenu] = useState(null);
+  const [randomizeCount, setRandomizeCount] = useState(0);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
