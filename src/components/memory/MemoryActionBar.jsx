@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shuffle, Moon, Sun, Blend } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Shuffle, Blend } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeSwitcher } from '@/components/ui/apple-liquid-glass-switcher';
 
 
 
