@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HueFilter, { HUE_RANGES } from '@/components/galaxy/HueFilter';
+import MediaOverlay from '@/components/memory/MediaOverlay';
 
 export default function Galaxy() {
   const [items, setItems] = useState([]);
@@ -217,52 +218,20 @@ export default function Galaxy() {
         ))}
       </div>
 
-      {/* Detail view */}
-      {selectedItem && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setSelectedItem(null)}
-          data-interactive
-        >
-          <motion.div
-            className="relative max-w-3xl w-full mx-4"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="absolute -top-10 right-0 p-2 text-white/60 hover:text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {selectedItem.content_type === 'video' ? (
-              <video
-                src={selectedItem.file_url}
-                className="w-full"
-                controls
-                autoPlay
-              />
-            ) : (
-              <img
-                src={selectedItem.file_url}
-                alt={selectedItem.title || ''}
-                className="w-full"
-              />
-            )}
-
-            {selectedItem.title && (
-              <div className="mt-4 text-white text-center">
-                <h3 className="text-lg font-display">{selectedItem.title}</h3>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
+      <MediaOverlay
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onPrev={() => {
+          const navigable = items.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx > 0) setSelectedItem(navigable[idx - 1]);
+        }}
+        onNext={() => {
+          const navigable = items.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx < navigable.length - 1) setSelectedItem(navigable[idx + 1]);
+        }}
+      />
     </div>
   );
 }
