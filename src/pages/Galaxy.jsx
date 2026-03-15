@@ -186,6 +186,7 @@ export default function Galaxy({ onSelectItem }) {
               width: 120 * camera.zoom * item.sizeMultiplier,
               height: 120 * camera.zoom * item.sizeMultiplier,
               transform: 'translate(-50%, -50%)',
+              transformOrigin: 'center',
             }}
             whileHover={{ scale: 1.1 }}
             onClick={() => onSelectItem?.(item)}
