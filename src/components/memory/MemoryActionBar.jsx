@@ -45,9 +45,10 @@ function FilterButton({ icon: Icon, label, active, isOpen, onClick }) {
   );
 }
 
-export default function MemoryActionBar({ activeTag, setActiveTag, dateFilter, setDateFilter, colorFilter, setColorFilter }) {
+export default function MemoryActionBar({ activeTag, setActiveTag, dateFilter, setDateFilter, colorFilter, setColorFilter, allTags = [] }) {
   const [openPanel, setOpenPanel] = useState(null);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [tagCategory, setTagCategory] = useState(null);
   const barRef = useRef(null);
 
   const toggleDark = () => {
