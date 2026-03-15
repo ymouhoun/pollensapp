@@ -245,7 +245,37 @@ export default function Memory() {
       {/* Centered logo */}
       {appLogo && (
         <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
-          <img src={appLogo.file_url} alt="Logo" style={{ maxHeight: logoSize, maxWidth: '80vw' }} className="object-contain opacity-90" />
+          <div className="relative flex items-center justify-center">
+            {isLoading && (
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: logoSize * 2.5,
+                  height: logoSize * 2.5,
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%)',
+                  animation: 'logo-glow 1.8s ease-in-out infinite',
+                }}
+              />
+            )}
+            <style>{`
+              @keyframes logo-glow {
+                0%, 100% { opacity: 0.3; transform: scale(0.85); }
+                50% { opacity: 1; transform: scale(1.1); }
+              }
+            `}</style>
+            <img
+              src={appLogo.file_url}
+              alt="Logo"
+              style={{
+                maxHeight: logoSize,
+                maxWidth: '80vw',
+                filter: isLoading ? 'drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 0 30px rgba(255,255,255,0.35))' : 'none',
+                animation: isLoading ? 'logo-glow 1.8s ease-in-out infinite' : 'none',
+                transition: 'filter 0.6s ease',
+              }}
+              className="object-contain opacity-90 relative"
+            />
+          </div>
         </div>
       )}
 
