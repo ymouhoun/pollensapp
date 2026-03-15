@@ -39,10 +39,10 @@ Make it poetic but grounded. Example: "A serene minimalist composition with soft
         const caption = response.caption?.trim() || '';
 
         await base44.asServiceRole.entities.MediaItem.update(item.id, {
-          tags: allTags,
+          text_content: caption,
         });
 
-        results.push({ id: item.id, tags: allTags, status: 'success' });
+        results.push({ id: item.id, caption, status: 'success' });
         retagged++;
       } catch (error) {
         results.push({ id: item.id, status: 'error', error: error.message });
