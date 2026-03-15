@@ -22,7 +22,23 @@ export default function Galaxy() {
   });
 
   useEffect(() => {
-    const filtered = mediaItems.filter(i => !i.is_forgotten && (i.content_type === 'image' || i.content_type === 'video'));
+    let filtered = mediaItems.filter(i => !i.is_forgotten && (i.content_type === 'image' || i.content_type === 'video'));
+    
+    // Apply hue filter if not "All"
+    if (!selectedHueRanges.includes('All')) {
+      filtered = filtered.filter(item => {
+        const tint = item.tint ?? 0;
+        return selectedHueRanges.some(rangeName => {
+          const range = HUE_RANGES.find(r => r.name === rangeName);
+          if (!range) return false;
+          // Handle wrap-around for red (330-360 and 0-30)
+          if (range.name === 'Red') {
+            return tint >= range.min || tint <= 30;
+          }
+          return tint >= range.min && tint < range.max;
+        });
+      });
+    }
     
     let orderedItems = filtered;
     
