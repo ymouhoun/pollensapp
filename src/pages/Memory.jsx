@@ -54,6 +54,13 @@ export default function Memory() {
     queryFn: () => base44.entities.AppLogo.list('-created_date', 1),
   });
   const appLogo = logos[0] || null;
+  const [logoSize, setLogoSize] = useState(() => parseInt(localStorage.getItem('logo-size') || '64'));
+
+  useEffect(() => {
+    const handler = (e) => setLogoSize(e.detail);
+    window.addEventListener('logo-size-change', handler);
+    return () => window.removeEventListener('logo-size-change', handler);
+  }, []);
 
   const PAGE_SIZE = 40;
 
