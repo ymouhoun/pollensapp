@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Brain, Sparkles, Shuffle, Moon, Sun, Settings } from 'lucide-react';
+import { Brain, Sparkles, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
