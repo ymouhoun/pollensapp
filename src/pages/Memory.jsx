@@ -49,6 +49,12 @@ export default function Memory() {
   const sentinelRef = useRef(null);
   const queryClient = useQueryClient();
 
+  const { data: logos = [] } = useQuery({
+    queryKey: ['app-logo'],
+    queryFn: () => base44.entities.AppLogo.list('-created_date', 1),
+  });
+  const appLogo = logos[0] || null;
+
   const PAGE_SIZE = 40;
 
   const {
