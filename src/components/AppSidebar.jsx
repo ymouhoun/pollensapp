@@ -49,33 +49,6 @@ export default function AppSidebar() {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <button
-          onClick={toggleDark}
-          className="flex flex-col items-center gap-1 group"
-          title={dark ? 'Switch to day' : 'Switch to night'}>
-
-          <div className={cn(
-            "relative w-5 h-9 rounded-full border transition-colors duration-300",
-            dark ? "bg-purple-600 border-purple-500" : "bg-muted border-border"
-          )}>
-            <div className={cn(
-              "absolute left-0 right-0 mx-auto w-4 h-4 rounded-full transition-all duration-300 flex items-center justify-center",
-              dark ? "top-0.5 bg-white" : "top-4 bg-muted-foreground/40"
-            )}>
-              {dark ?
-              <Moon className="w-2.5 h-2.5 text-purple-600" strokeWidth={2} /> :
-              <Sun className="w-2.5 h-2.5 text-muted-foreground/60" strokeWidth={2} />
-              }
-            </div>
-          </div>
-        </button>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
-          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-          title="Randomize order"
-        >
-          <Shuffle className="w-4 h-4" strokeWidth={1.5} />
-        </button>
         <a
           href="/Settings"
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
