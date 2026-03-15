@@ -276,8 +276,8 @@ export default function Memory() {
               style={{
                 maxHeight: logoSize,
                 maxWidth: '80vw',
-                filter: (isLoading || introGlow) ? 'drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 0 30px rgba(255,255,255,0.35))' : 'none',
-                animation: (isLoading || introGlow) ? 'logo-glow 1.8s ease-in-out infinite' : 'none',
+                filter: (isLoading || introGlow || hoverGlow) ? 'drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 0 30px rgba(255,255,255,0.35))' : 'none',
+                animation: (isLoading || introGlow || hoverGlow) ? 'logo-glow 1.8s ease-in-out infinite' : 'none',
                 transition: 'filter 0.6s ease',
               }}
               className="object-contain opacity-90 relative"
