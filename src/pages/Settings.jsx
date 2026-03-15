@@ -14,6 +14,7 @@ export default function Settings() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const logoFileRef = useRef();
+  const [logoSize, setLogoSize] = useState(() => parseInt(localStorage.getItem('logo-size') || '64'));
 
   const { data: fonts = [] } = useQuery({
     queryKey: ['custom-fonts'],
