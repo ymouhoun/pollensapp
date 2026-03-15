@@ -40,6 +40,7 @@ export default function Memory() {
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [vibeItem, setVibeItem] = useState(null);
   const [uploadingDrop, setUploadingDrop] = useState(false);
   const lastScrollY = useRef(0);
   const dragCounter = useRef(0);
