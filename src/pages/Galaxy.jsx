@@ -223,7 +223,14 @@ export default function Galaxy({ onSelectItem }) {
         ))}
       </div>
 
-
+      {contextMenu && (
+        <ItemContextMenu
+          item={contextMenu.item}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }
