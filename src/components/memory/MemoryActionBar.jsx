@@ -3,30 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shuffle, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 
-const TAG_CATEGORIES = {
-  colors: { label: 'Colors', icon: Palette },
-  moods: { label: 'Moods', icon: Tag },
-  objects: { label: 'Objects', icon: Tag },
-  style: { label: 'Style', icon: Tag },
-};
-
-const DATE_OPTIONS = [
-  { label: 'All time', value: 'all' },
-  { label: 'Today', value: 'today' },
-  { label: 'This week', value: 'week' },
-  { label: 'This month', value: 'month' },
-];
-
-const COLOR_OPTIONS = [
-  { label: 'Warm', value: 'warm', bg: '#D4937A' },
-  { label: 'Cool', value: 'cool', bg: '#7A9ED4' },
-  { label: 'Neutral', value: 'neutral', bg: '#C4C0B8' },
-  { label: 'Dark', value: 'dark', bg: '#2A2A2A' },
-  { label: 'Light', value: 'light', bg: '#F0EDE8' },
-  { label: 'B&W', value: 'monochrome', bg: 'linear-gradient(135deg, #111 50%, #f0f0f0 50%)' },
-];
 
 function FilterButton({ icon: Icon, label, active, isOpen, onClick }) {
   return (
