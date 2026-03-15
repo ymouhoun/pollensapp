@@ -237,44 +237,15 @@ export default function Memory() {
             className="bg-transparent border-none outline-none text-2xl text-white/80 placeholder:text-white/40 text-center tracking-wide"
             style={{ fontFamily: 'Dhampir, serif', width: 'auto', maxWidth: '90vw' }}
           />
-          {/* Logo with diffused glow */}
-          <div className="relative flex items-center justify-center pointer-events-none" style={{ width: 200, height: 70 }}>
-            {/* Outer bloom */}
-            <div
-              className="absolute"
-              style={{
-                width: 200,
-                height: 80,
-                background: 'radial-gradient(ellipse at center, rgba(200,180,255,0.45) 0%, rgba(180,150,255,0.15) 50%, transparent 75%)',
-                filter: 'blur(18px)',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
-            {/* Inner tight glow */}
-            <div
-              className="absolute"
-              style={{
-                width: 140,
-                height: 50,
-                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.6) 0%, transparent 70%)',
-                filter: 'blur(8px)',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
-            <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b2e952528daefdb8ba4906/1f8f76e3d_teston2.png"
-              alt="logo"
-              className="relative"
-              style={{
-                height: '61px',
-                width: 'auto',
-                filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(210,190,255,0.8)) drop-shadow(0 0 36px rgba(180,150,255,0.5))',
-              }}
-            />
+          <div className="pointer-events-none" style={{ width: 280, height: 48 }}>
+            <GradientWaveText
+              repeat
+              speed={0.6}
+              className="text-3xl tracking-[0.25em] font-light"
+              customColors={["#c9b8d8", "#8fa8c8", "#d4b8c4", "#a8c4d4", "#d4c8a8", "#b8a8c8"]}
+            >
+              SOLWEIG & IZAR
+            </GradientWaveText>
           </div>
         </div>
       </div>
