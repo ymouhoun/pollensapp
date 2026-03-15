@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Slider } from '@/components/ui/slider';
 import HueFilter, { HUE_RANGES } from '@/components/galaxy/HueFilter';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
