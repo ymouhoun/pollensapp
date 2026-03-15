@@ -235,6 +235,13 @@ export default function Memory() {
       <ProgressiveBlur side="top" height={160} />
       <ProgressiveBlur side="bottom" height={160} />
 
+      {/* Centered logo */}
+      {appLogo && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <img src={appLogo.file_url} alt="Logo" className="max-h-16 max-w-xs object-contain opacity-90" />
+        </div>
+      )}
+
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
         <div className="flex flex-col items-center gap-0 pointer-events-auto">
