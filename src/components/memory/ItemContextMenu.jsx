@@ -3,7 +3,7 @@ import { Pencil, Zap, Tag, Download, Trash2, Bolt } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-export default function ItemContextMenu({ item, position, onClose }) {
+export default function ItemContextMenu({ item, position, onClose, onSameVibe }) {
   const queryClient = useQueryClient();
   const ref = useRef(null);
   const [renaming, setRenaming] = useState(false);
