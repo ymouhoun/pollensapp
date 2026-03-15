@@ -66,6 +66,19 @@ export default function Memory() {
   const filtered = useMemo(() => items.filter(item => {
     if (item.is_forgotten) return false;
     if (activeTag && !item.tags?.includes(activeTag)) return false;
+    if (dateFilter !== 'all') {
+      const created = new Date(item.created_date);
+      const now = new Date();
+      if (dateFilter === 'today') {
+        if (created.toDateString() !== now.toDateString()) return false;
+      } else if (dateFilter === 'week') {
+        const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+        if (created < weekAgo) return false;
+      } else if (dateFilter === 'month') {
+        const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1);
+        if (created < monthAgo) return false;
+      }
+    }
     if (search) {
       const s = search.toLowerCase();
       return item.title?.toLowerCase().includes(s) ||
@@ -73,7 +86,7 @@ export default function Memory() {
              item.tags?.some(t => t.toLowerCase().includes(s));
     }
     return true;
-  }), [items, activeTag, search]);
+  }), [items, activeTag, dateFilter, search]);
 
   useEffect(() => {
     const onResize = () => {
