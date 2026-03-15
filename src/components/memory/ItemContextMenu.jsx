@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pencil, Zap, Tag, Download, Trash2 } from 'lucide-react';
+import { Pencil, Zap, Tag, Download, Trash2, Bolt } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
