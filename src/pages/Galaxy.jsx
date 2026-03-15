@@ -87,7 +87,7 @@ export default function Galaxy() {
     
     setItems(galaxyItems);
     setIsLoading(false);
-  }, [mediaItems, orderMode]);
+  }, [mediaItems, orderMode, selectedHueRanges]);
 
   const handleMouseDown = (e) => {
     if (e.target.closest('[data-interactive]')) return;
