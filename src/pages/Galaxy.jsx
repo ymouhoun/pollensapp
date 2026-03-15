@@ -25,13 +25,13 @@ export default function Galaxy() {
     let orderedItems = filtered;
     
     if (orderMode === 'color') {
-      const colorOrder = ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'];
+      const colorOrder = ['light', 'warm', 'cool', 'neutral', 'dark', 'monochrome'];
       orderedItems = [...filtered].sort((a, b) => {
-        const aColor = a.color_palette || 'unknown';
-        const bColor = b.color_palette || 'unknown';
+        const aColor = a.color_palette || 'monochrome';
+        const bColor = b.color_palette || 'monochrome';
         const aIdx = colorOrder.indexOf(aColor);
         const bIdx = colorOrder.indexOf(bColor);
-        return (aIdx === -1 ? colorOrder.length : aIdx) - (bIdx === -1 ? colorOrder.length : bIdx);
+        return aIdx - bIdx;
       });
     } else if (orderMode === 'similarity') {
       orderedItems = [...filtered].sort((a, b) => {
