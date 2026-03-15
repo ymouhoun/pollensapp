@@ -10,6 +10,7 @@ import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
 import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
+import Galaxy from '@/pages/Galaxy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
