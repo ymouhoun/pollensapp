@@ -64,7 +64,7 @@ export default function SameVibeModal({ item, onClose, onSelectItem }) {
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-4 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] tracking-[0.2em] uppercase text-white/40">Same Vibe</span>
+                <span className="text-[10px] tracking-[0.2em] uppercase text-white/40" style={{ fontFamily: 'Dhampir, serif' }}>Same Vibe</span>
                 {!loading && (
                   <span className="text-[9px] tracking-widest text-white/20">{vibeItems.length} items</span>
                 )}
