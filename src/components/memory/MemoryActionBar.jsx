@@ -106,31 +106,84 @@ export default function MemoryActionBar({ activeTag, setActiveTag, dateFilter, s
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="bg-background/90 backdrop-blur-xl border border-border/40 rounded-2xl shadow-xl p-3 max-w-xs"
+            className="bg-background/90 backdrop-blur-xl border border-border/40 rounded-2xl shadow-xl p-3 max-w-lg"
           >
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setActiveTag(null)}
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase transition-colors",
-                  !activeTag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                )}
-              >
-                All
-              </button>
-              {ALL_TAGS.map(tag => (
+            {!tagCategory ? (
+              <div className="flex flex-wrap gap-1.5">
                 <button
-                  key={tag}
-                  onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                  onClick={() => setActiveTag(null)}
                   className={cn(
                     "px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase transition-colors",
-                    activeTag === tag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    !activeTag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  {tag}
+                  All
                 </button>
-              ))}
-            </div>
+                {ALL_TAGS.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase transition-colors",
+                      activeTag === tag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+                <div className="w-full h-px bg-border/40 my-1" />
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1 w-full">Smart Tags</div>
+                {Object.entries(TAG_CATEGORIES).map(([key, { label }]) => (
+                  <button
+                    key={key}
+                    onClick={() => setTagCategory(key)}
+                    className="px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={() => setTagCategory(null)}
+                  className="text-[9px] tracking-widest uppercase text-muted-foreground hover:text-foreground mb-2 block"
+                >
+                  ← Back
+                </button>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setActiveTag(null)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase transition-colors",
+                      !activeTag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    All
+                  </button>
+                  {allTags
+                    .filter(tag => {
+                      if (tagCategory === 'colors') return ['blue', 'gold', 'gray', 'red', 'green', 'white', 'black', 'warm', 'cool', 'muted', 'deep', 'pale', 'bright', 'dark', 'light'].some(c => tag.toLowerCase().includes(c));
+                      if (tagCategory === 'moods') return ['melancholic', 'vibrant', 'serene', 'dramatic', 'calm', 'energetic', 'peaceful', 'moody', 'joyful', 'nostalgic', 'ethereal', 'intense'].some(m => tag.toLowerCase().includes(m));
+                      if (tagCategory === 'objects') return true;
+                      if (tagCategory === 'style') return ['minimalist', 'cinematic', 'vintage', 'macro', 'abstract', 'portrait', 'landscape', 'geometric', 'organic', 'symmetrical'].some(s => tag.toLowerCase().includes(s));
+                      return false;
+                    })
+                    .map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase transition-colors",
+                          activeTag === tag ? "bg-foreground text-background" : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
