@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
 { path: '/Memory', icon: Brain, label: 'my mind' },
 { path: '/Entropy', icon: Shuffle, label: 'entropy' },
+{ path: '/Galaxy', icon: Lightbulb, label: 'galaxy' },
 { path: '/Iterate', icon: Sparkles, label: 'iterate' }];
 
 
