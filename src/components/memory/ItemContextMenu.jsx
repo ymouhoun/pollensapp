@@ -108,6 +108,7 @@ export default function ItemContextMenu({ item, position, onClose, onSameVibe })
       ) : (
         <div className="py-0.5">
           <MenuItem icon={Pencil} label="Rename" onClick={() => setRenaming(true)} isDark={isDark} />
+          <MenuItem icon={Bolt} label="Same Vibe" onClick={() => { onSameVibe?.(item); onClose(); }} isDark={isDark} />
           <MenuItem icon={Zap} label="Use as prompt" onClick={handleUseAsPrompt} isDark={isDark} />
           <MenuItem icon={Tag} label="Add tag" onClick={() => setAddingTag(true)} isDark={isDark} />
           {item.file_url && (
