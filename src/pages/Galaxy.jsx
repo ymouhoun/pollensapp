@@ -146,6 +146,25 @@ export default function Galaxy() {
         <div>Scroll to zoom</div>
       </div>
 
+      {/* Hue filter */}
+      {orderMode === 'color' && (
+        <HueFilter
+          selectedRanges={selectedHueRanges}
+          onToggleRange={(rangeName) => {
+            if (rangeName === 'All') {
+              setSelectedHueRanges(['All']);
+            } else {
+              setSelectedHueRanges(prev => {
+                const next = prev.includes(rangeName)
+                  ? prev.filter(r => r !== rangeName)
+                  : [...prev.filter(r => r !== 'All'), rangeName];
+                return next.length === 0 ? ['All'] : next;
+              });
+            }
+          }}
+        />
+      )}
+
       {/* Order controls */}
       <div className="fixed bottom-6 left-6 z-20 flex gap-2">
         <button
