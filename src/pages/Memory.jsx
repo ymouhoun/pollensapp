@@ -487,9 +487,27 @@ export default function Memory() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <Galaxy />
+          <Galaxy onSelectItem={setSelectedItem} />
         </div>
       )}
     </div>
+
+    {/* MediaOverlay rendered at top level for proper z-index */}
+    {showGalaxy && (
+      <MediaOverlay
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onPrev={() => {
+          const navigable = items.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx > 0) setSelectedItem(navigable[idx - 1]);
+        }}
+        onNext={() => {
+          const navigable = items.filter(i => i.content_type !== 'text');
+          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
+          if (idx < navigable.length - 1) setSelectedItem(navigable[idx + 1]);
+        }}
+      />
+    )}
   );
 }

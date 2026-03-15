@@ -4,16 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HueFilter, { HUE_RANGES } from '@/components/galaxy/HueFilter';
-import MediaOverlay from '@/components/memory/MediaOverlay';
 
-export default function Galaxy() {
+export default function Galaxy({ onSelectItem }) {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [orderMode, setOrderMode] = useState('random');
   const [selectedHueRanges, setSelectedHueRanges] = useState(['All']);
 
@@ -190,7 +188,7 @@ export default function Galaxy() {
               transform: 'translate(-50%, -50%)',
             }}
             whileHover={{ scale: 1.1 }}
-            onClick={() => setSelectedItem(item)}
+            onClick={() => onSelectItem?.(item)}
             data-interactive
           >
             <div className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors">
@@ -218,20 +216,7 @@ export default function Galaxy() {
         ))}
       </div>
 
-      <MediaOverlay
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onPrev={() => {
-          const navigable = items.filter(i => i.content_type !== 'text');
-          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
-          if (idx > 0) setSelectedItem(navigable[idx - 1]);
-        }}
-        onNext={() => {
-          const navigable = items.filter(i => i.content_type !== 'text');
-          const idx = navigable.findIndex(i => i.id === selectedItem?.id);
-          if (idx < navigable.length - 1) setSelectedItem(navigable[idx + 1]);
-        }}
-      />
+
     </div>
   );
 }
