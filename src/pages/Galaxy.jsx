@@ -186,7 +186,7 @@ export default function Galaxy({ onSelectItem }) {
         className="absolute left-0 top-0"
       >
         {items.map((item) => (
-          <motion.div
+          <div
             key={item.id}
             className="absolute flex items-center justify-center"
             style={{
@@ -195,17 +195,18 @@ export default function Galaxy({ onSelectItem }) {
               width: 120 * camera.zoom * item.sizeMultiplier,
               height: 120 * camera.zoom * item.sizeMultiplier,
               transform: 'translate(-50%, -50%)',
-              transformOrigin: 'center',
-            }}
-            whileHover={{ scale: 1.1 }}
-            onClick={() => onSelectItem?.(item)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setContextMenu({ item, x: e.clientX, y: e.clientY });
             }}
             data-interactive
           >
-            <div className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors">
+            <motion.div
+              className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 hover:border-border/60 transition-colors"
+              whileHover={{ scale: 1.1 }}
+              onClick={() => onSelectItem?.(item)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ item, x: e.clientX, y: e.clientY });
+              }}
+            >
               {item.content_type === 'video' ? (
                 <video
                   src={item.file_url}
@@ -225,8 +226,8 @@ export default function Galaxy({ onSelectItem }) {
                   {item.title || 'Untitled'}
                 </span>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         ))}
       </div>
 
