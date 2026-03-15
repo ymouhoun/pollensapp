@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import MediaCard from '@/components/memory/MediaCard';
+import MediaCard from '@/components/memory/MediaCard.jsx';
 import TextCard from '@/components/memory/TextCard';
 import AddNoteCard from '@/components/memory/AddNoteCard';
 import UploadModal from '@/components/memory/UploadModal';
