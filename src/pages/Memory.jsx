@@ -235,6 +235,15 @@ export default function Memory() {
         </div>
       </div>
 
+      <MemoryActionBar
+        activeTag={activeTag}
+        setActiveTag={setActiveTag}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        colorFilter={colorFilter}
+        setColorFilter={setColorFilter}
+      />
+
       {/* Masonry grid */}
       <div className="px-4 pb-24 pt-4 min-h-screen">
         {isLoading ? (
