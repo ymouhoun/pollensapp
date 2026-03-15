@@ -21,33 +21,22 @@ Deno.serve(async (req) => {
 
       try {
         const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Analyze this image and extract metadata. Be specific and descriptive.
+          prompt: `Create a rich, searchable caption for this image. Write 1-2 sentences that describe:
+- What you see (subjects, objects, composition)
+- The mood/atmosphere (colors, lighting, tone)
+- The style/technique (photographic style, artistic approach)
 
-Return a JSON object with:
-- colors: array of 2-3 dominant colors (e.g., "deep blue", "warm gold", "muted gray")
-- moods: array of 2-3 emotional/atmospheric moods (e.g., "melancholic", "vibrant", "serene", "dramatic")
-- objects: array of 3-5 main objects/subjects visible (e.g., "flowers", "architecture", "hands", "water")
-- style: array of 2-3 artistic/photographic styles (e.g., "minimalist", "cinematic", "vintage", "macro photography")
-
-Be concise and use lowercase. Focus on what's actually visible.`,
+Make it poetic but grounded. Example: "A serene minimalist composition with soft golden light illuminating delicate botanical forms against a neutral backdrop. The mood is ethereal and contemplative."`,
           file_urls: [item.file_url],
           response_json_schema: {
             type: 'object',
             properties: {
-              colors: { type: 'array', items: { type: 'string' } },
-              moods: { type: 'array', items: { type: 'string' } },
-              objects: { type: 'array', items: { type: 'string' } },
-              style: { type: 'array', items: { type: 'string' } },
+              caption: { type: 'string' },
             },
           },
         });
 
-        const allTags = [
-          ...(response.colors || []),
-          ...(response.moods || []),
-          ...(response.objects || []),
-          ...(response.style || []),
-        ].filter(Boolean);
+        const caption = response.caption?.trim() || '';
 
         await base44.asServiceRole.entities.MediaItem.update(item.id, {
           tags: allTags,
