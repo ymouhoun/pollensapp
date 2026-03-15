@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { base44 } from '@/api/base44Client';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import { ShiningText } from '@/components/ui/shining-text';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import MediaCard from '@/components/memory/MediaCard';
 import TextCard from '@/components/memory/TextCard';
@@ -330,7 +329,6 @@ export default function Memory() {
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
         <div className="flex flex-col items-center gap-0 pointer-events-auto">
-          {!search && <ShiningText text="Search memory..." />}
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
