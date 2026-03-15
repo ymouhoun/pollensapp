@@ -252,7 +252,7 @@ export default function Memory() {
       {appLogo && (
         <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
           <div className="relative flex items-center justify-center">
-            {isLoading && (
+            {(isLoading || introGlow) && (
               <div
                 className="absolute rounded-full"
                 style={{
