@@ -51,8 +51,8 @@ export default function ItemContextMenu({ item, position, onClose, onSameVibe })
   };
 
   const isDark = document.documentElement.classList.contains('dark');
-  const bgColor = isDark ? 'rgba(20, 20, 25, 0.72)' : 'rgba(255, 255, 255, 0.85)';
-  const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+  const bgColor = isDark ? 'rgba(15, 15, 20, 0.35)' : 'rgba(255, 255, 255, 0.3)';
+  const borderColor = isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.5)';
   const textColor = isDark ? 'text-white/70' : 'text-black/70';
   const inputBg = isDark ? 'bg-white/10' : 'bg-black/10';
   const inputText = isDark ? 'text-white' : 'text-black';
