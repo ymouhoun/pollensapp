@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Upload, Trash2, Loader2, Type } from 'lucide-react';
+import { Upload, Trash2, Loader2, Type, Image } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Settings() {
   const [uploading, setUploading] = useState(false);
