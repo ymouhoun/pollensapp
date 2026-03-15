@@ -79,6 +79,7 @@ export default function Memory() {
         if (created < monthAgo) return false;
       }
     }
+    if (colorFilter && item.color_palette !== colorFilter) return false;
     if (search) {
       const s = search.toLowerCase();
       return item.title?.toLowerCase().includes(s) ||
@@ -86,7 +87,7 @@ export default function Memory() {
              item.tags?.some(t => t.toLowerCase().includes(s));
     }
     return true;
-  }), [items, activeTag, dateFilter, search]);
+  }), [items, activeTag, dateFilter, colorFilter, search]);
 
   useEffect(() => {
     const onResize = () => {
