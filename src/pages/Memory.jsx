@@ -56,6 +56,7 @@ export default function Memory() {
   const appLogo = logos[0] || null;
   const [logoSize, setLogoSize] = useState(() => parseInt(localStorage.getItem('logo-size') || '64'));
   const [introGlow, setIntroGlow] = useState(true);
+  const [hoverGlow, setHoverGlow] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIntroGlow(false), 2000);
