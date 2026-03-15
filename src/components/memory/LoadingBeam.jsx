@@ -13,8 +13,9 @@ export default function LoadingBeam({ visible }) {
       <motion.div
         className="absolute top-0 h-px w-[18%]"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,220,240,0.15) 25%, rgba(255,235,248,1) 50%, rgba(255,220,240,0.15) 75%, transparent 100%)',
-          boxShadow: '0 0 6px 1px rgba(255,210,235,0.8), 0 0 20px 4px rgba(220,160,200,0.4), 0 0 50px 10px rgba(180,100,150,0.15)',
+          height: '0.5px',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,20,147,0.2) 25%, rgba(255,20,147,1) 50%, rgba(255,20,147,0.2) 75%, transparent 100%)',
+          boxShadow: '0 0 4px 1px rgba(255,20,147,1), 0 0 12px 3px rgba(255,20,147,0.6), 0 0 30px 6px rgba(255,20,147,0.2)',
         }}
         initial={{ left: '-18%' }}
         animate={{ left: '110%' }}
