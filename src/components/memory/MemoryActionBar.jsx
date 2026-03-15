@@ -62,7 +62,7 @@ export default function MemoryActionBar({ activeTag, setActiveTag, dateFilter, s
   }, []);
 
   return (
-    <div ref={barRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
+    <div ref={barRef} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col-reverse items-center gap-2">
       {/* Main pill bar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border/40 shadow-lg">
         <FilterButton icon={Tag} label="Tags" active={!!activeTag} isOpen={openPanel === 'tags'} onClick={() => togglePanel('tags')} />
