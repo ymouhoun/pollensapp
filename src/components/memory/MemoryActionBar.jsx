@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shuffle, Moon, Sun } from 'lucide-react';
+import { Shuffle, Moon, Sun, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
@@ -22,7 +22,7 @@ function FilterButton({ icon: Icon, label, active, isOpen, onClick }) {
   );
 }
 
-export default function MemoryActionBar() {
+export default function MemoryActionBar({ onToggleGalaxy }) {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   const barRef = useRef(null);
 
@@ -46,6 +46,13 @@ export default function MemoryActionBar() {
           title="Randomize"
         >
           <Shuffle className="w-3.5 h-3.5" strokeWidth={1.5} />
+        </button>
+        <button
+          onClick={() => onToggleGalaxy?.()}
+          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          title="Galaxy View"
+        >
+          <Lightbulb className="w-3.5 h-3.5" strokeWidth={1.5} />
         </button>
         <button
           onClick={toggleDark}

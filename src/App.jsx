@@ -10,7 +10,6 @@ import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
 import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
-import Galaxy from '@/pages/Galaxy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,7 +37,6 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/Memory" element={<Memory />} />
         <Route path="/Entropy" element={<Entropy />} />
-        <Route path="/Galaxy" element={<Galaxy />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

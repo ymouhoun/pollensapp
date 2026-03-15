@@ -13,6 +13,7 @@ import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
 import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
+import Galaxy from '@/pages/Galaxy';
 import { useQuery } from '@tanstack/react-query';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
@@ -44,6 +45,7 @@ export default function Memory() {
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [vibeItem, setVibeItem] = useState(null);
   const [uploadingDrop, setUploadingDrop] = useState(false);
+  const [showGalaxy, setShowGalaxy] = useState(false);
   const lastScrollY = useRef(0);
   const dragCounter = useRef(0);
   const sentinelRef = useRef(null);
@@ -359,6 +361,7 @@ export default function Memory() {
         colorFilter={colorFilter}
         setColorFilter={setColorFilter}
         allTags={items.flatMap(item => item.tags || []).filter((tag, i, arr) => arr.indexOf(tag) === i)}
+        onToggleGalaxy={() => setShowGalaxy(!showGalaxy)}
       />
 
       {/* Masonry grid */}
@@ -472,6 +475,21 @@ export default function Memory() {
         onOpenChange={setShowUpload}
         onUploaded={() => queryClient.invalidateQueries({ queryKey: ['media-items'] })}
       />
+      
+      {showGalaxy && (
+        <div className="fixed inset-0 z-[200] bg-black/80">
+          <button
+            onClick={() => setShowGalaxy(false)}
+            className="absolute top-4 right-4 z-50 p-2 text-white/60 hover:text-white transition-colors"
+            title="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <Galaxy />
+        </div>
+      )}
     </div>
   );
 }
