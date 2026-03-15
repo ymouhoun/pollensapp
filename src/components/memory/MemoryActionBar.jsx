@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shuffle, Moon, Sun, Lightbulb } from 'lucide-react';
+import { Shuffle, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
@@ -52,7 +52,10 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
           className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           title="Galaxy View"
         >
-          <Saturn className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="10" r="6" />
+            <ellipse cx="12" cy="10" rx="10" ry="3" opacity="0.6" />
+          </svg>
         </button>
         <button
           onClick={toggleDark}
