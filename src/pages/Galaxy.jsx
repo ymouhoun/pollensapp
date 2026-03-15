@@ -200,8 +200,8 @@ export default function Galaxy({ onSelectItem }) {
         }}
         className="absolute left-0 top-0"
       >
-        {items.map((item) => (
-          <div
+        {items.map((item, idx) => (
+          <motion.div
             key={item.id}
             className="absolute flex items-center justify-center"
             style={{
@@ -212,6 +212,9 @@ export default function Galaxy({ onSelectItem }) {
               transform: 'translate(-50%, -50%)',
             }}
             data-interactive
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: idx * 0.03 }}
           >
             <motion.div
               className="relative w-full h-full overflow-hidden cursor-pointer border border-border/20 transition-colors"
