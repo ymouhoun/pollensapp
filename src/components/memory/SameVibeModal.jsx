@@ -100,7 +100,7 @@ export default function SameVibeModal({ item, onClose, onSelectItem }) {
                       onClick={() => { onSelectItem(vItem); onClose(); }}
                     >
                       {vItem.content_type === 'image' || vItem.content_type === 'video' ? (
-                        <div className="relative overflow-hidden rounded-lg bg-white/5" style={{ height: 200 }}>
+                        <div className="relative overflow-hidden rounded-lg" style={{ height: 200, background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                           {vItem.content_type === 'video' ? (
                             <video
                               src={vItem.file_url}
