@@ -389,6 +389,11 @@ export default function Memory() {
           if (idx < navigable.length - 1) setSelectedItem(navigable[idx + 1]);
         }}
       />
+      <SameVibeModal
+        item={vibeItem}
+        onClose={() => setVibeItem(null)}
+        onSelectItem={setSelectedItem}
+      />
       <UploadModal
         open={showUpload}
         onOpenChange={setShowUpload}
