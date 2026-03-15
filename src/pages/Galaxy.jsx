@@ -46,7 +46,7 @@ export default function Galaxy({ onSelectItem }) {
     
     // Distribute items in scattered random pattern
     const galaxyItems = orderedItems.map((item, idx) => {
-      const seed = idx + Math.random() * 1000;
+      const seed = idx + Math.random() * 1000 + randomizeCount * 10000;
       const x = (Math.sin(seed) * window.innerWidth * 0.6);
       const y = (Math.cos(seed * 1.3) * window.innerHeight * 0.6);
       
@@ -61,7 +61,7 @@ export default function Galaxy({ onSelectItem }) {
     
     setItems(galaxyItems);
     setIsLoading(false);
-  }, [mediaItems, orderMode, selectedHueRanges]);
+  }, [mediaItems, orderMode, selectedHueRanges, randomizeCount]);
 
   const handleMouseDown = (e) => {
     if (e.target.closest('[data-interactive]')) return;
