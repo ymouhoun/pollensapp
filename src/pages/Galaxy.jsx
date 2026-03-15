@@ -14,6 +14,7 @@ export default function Galaxy() {
   const containerRef = useRef(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderMode, setOrderMode] = useState('random'); // 'color', 'similarity', 'random'
+  const [selectedHueRanges, setSelectedHueRanges] = useState(['All']);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
