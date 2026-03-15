@@ -32,17 +32,7 @@ export default function MemoryActionBar() {
     document.documentElement.classList.toggle('dark', next);
   };
 
-  const togglePanel = (panel) => setOpenPanel(prev => prev === panel ? null : panel);
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (barRef.current && !barRef.current.contains(e.target)) {
-        setOpenPanel(null);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   return (
     <div ref={barRef} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col-reverse items-center gap-2">
