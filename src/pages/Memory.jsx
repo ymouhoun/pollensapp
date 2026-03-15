@@ -338,7 +338,7 @@ export default function Memory() {
               fontFamily: 'Dhampir, serif', 
               width: 'auto', 
               maxWidth: '90vw',
-              animation: 'shine 2s linear infinite'
+              animation: 'shine 4s linear infinite'
             }}
           />
           <style>{`
