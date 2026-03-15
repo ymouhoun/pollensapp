@@ -50,16 +50,7 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
           <span className="text-xs font-light tracking-wide opacity-0 group-hover:opacity-100 transition-opacity w-0 group-hover:w-16">Galaxy</span>
         </button>
         <div className="w-px h-5 bg-white/10" />
-        <button
-          onClick={toggleDark}
-          className="flex items-center gap-2 text-white/70 hover:text-white transition-all duration-200 group"
-          title={dark ? 'Day mode' : 'Night mode'}
-        >
-          {dark
-            ? <Sun className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-            : <Moon className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />}
-          <span className="text-xs font-light tracking-wide opacity-0 group-hover:opacity-100 transition-opacity w-0 group-hover:w-12">{dark ? 'Light' : 'Dark'}</span>
-        </button>
+        <ThemeSwitcher value={theme} onValueChange={handleThemeChange} />
       </div>
     </div>
   );
