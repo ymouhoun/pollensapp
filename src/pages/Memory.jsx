@@ -319,7 +319,7 @@ export default function Memory() {
                             >
                               {item.content_type === 'text'
                               ? <TextCard item={item} index={index} />
-                              : <MediaCard item={item} index={index} onClick={setSelectedItem} />}
+                              : <MediaCard item={item} index={index} onClick={setSelectedItem} onSameVibe={setVibeItem} />}
                             </div>
                           )}
                         </Draggable>
