@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HueFilter, { HUE_RANGES } from '@/components/galaxy/HueFilter';
+import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 export default function Galaxy({ onSelectItem }) {
   const [items, setItems] = useState([]);
@@ -14,6 +15,7 @@ export default function Galaxy({ onSelectItem }) {
   const containerRef = useRef(null);
   const [orderMode, setOrderMode] = useState('random');
   const [selectedHueRanges, setSelectedHueRanges] = useState(['All']);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
