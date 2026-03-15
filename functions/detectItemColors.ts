@@ -23,23 +23,24 @@ Deno.serve(async (req) => {
       processed++;
       try {
         const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Analyze this image and identify its predominant color palette. Respond with only one of these values: warm, cool, neutral, dark, light, monochrome`,
+          prompt: `Analyze this image and identify its predominant hue as a number between 0-360 degrees. 0=red, 60=yellow, 120=green, 180=cyan, 240=blue, 300=magenta. Return the hue value.`,
           file_urls: [item.file_url],
           response_json_schema: {
             type: 'object',
             properties: {
-              color_palette: {
-                type: 'string',
-                enum: ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome']
+              tint: {
+                type: 'number',
+                minimum: 0,
+                maximum: 360
               }
             }
           }
         });
 
-        const colorPalette = response.color_palette;
-        if (colorPalette) {
+        const tint = response.tint;
+        if (typeof tint === 'number') {
           await base44.asServiceRole.entities.MediaItem.update(item.id, {
-            color_palette: colorPalette
+            tint
           });
           updated++;
         }
