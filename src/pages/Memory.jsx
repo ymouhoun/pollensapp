@@ -11,6 +11,7 @@ import MediaOverlay from '@/components/memory/MediaOverlay';
 import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
 import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import LoadingBeam from '@/components/memory/LoadingBeam';
+import SameVibeModal from '@/components/memory/SameVibeModal';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 
