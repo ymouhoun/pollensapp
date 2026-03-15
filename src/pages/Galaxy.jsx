@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import HueFilter, { HUE_RANGES } from '@/components/galaxy/HueFilter';
 
 export default function Galaxy() {
   const [items, setItems] = useState([]);
