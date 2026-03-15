@@ -123,7 +123,7 @@ export default function SameVibeModal({ item, onClose, onSelectItem }) {
                           )}
                         </div>
                       ) : (
-                        <div className="rounded-lg bg-white/5 border border-white/10 p-3 h-[200px] overflow-hidden">
+                        <div className="rounded-lg p-3 h-[200px] overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                           <p className="text-[11px] text-white/60 font-light leading-relaxed line-clamp-6">{vItem.text_content}</p>
                         </div>
                       )}
