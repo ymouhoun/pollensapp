@@ -127,6 +127,20 @@ export default function Galaxy({ onSelectItem }) {
         <div>Scroll to zoom</div>
       </div>
 
+      {/* Zoom slider */}
+      <div className="fixed bottom-6 left-6 z-20 flex items-center gap-3 bg-background/80 backdrop-blur-xl border border-border/40 rounded-full px-4 py-2 pointer-events-auto" style={{ width: '200px' }}>
+        <span className="text-[10px] tracking-widest uppercase text-foreground/60">Zoom</span>
+        <Slider
+          value={[camera.zoom]}
+          onValueChange={(val) => setCamera({ ...camera, zoom: val[0] })}
+          min={0.5}
+          max={4}
+          step={0.1}
+          className="flex-1"
+        />
+        <span className="text-[10px] tracking-widest text-foreground/60">{camera.zoom.toFixed(1)}x</span>
+      </div>
+
 
 
 
