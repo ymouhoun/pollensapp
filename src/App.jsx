@@ -38,6 +38,7 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/Memory" element={<Memory />} />
         <Route path="/Entropy" element={<Entropy />} />
+        <Route path="/Galaxy" element={<Galaxy />} />
         <Route path="/Settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
