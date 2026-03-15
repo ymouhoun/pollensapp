@@ -87,6 +87,7 @@ export default function MediaCard({ item, index, onClick, onSameVibe }) {
           item={item}
           position={contextMenu}
           onClose={() => setContextMenu(null)}
+          onSameVibe={onSameVibe}
         />
       )}
     </>
