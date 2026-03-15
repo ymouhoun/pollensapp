@@ -20,7 +20,7 @@ function CircularCommandMenu({
   const startAngle = -90 // Start from top
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+    (e) => {
       if (!isOpen || itemCount === 0) return
 
       switch (e.key) {
@@ -57,7 +57,7 @@ function CircularCommandMenu({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [handleKeyDown])
 
-  const getItemPosition = (index: number) => {
+  const getItemPosition = (index) => {
     const angle = ((startAngle + index * angleStep) * Math.PI) / 180
     return {
       x: Math.cos(angle) * radius,
