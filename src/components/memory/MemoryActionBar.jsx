@@ -6,31 +6,20 @@ import { ThemeSwitcher } from '@/components/ui/apple-liquid-glass-switcher';
 
 
 
-function FilterButton({ icon: Icon, label, active, isOpen, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] tracking-widest uppercase transition-all duration-200",
-        isOpen || active
-          ? "bg-foreground text-background"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-      )}
-    >
-      <Icon className="w-3 h-3" strokeWidth={1.5} />
-      <span>{label}</span>
-    </button>
-  );
-}
-
 export default function MemoryActionBar({ onToggleGalaxy }) {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [theme, setTheme] = useState(() => {
+    if (document.documentElement.classList.contains('dark')) return 'dark';
+    return 'light';
+  });
   const barRef = useRef(null);
 
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
 
