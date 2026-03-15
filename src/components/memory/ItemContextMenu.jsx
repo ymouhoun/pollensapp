@@ -71,8 +71,8 @@ export default function ItemContextMenu({ item, position, onClose, onSameVibe })
         left: position.x,
         background: bgColor,
         borderColor: borderColor,
-        backdropFilter: 'blur(32px)',
-        WebkitBackdropFilter: 'blur(32px)',
+        backdropFilter: 'blur(60px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(60px) saturate(180%)',
       }}
     >
       {renaming ? (
