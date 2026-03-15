@@ -221,11 +221,6 @@ export default function Galaxy({ onSelectItem }) {
                   className="w-full h-full object-contain"
                 />
               )}
-              <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-xs text-center px-2">
-                  {item.title || 'Untitled'}
-                </span>
-              </div>
             </motion.div>
           </div>
         ))}
