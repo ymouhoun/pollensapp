@@ -42,14 +42,13 @@ export default function Galaxy() {
     
     const orderedItems = [...filtered].sort(() => Math.random() - 0.5);
     
-    // Distribute items in a galaxy-like pattern or spectrum layout
+    // Distribute items in scattered random pattern
     const galaxyItems = orderedItems.map((item, idx) => {
-      const angle = (idx / orderedItems.length) * Math.PI * 2;
-      const distance = 100 + (idx % 10) * 80;
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
+      const seed = idx + Math.random() * 1000;
+      const x = (Math.sin(seed) * window.innerWidth * 0.6);
+      const y = (Math.cos(seed * 1.3) * window.innerHeight * 0.6);
       
-      const sizeVariation = 0.6 + (Math.sin(idx * 0.7) * 0.4);
+      const sizeVariation = 0.5 + (Math.random() * 0.6);
       return {
         ...item,
         galaxyX: x,
