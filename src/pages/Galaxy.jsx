@@ -236,17 +236,14 @@ function Scene({ items, onSelectItem, onContextMenu }) {
   return (
     <>
       <CameraController />
-      <ambientLight intensity={1} />
-      <Suspense fallback={null}>
-        {items.map((item) => (
-          <ImagePlane
-            key={item.id}
-            item={item}
-            onClick={onSelectItem}
-            onContextMenu={onContextMenu}
-          />
-        ))}
-      </Suspense>
+      {items.map((item) => (
+        <ImagePlane
+          key={item.id}
+          item={item}
+          onClick={onSelectItem}
+          onContextMenu={onContextMenu}
+        />
+      ))}
     </>
   );
 }
