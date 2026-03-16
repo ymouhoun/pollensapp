@@ -1,54 +1,254 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useTexture, Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { HUE_RANGES } from '@/components/galaxy/HueFilter';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
-// Spread items over a large virtual canvas
-const CANVAS_SPREAD = 4000;
-const ITEM_BASE_SIZE = 160;
+// ─── Item placement ───────────────────────────────────────────────
+function hashId(id = '', idx) {
+  let h = idx * 2654435761;
+  for (let i = 0; i < id.length; i++) h = (h ^ id.charCodeAt(i)) * 2246822519;
+  return (h >>> 0) / 4294967296;
+}
 
 function buildLayout(items) {
-  // Poisson-disk-ish: just use a seeded pseudo-random with enough spread
   return items.map((item, idx) => {
-    // deterministic pseudo-random per item id
-    const seed = item.id ? item.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : idx * 137;
-    const angle = (seed * 2.399963) % (Math.PI * 2);
-    const radius = 200 + ((seed * 137 + idx * 311) % CANVAS_SPREAD);
-    const x = Math.cos(angle) * radius + (((seed * 31) % 600) - 300);
-    const y = Math.sin(angle) * radius + (((seed * 53) % 600) - 300);
-    const size = ITEM_BASE_SIZE * (0.6 + ((seed % 100) / 100) * 0.8);
-    return { ...item, cx: x, cy: y, size };
+    const r1 = hashId(item.id, idx * 2);
+    const r2 = hashId(item.id, idx * 2 + 1);
+    const r3 = hashId(item.id, idx * 3 + 7);
+    const angle = r1 * Math.PI * 2;
+    const radius = 3 + r2 * 25;
+    const x = Math.cos(angle) * radius + (r3 - 0.5) * 4;
+    const y = Math.sin(angle) * radius + (hashId(item.id, idx + 99) - 0.5) * 4;
+    const size = 1.2 + r3 * 1.2;
+    return { ...item, x, y, size };
   });
 }
 
-export default function Galaxy({ onSelectItem }) {
-  const containerRef = useRef(null);
-  const stateRef = useRef({
-    // Camera state (kept in ref for performance)
-    x: 0, y: 0, zoom: 1,
-    // Drag
-    dragging: false, lastMX: 0, lastMY: 0,
-    // Momentum
-    vx: 0, vy: 0,
-    // Pinch
-    pinching: false, lastPinchDist: 0,
-    rafId: null,
+// ─── Single image plane ───────────────────────────────────────────
+function ImagePlane({ item, onClick, onContextMenu }) {
+  const meshRef = useRef();
+  const texture = useTexture(item.file_url);
+  const [hovered, setHovered] = useState(false);
+
+  // Compute aspect ratio once texture loaded
+  const aspect = useMemo(() => {
+    if (!texture?.image) return 1;
+    return texture.image.width / texture.image.height;
+  }, [texture]);
+
+  const w = item.size * (aspect >= 1 ? 1 : aspect);
+  const h = item.size * (aspect >= 1 ? 1 / aspect : 1);
+
+  useFrame((_, delta) => {
+    if (!meshRef.current) return;
+    const target = hovered ? 1.06 : 1;
+    meshRef.current.scale.lerp(new THREE.Vector3(target, target, target), 0.12);
   });
-  const [renderTick, setRenderTick] = useState(0); // force re-render
+
+  return (
+    <mesh
+      ref={meshRef}
+      position={[item.x, item.y, 0]}
+      onClick={(e) => { e.stopPropagation(); onClick(item); }}
+      onContextMenu={(e) => { e.stopPropagation(); onContextMenu(e, item); }}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+// ─── Camera controller ────────────────────────────────────────────
+function CameraController({ targetRef }) {
+  const { camera, gl } = useThree();
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0 });
+  const pinchRef = useRef({ active: false, lastDist: 0 });
+
+  useEffect(() => {
+    camera.position.set(0, 0, 15);
+    camera.near = 0.01;
+    camera.far = 1000;
+    camera.updateProjectionMatrix();
+  }, [camera]);
+
+  const getWorldDelta = useCallback((dxScreen, dyScreen) => {
+    const fov = camera.fov * (Math.PI / 180);
+    const height = 2 * Math.tan(fov / 2) * camera.position.z;
+    const width = height * camera.aspect;
+    const canvas = gl.domElement;
+    return {
+      dx: -(dxScreen / canvas.clientWidth) * width,
+      dy: (dyScreen / canvas.clientHeight) * height,
+    };
+  }, [camera, gl]);
+
+  useFrame(() => {
+    const d = dragRef.current;
+    if (!d.active) {
+      if (Math.abs(d.vx) > 0.001 || Math.abs(d.vy) > 0.001) {
+        camera.position.x += d.vx;
+        camera.position.y += d.vy;
+        d.vx *= 0.92;
+        d.vy *= 0.92;
+      }
+    }
+  });
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+
+    const onMouseDown = (e) => {
+      const d = dragRef.current;
+      d.active = true;
+      d.startX = e.clientX;
+      d.startY = e.clientY;
+      d.camX = camera.position.x;
+      d.camY = camera.position.y;
+      d.vx = 0; d.vy = 0;
+    };
+
+    const onMouseMove = (e) => {
+      const d = dragRef.current;
+      if (!d.active) return;
+      const { dx, dy } = getWorldDelta(e.clientX - d.startX, e.clientY - d.startY);
+      const newX = d.camX + dx;
+      const newY = d.camY + dy;
+      d.vx = newX - camera.position.x;
+      d.vy = newY - camera.position.y;
+      camera.position.x = newX;
+      camera.position.y = newY;
+    };
+
+    const onMouseUp = () => { dragRef.current.active = false; };
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.08 : 0.93;
+      const newZ = Math.max(1, Math.min(50, camera.position.z * factor));
+
+      // Zoom toward mouse cursor in world space
+      const rect = canvas.getBoundingClientRect();
+      const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      const fov = camera.fov * (Math.PI / 180);
+      const halfH = Math.tan(fov / 2) * camera.position.z;
+      const halfW = halfH * camera.aspect;
+      const worldX = camera.position.x + ndcX * halfW;
+      const worldY = camera.position.y + ndcY * halfH;
+      const ratio = (newZ - camera.position.z) / camera.position.z;
+      camera.position.x += (camera.position.x - worldX) * ratio;
+      camera.position.y += (camera.position.y - worldY) * ratio;
+      camera.position.z = newZ;
+    };
+
+    // Touch
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        const d = dragRef.current;
+        d.active = true;
+        d.startX = e.touches[0].clientX;
+        d.startY = e.touches[0].clientY;
+        d.camX = camera.position.x;
+        d.camY = camera.position.y;
+        d.vx = 0; d.vy = 0;
+      } else if (e.touches.length === 2) {
+        dragRef.current.active = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchRef.current = { active: true, lastDist: Math.sqrt(dx * dx + dy * dy) };
+      }
+    };
+
+    const onTouchMove = (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && dragRef.current.active) {
+        const d = dragRef.current;
+        const { dx, dy } = getWorldDelta(
+          e.touches[0].clientX - d.startX,
+          e.touches[0].clientY - d.startY
+        );
+        const newX = d.camX + dx;
+        const newY = d.camY + dy;
+        d.vx = newX - camera.position.x;
+        d.vy = newY - camera.position.y;
+        camera.position.x = newX;
+        camera.position.y = newY;
+      } else if (e.touches.length === 2 && pinchRef.current.active) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const factor = pinchRef.current.lastDist / dist;
+        camera.position.z = Math.max(1, Math.min(50, camera.position.z * factor));
+        pinchRef.current.lastDist = dist;
+      }
+    };
+
+    const onTouchEnd = () => {
+      dragRef.current.active = false;
+      pinchRef.current.active = false;
+    };
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      canvas.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [camera, gl, getWorldDelta]);
+
+  return null;
+}
+
+// ─── Scene ────────────────────────────────────────────────────────
+function Scene({ items, onSelectItem, onContextMenu }) {
+  return (
+    <>
+      <CameraController />
+      <ambientLight intensity={1} />
+      <Suspense fallback={null}>
+        {items.map((item) => (
+          <ImagePlane
+            key={item.id}
+            item={item}
+            onClick={onSelectItem}
+            onContextMenu={onContextMenu}
+          />
+        ))}
+      </Suspense>
+    </>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────
+export default function Galaxy({ onSelectItem }) {
   const [contextMenu, setContextMenu] = useState(null);
-  const [selectedHueRanges] = useState(['All']);
   const [randomizeCount, setRandomizeCount] = useState(0);
-  const layoutRef = useRef([]);
+  const [selectedHueRanges] = useState(['All']);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
     queryFn: () => base44.entities.MediaItem.list('-created_date', 500),
   });
 
-  // Build layout whenever items change or randomize
-  useEffect(() => {
+  const items = useMemo(() => {
     let filtered = mediaItems.filter(
       i => !i.is_forgotten && (i.content_type === 'image' || i.content_type === 'video')
     );
@@ -63,178 +263,28 @@ export default function Galaxy({ onSelectItem }) {
         });
       });
     }
-    layoutRef.current = buildLayout(filtered);
-    setRenderTick(t => t + 1);
+    return buildLayout(filtered);
   }, [mediaItems, selectedHueRanges, randomizeCount]);
 
-  // Animate loop for momentum
-  useEffect(() => {
-    const s = stateRef.current;
-    function tick() {
-      if (!s.dragging && (Math.abs(s.vx) > 0.1 || Math.abs(s.vy) > 0.1)) {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.vx *= 0.93;
-        s.vy *= 0.93;
-        setRenderTick(t => t + 1);
-      }
-      s.rafId = requestAnimationFrame(tick);
-    }
-    s.rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(s.rafId);
-  }, []);
-
-  // Randomize listener
   useEffect(() => {
     const handler = () => setRandomizeCount(c => c + 1);
     window.addEventListener('randomize-memory', handler);
     return () => window.removeEventListener('randomize-memory', handler);
   }, []);
 
-  // ─── Mouse events ───
-  const onMouseDown = useCallback((e) => {
-    if (e.target.closest('[data-interactive]')) return;
-    const s = stateRef.current;
-    s.dragging = true;
-    s.lastMX = e.clientX;
-    s.lastMY = e.clientY;
-    s.vx = 0;
-    s.vy = 0;
+  const handleContextMenu = useCallback((e, item) => {
+    // e here is a Three.js event, get native event
+    const native = e.nativeEvent || e;
+    setContextMenu({ item, x: native.clientX, y: native.clientY });
   }, []);
-
-  const onMouseMove = useCallback((e) => {
-    const s = stateRef.current;
-    if (!s.dragging) return;
-    const dx = e.clientX - s.lastMX;
-    const dy = e.clientY - s.lastMY;
-    s.x += dx;
-    s.y += dy;
-    s.vx = dx;
-    s.vy = dy;
-    s.lastMX = e.clientX;
-    s.lastMY = e.clientY;
-    setRenderTick(t => t + 1);
-  }, []);
-
-  const onMouseUp = useCallback(() => {
-    stateRef.current.dragging = false;
-  }, []);
-
-  // ─── Wheel zoom toward cursor ───
-  const onWheel = useCallback((e) => {
-    e.preventDefault();
-    const s = stateRef.current;
-    const rect = containerRef.current.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const factor = e.deltaY < 0 ? 1.08 : 0.93;
-    const newZoom = Math.max(0.15, Math.min(5, s.zoom * factor));
-    // Zoom toward cursor: adjust offset so world point under cursor stays fixed
-    s.x = cx - (cx - s.x) * (newZoom / s.zoom);
-    s.y = cy - (cy - s.y) * (newZoom / s.zoom);
-    s.zoom = newZoom;
-    setRenderTick(t => t + 1);
-  }, []);
-
-  // ─── Touch events ───
-  const onTouchStart = useCallback((e) => {
-    if (e.target.closest('[data-interactive]')) return;
-    const s = stateRef.current;
-    if (e.touches.length === 1) {
-      s.dragging = true;
-      s.lastMX = e.touches[0].clientX;
-      s.lastMY = e.touches[0].clientY;
-      s.vx = 0; s.vy = 0;
-    } else if (e.touches.length === 2) {
-      s.dragging = false;
-      s.pinching = true;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      s.lastPinchDist = Math.sqrt(dx * dx + dy * dy);
-    }
-  }, []);
-
-  const onTouchMove = useCallback((e) => {
-    e.preventDefault();
-    const s = stateRef.current;
-    if (s.dragging && e.touches.length === 1) {
-      const dx = e.touches[0].clientX - s.lastMX;
-      const dy = e.touches[0].clientY - s.lastMY;
-      s.x += dx; s.y += dy;
-      s.vx = dx; s.vy = dy;
-      s.lastMX = e.touches[0].clientX;
-      s.lastMY = e.touches[0].clientY;
-      setRenderTick(t => t + 1);
-    } else if (s.pinching && e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const factor = dist / s.lastPinchDist;
-      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const cx = mx - rect.left, cy = my - rect.top;
-        const newZoom = Math.max(0.15, Math.min(5, s.zoom * factor));
-        s.x = cx - (cx - s.x) * (newZoom / s.zoom);
-        s.y = cy - (cy - s.y) * (newZoom / s.zoom);
-        s.zoom = newZoom;
-      }
-      s.lastPinchDist = dist;
-      setRenderTick(t => t + 1);
-    }
-  }, []);
-
-  const onTouchEnd = useCallback(() => {
-    const s = stateRef.current;
-    s.dragging = false;
-    s.pinching = false;
-  }, []);
-
-  // Attach wheel + touch with non-passive option
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => {
-      el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('touchmove', onTouchMove);
-    };
-  }, [onWheel, onTouchMove]);
-
-  const s = stateRef.current;
-  const items = layoutRef.current;
-
-  // Viewport culling: only render items in view + margin
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const margin = 300;
-  const visible = items.filter(item => {
-    const sx = item.cx * s.zoom + s.x + vw / 2;
-    const sy = item.cy * s.zoom + s.y + vh / 2;
-    const half = (item.size * s.zoom) / 2;
-    return sx + half > -margin && sx - half < vw + margin &&
-           sy + half > -margin && sy - half < vh + margin;
-  });
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 bg-background overflow-hidden select-none"
-      style={{ cursor: s.dragging ? 'grabbing' : 'grab' }}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* Close button */}
+    <div className="fixed inset-0 bg-background">
+      {/* Close */}
       <button
-        data-interactive
         onClick={() => window.history.back()}
         className="fixed top-6 right-6 z-30 p-2 rounded-full bg-background/60 backdrop-blur-sm hover:bg-muted/70 transition-colors border border-border/30"
+        style={{ pointerEvents: 'auto' }}
       >
         <X className="w-4 h-4" strokeWidth={1.5} />
       </button>
@@ -244,86 +294,18 @@ export default function Galaxy({ onSelectItem }) {
         drag · scroll to zoom
       </div>
 
-      {/* Zoom indicator */}
-      <div className="fixed bottom-24 right-6 z-10 text-[10px] tracking-widest text-foreground/30 pointer-events-none">
-        {Math.round(s.zoom * 100)}%
-      </div>
-
-      {/* Canvas world */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: 0,
-          height: 0,
-          transform: `translate(calc(50vw + ${s.x}px), calc(50vh + ${s.y}px))`,
-          willChange: 'transform',
-        }}
+      <Canvas
+        style={{ width: '100%', height: '100%' }}
+        camera={{ position: [0, 0, 15], fov: 60 }}
+        gl={{ antialias: true, alpha: false }}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        {visible.map((item) => {
-          const w = item.size * s.zoom;
-          const h = item.size * s.zoom;
-          return (
-            <div
-              key={item.id}
-              data-interactive
-              style={{
-                position: 'absolute',
-                left: item.cx * s.zoom,
-                top: item.cy * s.zoom,
-                width: w,
-                height: h,
-                transform: 'translate(-50%, -50%)',
-                cursor: 'pointer',
-                transition: 'opacity 0.3s',
-              }}
-              onClick={() => onSelectItem?.(item)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenu({ item, x: e.clientX, y: e.clientY });
-              }}
-            >
-              <div
-                className="w-full h-full overflow-hidden"
-                style={{
-                  borderRadius: 4,
-                  border: '1px solid rgba(128,128,128,0.15)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'scale(1.04)';
-                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-                  e.currentTarget.style.zIndex = '10';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.zIndex = '';
-                }}
-              >
-                {item.content_type === 'video' ? (
-                  <video
-                    src={item.file_url}
-                    className="w-full h-full object-cover"
-                    style={{ mixBlendMode: 'multiply', display: 'block' }}
-                    muted
-                    preload="metadata"
-                  />
-                ) : (
-                  <img
-                    src={item.file_url}
-                    alt={item.title || ''}
-                    className="w-full h-full object-cover"
-                    style={{ mixBlendMode: 'multiply', display: 'block' }}
-                    loading="lazy"
-                  />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        <Scene
+          items={items}
+          onSelectItem={onSelectItem}
+          onContextMenu={handleContextMenu}
+        />
+      </Canvas>
 
       {contextMenu && (
         <ItemContextMenu
