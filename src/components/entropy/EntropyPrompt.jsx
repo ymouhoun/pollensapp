@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
-const SAMPLERS = ['RES_2S', 'EULER', 'DPM++', 'DDIM'];
-const SCHEDULERS = ['KL_OPTIMAL', 'KARRAS', 'NORMAL', 'EXPONENTIAL'];
+const SAMPLERS = ['RES_2S', 'RES_5S', 'ER_SDE', 'EULER', 'DPM_2M', 'SEEDS_2', 'RK_BETA'];
+const SCHEDULERS = ['KL_OPTIMAL', 'DDIM_UNIFORM', 'BETA57', 'SIGMOID_OFFSET', 'BONG_TANGENT'];
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef }) {
   const [sampler, setSampler] = useState('RES_2S');
