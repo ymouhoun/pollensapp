@@ -43,8 +43,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex items-center justify-between px-5 py-2.5 border-t border-white/[0.07]"
-          style={{ background: 'rgba(0,0,0,0.2)', fontFamily: 'var(--font-sans)' }}
+          className="flex items-center justify-between px-5 py-2.5"
+          style={{ fontFamily: 'var(--font-sans)' }}
         >
           {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
