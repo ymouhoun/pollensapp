@@ -343,11 +343,17 @@ export default function Galaxy({ onSelectItem }) {
         drag.vy *= 0.88;
       }
 
-      // Chunk sync based on world pan position
+      // Chunk sync based on world pan position (always sync every frame if moved)
       const cx = Math.floor(vpRef.current.x / CHUNK_SIZE);
       const cy = Math.floor(vpRef.current.y / CHUNK_SIZE);
       if (cx !== lastCX || cy !== lastCY) {
         lastCX = cx; lastCY = cy;
+        syncChunks(vpRef.current.x, vpRef.current.y);
+      }
+      // Also sync on zoom changes so new chunks appear when zooming out
+      const zoomChunk = Math.floor(Math.log2(vpRef.current.zoom) * 4);
+      if (zoomChunk !== lastZoomChunk) {
+        lastZoomChunk = zoomChunk;
         syncChunks(vpRef.current.x, vpRef.current.y);
       }
 
