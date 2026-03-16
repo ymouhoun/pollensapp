@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -6,11 +6,11 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
-const CHUNK_SIZE = 40;
-const RENDER_RADIUS = 1;        // chunks around camera (3×3 = 9 chunks)
-const PLANES_PER_CHUNK = 5;
-const MIN_Z = 4;
-const MAX_Z = 120;
+const CHUNK_SIZE = 600;          // world units per chunk
+const RENDER_RADIUS = 2;         // chunks in each direction
+const PLANES_PER_CHUNK = 6;
+const MIN_ZOOM = 0.02;           // very zoomed out
+const MAX_ZOOM = 8;              // very zoomed in
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
@@ -19,28 +19,26 @@ function seededRandom(seed) {
 }
 
 function hashChunk(cx, cy) {
-  return (cx * 73856093) ^ (cy * 19349663);
+  return Math.abs((cx * 73856093) ^ (cy * 19349663));
 }
 
 // ─── Chunk layout cache (LRU) ─────────────────────────────────────
-const MAX_CACHE = 256;
+const MAX_CACHE = 512;
 const planeCache = new Map();
 
-function generateChunkPlanes(cx, cy, totalItems) {
+function generateChunkPlanes(cx, cy) {
   const key = `${cx},${cy}`;
   if (planeCache.has(key)) {
     const v = planeCache.get(key);
-    planeCache.delete(key);
-    planeCache.set(key, v);
+    planeCache.delete(key); planeCache.set(key, v);
     return v;
   }
-
   const seed = hashChunk(cx, cy);
   const planes = [];
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 997;
     const r = (n) => seededRandom(s + n);
-    const size = 10 + r(4) * 10;
+    const size = 80 + r(4) * 120;
     planes.push({
       id: `${cx}-${cy}-${i}`,
       x: cx * CHUNK_SIZE + r(0) * CHUNK_SIZE,
@@ -49,11 +47,8 @@ function generateChunkPlanes(cx, cy, totalItems) {
       mediaIndex: Math.abs(Math.floor(r(3) * 1_000_000)),
     });
   }
-
   planeCache.set(key, planes);
-  while (planeCache.size > MAX_CACHE) {
-    planeCache.delete(planeCache.keys().next().value);
-  }
+  while (planeCache.size > MAX_CACHE) planeCache.delete(planeCache.keys().next().value);
   return planes;
 }
 
@@ -70,13 +65,18 @@ function loadTexture(url, cb) {
   });
 }
 
-// ─── Main Galaxy Component ────────────────────────────────────────
+// ─── Galaxy Component ─────────────────────────────────────────────
 export default function Galaxy({ onSelectItem }) {
   const canvasRef = useRef(null);
-  const stateRef = useRef(null); // holds all Three.js state
+  const rendererRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const chunkMeshesRef = useRef(new Map());
   const [contextMenu, setContextMenu] = React.useState(null);
-  const chunkMeshesRef = useRef(new Map()); // key -> [meshes]
-  const activeChunksRef = useRef(new Set());
+
+  // Viewport state — pan (world coords) + zoom (scalar)
+  const vpRef = useRef({ x: 0, y: 0, zoom: 1 });
+  const mediaRef = useRef([]);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
@@ -84,21 +84,21 @@ export default function Galaxy({ onSelectItem }) {
   });
 
   const media = useMemo(() =>
-    mediaItems.filter(i => !i.is_forgotten && i.file_url && (i.content_type === 'image' || i.content_type === 'video')),
+    mediaItems.filter(i => !i.is_forgotten && i.file_url &&
+      (i.content_type === 'image' || i.content_type === 'video')),
     [mediaItems]
   );
-  const mediaRef = useRef(media);
+
   useEffect(() => { mediaRef.current = media; }, [media]);
 
-  // ── Chunk management ────────────────────────────────────────────
+  // ── Chunk management ───────────────────────────────────────────
   const spawnChunk = useCallback((cx, cy) => {
     const key = `${cx},${cy}`;
     if (chunkMeshesRef.current.has(key)) return;
+    const scene = sceneRef.current;
+    if (!scene || !mediaRef.current.length) return;
 
-    const st = stateRef.current;
-    if (!st || !mediaRef.current.length) return;
-
-    const planes = generateChunkPlanes(cx, cy, mediaRef.current.length);
+    const planes = generateChunkPlanes(cx, cy);
     const meshes = [];
 
     planes.forEach((p) => {
@@ -106,26 +106,29 @@ export default function Galaxy({ onSelectItem }) {
       if (!item?.file_url) return;
 
       const geo = new THREE.PlaneGeometry(p.size, p.size);
-      const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false });
+      const mat = new THREE.MeshBasicMaterial({
+        transparent: true, opacity: 0,
+        side: THREE.DoubleSide, toneMapped: false,
+      });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(p.x, p.y, 0);
       mesh.userData.item = item;
-      st.scene.add(mesh);
+      mesh.userData.baseSize = p.size;
+      scene.add(mesh);
       meshes.push(mesh);
 
       loadTexture(item.file_url, (tex) => {
+        if (!mesh.parent) return; // destroyed before load
         const img = tex.image;
         if (img?.width && img?.height) {
           const a = img.width / img.height;
-          const w = p.size * (a >= 1 ? 1 : a);
-          const h = p.size * (a >= 1 ? 1 / a : 1);
-          geo.dispose();
+          const w = a >= 1 ? p.size : p.size * a;
+          const h = a >= 1 ? p.size / a : p.size;
+          mesh.geometry.dispose();
           mesh.geometry = new THREE.PlaneGeometry(w, h);
         }
         mat.map = tex;
         mat.needsUpdate = true;
-        // Fade in
-        mat.opacity = 0;
         mesh.userData.fadeIn = true;
       });
     });
@@ -134,120 +137,131 @@ export default function Galaxy({ onSelectItem }) {
   }, []);
 
   const destroyChunk = useCallback((key) => {
-    const st = stateRef.current;
-    if (!st) return;
+    const scene = sceneRef.current;
+    if (!scene) return;
     const meshes = chunkMeshesRef.current.get(key);
     if (!meshes) return;
-    meshes.forEach((m) => {
-      st.scene.remove(m);
-      m.geometry.dispose();
-      m.material.dispose();
-    });
+    meshes.forEach((m) => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
     chunkMeshesRef.current.delete(key);
   }, []);
 
-  const syncChunks = useCallback((camX, camY) => {
-    const cx = Math.floor(camX / CHUNK_SIZE);
-    const cy = Math.floor(camY / CHUNK_SIZE);
+  const syncChunks = useCallback((worldX, worldY) => {
+    const cx = Math.floor(worldX / CHUNK_SIZE);
+    const cy = Math.floor(worldY / CHUNK_SIZE);
     const needed = new Set();
-
-    for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++) {
-      for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++) {
+    for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
+      for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++)
         needed.add(`${cx + dx},${cy + dy}`);
-      }
-    }
 
-    // Spawn new
     needed.forEach((key) => {
       if (!chunkMeshesRef.current.has(key)) {
         const [kcx, kcy] = key.split(',').map(Number);
         spawnChunk(kcx, kcy);
       }
     });
-
-    // Destroy old
     chunkMeshesRef.current.forEach((_, key) => {
       if (!needed.has(key)) destroyChunk(key);
     });
-
-    activeChunksRef.current = needed;
   }, [spawnChunk, destroyChunk]);
 
-  // ── Three.js init ────────────────────────────────────────────────
+  // ── Three.js setup ─────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setSize(W, H);
+    rendererRef.current = renderer;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 5000);
-    camera.position.set(0, 0, 60);
+    sceneRef.current = scene;
 
-    stateRef.current = { renderer, scene, camera };
+    // Orthographic camera — perfect for 2D infinite canvas
+    // We'll manually update it each frame based on vpRef
+    const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 1000);
+    camera.position.z = 10;
+    cameraRef.current = camera;
 
-    // ── Input state ──
-    const drag = { active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0 };
-    const pinch = { active: false, lastDist: 0 };
-    let lastChunkCX = null, lastChunkCY = null;
+    const updateCamera = () => {
+      const { x, y, zoom } = vpRef.current;
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const hw = w / 2 / zoom, hh = h / 2 / zoom;
+      camera.left   = x - hw;
+      camera.right  = x + hw;
+      camera.top    = y + hh;
+      camera.bottom = y - hh;
+      camera.updateProjectionMatrix();
+    };
+    updateCamera();
 
-    const worldDelta = (dxS, dyS) => {
-      const fov = camera.fov * (Math.PI / 180);
-      const h = 2 * Math.tan(fov / 2) * camera.position.z;
-      const w = h * camera.aspect;
-      return { dx: -(dxS / canvas.clientWidth) * w, dy: (dyS / canvas.clientHeight) * h };
+    // ── Pointer / input state ──
+    const drag = { active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0, moved: false };
+    const pinch = { active: false, lastDist: 0, midX: 0, midY: 0 };
+    let lastCX = null, lastCY = null;
+
+    // Screen px → world coords
+    const screenToWorld = (sx, sy) => {
+      const { x, y, zoom } = vpRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const ndcX = (sx - rect.left - rect.width / 2) / zoom;
+      const ndcY = -(sy - rect.top - rect.height / 2) / zoom;
+      return { wx: x + ndcX, wy: y + ndcY };
     };
 
-    // ── Event handlers ──
+    const zoomAround = (pivotSX, pivotSY, factor) => {
+      const { wx: pwx, wy: pwy } = screenToWorld(pivotSX, pivotSY);
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, vpRef.current.zoom * factor));
+      // Adjust pan so pivot stays fixed
+      const ratio = newZoom / vpRef.current.zoom;
+      vpRef.current.x = pwx + (vpRef.current.x - pwx) / ratio;
+      vpRef.current.y = pwy + (vpRef.current.y - pwy) / ratio;
+      vpRef.current.zoom = newZoom;
+    };
+
     const onMouseDown = (e) => {
-      drag.active = true;
+      drag.active = true; drag.moved = false;
       drag.startX = e.clientX; drag.startY = e.clientY;
-      drag.camX = camera.position.x; drag.camY = camera.position.y;
+      drag.camX = vpRef.current.x; drag.camY = vpRef.current.y;
       drag.vx = 0; drag.vy = 0;
-      drag.moved = false;
+      canvas.style.cursor = 'grabbing';
     };
+
     const onMouseMove = (e) => {
       if (!drag.active) return;
-      const { dx, dy } = worldDelta(e.clientX - drag.startX, e.clientY - drag.startY);
-      const nx = drag.camX + dx, ny = drag.camY + dy;
-      drag.vx = nx - camera.position.x;
-      drag.vy = ny - camera.position.y;
-      camera.position.x = nx;
-      camera.position.y = ny;
+      const { zoom } = vpRef.current;
+      const dx = (e.clientX - drag.startX) / zoom;
+      const dy = (e.clientY - drag.startY) / zoom;
+      const nx = drag.camX - dx, ny = drag.camY + dy;
+      drag.vx = nx - vpRef.current.x;
+      drag.vy = ny - vpRef.current.y;
+      vpRef.current.x = nx;
+      vpRef.current.y = ny;
       drag.moved = true;
     };
+
     const onMouseUp = (e) => {
+      canvas.style.cursor = 'grab';
       if (!drag.moved) {
-        // treat as click — raycast
-        handleClick(e.clientX, e.clientY);
+        const hit = raycast(e.clientX, e.clientY);
+        if (hit?.userData.item) onSelectItem?.(hit.userData.item);
       }
       drag.active = false;
     };
+
     const onWheel = (e) => {
       e.preventDefault();
-      const factor = e.deltaY > 0 ? 1.08 : 0.93;
-      const newZ = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z * factor));
-      const rect = canvas.getBoundingClientRect();
-      const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      const fov = camera.fov * (Math.PI / 180);
-      const halfH = Math.tan(fov / 2) * camera.position.z;
-      const halfW = halfH * camera.aspect;
-      const wx = camera.position.x + ndcX * halfW;
-      const wy = camera.position.y + ndcY * halfH;
-      const ratio = (newZ - camera.position.z) / camera.position.z;
-      camera.position.x += (camera.position.x - wx) * ratio;
-      camera.position.y += (camera.position.y - wy) * ratio;
-      camera.position.z = newZ;
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoomAround(e.clientX, e.clientY, factor);
     };
 
     const onTouchStart = (e) => {
       if (e.touches.length === 1) {
         drag.active = true; drag.moved = false;
         drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY;
-        drag.camX = camera.position.x; drag.camY = camera.position.y;
+        drag.camX = vpRef.current.x; drag.camY = vpRef.current.y;
         drag.vx = 0; drag.vy = 0;
       } else if (e.touches.length === 2) {
         drag.active = false;
@@ -255,31 +269,38 @@ export default function Galaxy({ onSelectItem }) {
         const ddy = e.touches[0].clientY - e.touches[1].clientY;
         pinch.active = true;
         pinch.lastDist = Math.sqrt(ddx * ddx + ddy * ddy);
+        pinch.midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinch.midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       }
     };
+
     const onTouchMove = (e) => {
       e.preventDefault();
       if (e.touches.length === 1 && drag.active) {
-        const { dx, dy } = worldDelta(e.touches[0].clientX - drag.startX, e.touches[0].clientY - drag.startY);
-        const nx = drag.camX + dx, ny = drag.camY + dy;
-        drag.vx = nx - camera.position.x; drag.vy = ny - camera.position.y;
-        camera.position.x = nx; camera.position.y = ny;
+        const { zoom } = vpRef.current;
+        const dx = (e.touches[0].clientX - drag.startX) / zoom;
+        const dy = (e.touches[0].clientY - drag.startY) / zoom;
+        const nx = drag.camX - dx, ny = drag.camY + dy;
+        drag.vx = nx - vpRef.current.x; drag.vy = ny - vpRef.current.y;
+        vpRef.current.x = nx; vpRef.current.y = ny;
         drag.moved = true;
       } else if (e.touches.length === 2 && pinch.active) {
         const ddx = e.touches[0].clientX - e.touches[1].clientX;
         const ddy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-        camera.position.z = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z * (pinch.lastDist / dist)));
-        pinch.lastDist = dist;
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        zoomAround(midX, midY, dist / pinch.lastDist);
+        pinch.lastDist = dist; pinch.midX = midX; pinch.midY = midY;
       }
     };
+
     const onTouchEnd = () => { drag.active = false; pinch.active = false; };
 
-    // ── Context menu ──
     const onContextMenu = (e) => {
       e.preventDefault();
       const hit = raycast(e.clientX, e.clientY);
-      if (hit) setContextMenu({ item: hit.userData.item, x: e.clientX, y: e.clientY });
+      if (hit?.userData.item) setContextMenu({ item: hit.userData.item, x: e.clientX, y: e.clientY });
     };
 
     const raycast = (clientX, clientY) => {
@@ -294,11 +315,6 @@ export default function Galaxy({ onSelectItem }) {
       return hits.find(h => h.object.userData.item)?.object ?? null;
     };
 
-    const handleClick = (clientX, clientY) => {
-      const hit = raycast(clientX, clientY);
-      if (hit?.userData.item) onSelectItem?.(hit.userData.item);
-    };
-
     canvas.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
@@ -308,50 +324,46 @@ export default function Galaxy({ onSelectItem }) {
     canvas.addEventListener('touchend', onTouchEnd);
     canvas.addEventListener('contextmenu', onContextMenu);
 
-    // ── Resize ──
     const onResize = () => {
       const w = canvas.clientWidth, h = canvas.clientHeight;
       renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
     };
     const ro = new ResizeObserver(onResize);
     ro.observe(canvas);
 
-    // ── Animation loop ──
     let rafId;
     const animate = () => {
       rafId = requestAnimationFrame(animate);
 
       // Inertia
-      if (!drag.active && (Math.abs(drag.vx) > 0.001 || Math.abs(drag.vy) > 0.001)) {
-        camera.position.x += drag.vx;
-        camera.position.y += drag.vy;
-        drag.vx *= 0.9;
-        drag.vy *= 0.9;
+      if (!drag.active && (Math.abs(drag.vx) > 0.01 || Math.abs(drag.vy) > 0.01)) {
+        vpRef.current.x += drag.vx;
+        vpRef.current.y += drag.vy;
+        drag.vx *= 0.88;
+        drag.vy *= 0.88;
       }
 
-      // Chunk sync
-      const cx = Math.floor(camera.position.x / CHUNK_SIZE);
-      const cy = Math.floor(camera.position.y / CHUNK_SIZE);
-      if (cx !== lastChunkCX || cy !== lastChunkCY) {
-        lastChunkCX = cx; lastChunkCY = cy;
-        syncChunks(camera.position.x, camera.position.y);
+      // Chunk sync based on world pan position
+      const cx = Math.floor(vpRef.current.x / CHUNK_SIZE);
+      const cy = Math.floor(vpRef.current.y / CHUNK_SIZE);
+      if (cx !== lastCX || cy !== lastCY) {
+        lastCX = cx; lastCY = cy;
+        syncChunks(vpRef.current.x, vpRef.current.y);
       }
 
-      // Fade in meshes
+      // Fade in
       scene.children.forEach((m) => {
         if (m.userData.fadeIn) {
-          m.material.opacity = Math.min(1, m.material.opacity + 0.04);
+          m.material.opacity = Math.min(1, m.material.opacity + 0.05);
           if (m.material.opacity >= 1) m.userData.fadeIn = false;
         }
       });
 
+      updateCamera();
       renderer.render(scene, camera);
     };
     animate();
 
-    // Initial chunks
     syncChunks(0, 0);
 
     return () => {
@@ -365,41 +377,39 @@ export default function Galaxy({ onSelectItem }) {
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
       canvas.removeEventListener('contextmenu', onContextMenu);
-      // cleanup all meshes
       chunkMeshesRef.current.forEach((meshes) => {
         meshes.forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
       });
       chunkMeshesRef.current.clear();
       renderer.dispose();
-      stateRef.current = null;
+      rendererRef.current = null;
+      sceneRef.current = null;
+      cameraRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-sync chunks when media loads
+  // Re-sync when media loads
   useEffect(() => {
-    if (!media.length || !stateRef.current) return;
-    // Destroy existing chunks so they respawn with real images
-    chunkMeshesRef.current.forEach((meshes, key) => {
-      const st = stateRef.current;
-      meshes.forEach((m) => { st.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+    if (!media.length || !sceneRef.current) return;
+    chunkMeshesRef.current.forEach((meshes) => {
+      const scene = sceneRef.current;
+      meshes.forEach((m) => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
     });
     chunkMeshesRef.current.clear();
-    const cam = stateRef.current.camera;
-    syncChunks(cam.position.x, cam.position.y);
+    syncChunks(vpRef.current.x, vpRef.current.y);
   }, [media, syncChunks]);
 
-  // Randomize
+  // Randomize event
   useEffect(() => {
     const handler = () => {
       planeCache.clear();
-      if (!stateRef.current) return;
+      if (!sceneRef.current) return;
       chunkMeshesRef.current.forEach((meshes) => {
-        const st = stateRef.current;
-        meshes.forEach((m) => { st.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+        const scene = sceneRef.current;
+        meshes.forEach((m) => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
       });
       chunkMeshesRef.current.clear();
-      const cam = stateRef.current.camera;
-      syncChunks(cam.position.x, cam.position.y);
+      syncChunks(vpRef.current.x, vpRef.current.y);
     };
     window.addEventListener('randomize-memory', handler);
     return () => window.removeEventListener('randomize-memory', handler);
