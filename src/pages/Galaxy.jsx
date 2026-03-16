@@ -74,11 +74,13 @@ function loadTexture(url, onLoaded) {
 // ─── Image Plane ──────────────────────────────────────────────────
 const scaleVec = new THREE.Vector3();
 
+const EMPTY_MAT = new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, toneMapped: false });
+
 function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
   const meshRef = useRef();
-  const matRef = useRef();
   const [hovered, setHovered] = useState(false);
   const [dims, setDims] = useState({ w: size, h: size });
+  const [mat] = useState(() => EMPTY_MAT.clone());
 
   useEffect(() => {
     if (!url) return;
