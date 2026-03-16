@@ -30,24 +30,35 @@ function buildLayout(items) {
 }
 
 // ─── Single image plane ───────────────────────────────────────────
+const scaleVec = new THREE.Vector3();
+
 function ImagePlane({ item, onClick, onContextMenu }) {
   const meshRef = useRef();
-  const texture = useTexture(item.file_url);
   const [hovered, setHovered] = useState(false);
+  const texture = useTexture(item.file_url);
 
-  // Compute aspect ratio once texture loaded
-  const aspect = useMemo(() => {
-    if (!texture?.image) return 1;
-    return texture.image.width / texture.image.height;
+  // Fix texture encoding
+  useEffect(() => {
+    if (texture) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    }
   }, [texture]);
 
-  const w = item.size * (aspect >= 1 ? 1 : aspect);
-  const h = item.size * (aspect >= 1 ? 1 / aspect : 1);
+  const { w, h } = useMemo(() => {
+    const img = texture?.image;
+    const aspect = img?.width && img?.height ? img.width / img.height : 1;
+    return {
+      w: item.size * (aspect >= 1 ? 1 : aspect),
+      h: item.size * (aspect >= 1 ? 1 / aspect : 1),
+    };
+  }, [texture, item.size]);
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (!meshRef.current) return;
     const target = hovered ? 1.06 : 1;
-    meshRef.current.scale.lerp(new THREE.Vector3(target, target, target), 0.12);
+    scaleVec.set(target, target, target);
+    meshRef.current.scale.lerp(scaleVec, 0.12);
   });
 
   return (
@@ -56,11 +67,11 @@ function ImagePlane({ item, onClick, onContextMenu }) {
       position={[item.x, item.y, 0]}
       onClick={(e) => { e.stopPropagation(); onClick(item); }}
       onContextMenu={(e) => { e.stopPropagation(); onContextMenu(e, item); }}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
+      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
+      onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} />
+      <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
