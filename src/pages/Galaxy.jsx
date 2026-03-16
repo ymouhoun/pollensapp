@@ -445,7 +445,7 @@ export default function Galaxy({ onSelectItem }) {
         key={randomizeSeed}
         style={{ width: '100%', height: '100%' }}
         camera={{ position: [0, 0, 18], fov: 60 }}
-        gl={{ antialias: true, alpha: false }}
+        gl={{ antialias: true, alpha: true }}
         onContextMenu={(e) => e.preventDefault()}
       >
         <Scene
