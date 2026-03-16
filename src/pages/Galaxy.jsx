@@ -101,6 +101,9 @@ function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
     meshRef.current.scale.lerp(scaleVec, 0.1);
   });
 
+  // Don't render until we have something to show
+  if (!url) return null;
+
   return (
     <mesh
       ref={meshRef}
