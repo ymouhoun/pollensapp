@@ -30,28 +30,32 @@ function buildLayout(items) {
 
 // ─── Single image plane ───────────────────────────────────────────
 const scaleVec = new THREE.Vector3();
+const loader = new THREE.TextureLoader();
 
 function ImagePlane({ item, onClick, onContextMenu }) {
   const meshRef = useRef();
+  const matRef = useRef();
   const [hovered, setHovered] = useState(false);
-  const texture = useTexture(item.file_url);
+  const [dims, setDims] = useState({ w: item.size, h: item.size });
 
-  // Fix texture encoding
   useEffect(() => {
-    if (texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-    }
-  }, [texture]);
-
-  const { w, h } = useMemo(() => {
-    const img = texture?.image;
-    const aspect = img?.width && img?.height ? img.width / img.height : 1;
-    return {
-      w: item.size * (aspect >= 1 ? 1 : aspect),
-      h: item.size * (aspect >= 1 ? 1 / aspect : 1),
-    };
-  }, [texture, item.size]);
+    if (!item.file_url) return;
+    loader.load(item.file_url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      if (matRef.current) {
+        matRef.current.map = tex;
+        matRef.current.needsUpdate = true;
+      }
+      const img = tex.image;
+      if (img?.width && img?.height) {
+        const aspect = img.width / img.height;
+        setDims({
+          w: item.size * (aspect >= 1 ? 1 : aspect),
+          h: item.size * (aspect >= 1 ? 1 / aspect : 1),
+        });
+      }
+    });
+  }, [item.file_url, item.size]);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -69,8 +73,8 @@ function ImagePlane({ item, onClick, onContextMenu }) {
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
-      <planeGeometry args={[w, h]} />
-      <meshBasicMaterial map={texture ?? null} transparent toneMapped={false} side={THREE.DoubleSide} />
+      <planeGeometry args={[dims.w, dims.h]} />
+      <meshBasicMaterial ref={matRef} transparent toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
