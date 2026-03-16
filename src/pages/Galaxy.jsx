@@ -71,7 +71,7 @@ function ImagePlane({ item, onClick, onContextMenu }) {
       onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.DoubleSide} />
+      <meshBasicMaterial map={texture ?? null} transparent toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
