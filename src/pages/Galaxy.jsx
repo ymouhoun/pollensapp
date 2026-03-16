@@ -75,59 +75,64 @@ function loadTexture(url, onLoaded) {
 const scaleVec = new THREE.Vector3();
 
 function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
-  const meshRef = useRef();
-  const [hovered, setHovered] = useState(false);
-  const [dims, setDims] = useState({ w: size, h: size });
+  const { scene } = useThree();
+  const meshRef = useRef(null);
+  const hoveredRef = useRef(false);
 
-  // Create material once, entirely outside of R3F's prop system
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({
-    transparent: true,
-    side: THREE.DoubleSide,
-    toneMapped: false,
-  }), []);
-
-  // Attach material imperatively so applyProps never touches it
+  // Build the mesh imperatively — never touches R3F applyProps
   useEffect(() => {
-    if (meshRef.current) meshRef.current.material = mat;
-  }, [mat]);
+    const geo = new THREE.PlaneGeometry(size, size);
+    const mat = new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, toneMapped: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(lx, ly, 0);
+    scene.add(mesh);
+    meshRef.current = mesh;
 
-  useEffect(() => {
-    if (!url) return;
-    loadTexture(url, (tex) => {
-      mat.map = tex;
-      mat.needsUpdate = true;
-      const img = tex.image;
-      if (img?.width && img?.height) {
-        const a = img.width / img.height;
-        setDims({ w: size * (a >= 1 ? 1 : a), h: size * (a >= 1 ? 1 / a : 1) });
-      }
-    });
-    return () => { mat.map = null; mat.needsUpdate = true; };
-  }, [url, size, mat]);
+    if (url) {
+      loadTexture(url, (tex) => {
+        mat.map = tex;
+        mat.needsUpdate = true;
+        const img = tex.image;
+        if (img?.width && img?.height) {
+          const a = img.width / img.height;
+          const w = size * (a >= 1 ? 1 : a);
+          const h = size * (a >= 1 ? 1 / a : 1);
+          geo.dispose();
+          const newGeo = new THREE.PlaneGeometry(w, h);
+          mesh.geometry = newGeo;
+        }
+      });
+    }
 
-  useEffect(() => () => mat.dispose(), [mat]);
+    return () => {
+      scene.remove(mesh);
+      mesh.geometry.dispose();
+      mat.map = null;
+      mat.dispose();
+      meshRef.current = null;
+    };
+  }, [lx, ly, size, url, scene]);
 
   useFrame(() => {
-    if (!meshRef.current) return;
-    const t = hovered ? 1.06 : 1;
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const t = hoveredRef.current ? 1.06 : 1;
     scaleVec.set(t, t, t);
-    meshRef.current.scale.lerp(scaleVec, 0.1);
+    mesh.scale.lerp(scaleVec, 0.1);
   });
 
-  if (!url) return null;
+  // Handle pointer events via raycasting on the parent canvas is complex;
+  // instead we register the mesh in a click/context handler via a tiny overlay approach.
+  // For simplicity, attach userData so the Scene-level raycaster can dispatch events.
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    mesh.userData.onClick = onClick;
+    mesh.userData.onContextMenu = onContextMenu;
+    mesh.userData.setHovered = (v) => { hoveredRef.current = v; };
+  });
 
-  return (
-    <mesh
-      ref={meshRef}
-      position={[lx, ly, 0]}
-      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-      onContextMenu={(e) => { e.stopPropagation(); onContextMenu?.(e); }}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
-      onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
-    >
-      <planeGeometry key={`${dims.w.toFixed(3)}-${dims.h.toFixed(3)}`} args={[dims.w, dims.h]} />
-    </mesh>
-  );
+  return null;
 }
 
 // ─── Chunk ────────────────────────────────────────────────────────
