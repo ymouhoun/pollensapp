@@ -29,15 +29,17 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       >
         {/* Text input */}
         <div className="px-5 py-4">
-          <input
+          <textarea
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onGenerate()}
             placeholder="What do you want to create..."
             disabled={generating}
-            className="w-full bg-transparent text-white/75 placeholder-white/30 text-[15px] outline-none"
+            rows={1}
+            className="w-full bg-transparent text-white/75 placeholder-white/30 text-[15px] outline-none resize-none overflow-hidden"
             style={{ fontFamily: 'var(--font-sans)' }}
+            onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
         </div>
 
