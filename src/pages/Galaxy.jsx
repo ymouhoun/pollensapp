@@ -85,16 +85,15 @@ function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
   useEffect(() => {
     if (!url) return;
     loadTexture(url, (tex) => {
-      if (!matRef.current) return;
-      matRef.current.map = tex;
-      matRef.current.needsUpdate = true;
+      mat.map = tex;
+      mat.needsUpdate = true;
       const img = tex.image;
       if (img?.width && img?.height) {
         const a = img.width / img.height;
         setDims({ w: size * (a >= 1 ? 1 : a), h: size * (a >= 1 ? 1 / a : 1) });
       }
     });
-  }, [url, size]);
+  }, [url, size, mat]);
 
   useFrame(() => {
     if (!meshRef.current) return;
