@@ -1,5 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -7,9 +6,11 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
-const CHUNK_SIZE = 30;
-const RENDER_RADIUS = 1; // chunks around camera to keep alive
-const PLANES_PER_CHUNK = 6;
+const CHUNK_SIZE = 40;
+const RENDER_RADIUS = 1;        // chunks around camera (3×3 = 9 chunks)
+const PLANES_PER_CHUNK = 5;
+const MIN_Z = 4;
+const MAX_Z = 120;
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
@@ -21,16 +22,16 @@ function hashChunk(cx, cy) {
   return (cx * 73856093) ^ (cy * 19349663);
 }
 
-// ─── Chunk layout generator ───────────────────────────────────────
-const chunkCache = new Map();
-const MAX_CACHE = 128;
+// ─── Chunk layout cache (LRU) ─────────────────────────────────────
+const MAX_CACHE = 256;
+const planeCache = new Map();
 
-function generateChunkLayout(cx, cy, totalItems) {
+function generateChunkPlanes(cx, cy, totalItems) {
   const key = `${cx},${cy}`;
-  if (chunkCache.has(key)) {
-    const v = chunkCache.get(key);
-    chunkCache.delete(key);
-    chunkCache.set(key, v);
+  if (planeCache.has(key)) {
+    const v = planeCache.get(key);
+    planeCache.delete(key);
+    planeCache.set(key, v);
     return v;
   }
 
@@ -39,18 +40,19 @@ function generateChunkLayout(cx, cy, totalItems) {
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 997;
     const r = (n) => seededRandom(s + n);
+    const size = 10 + r(4) * 10;
     planes.push({
       id: `${cx}-${cy}-${i}`,
-      lx: cx * CHUNK_SIZE + r(0) * CHUNK_SIZE,
-      ly: cy * CHUNK_SIZE + r(1) * CHUNK_SIZE,
-      size: 1.4 + r(2) * 2.2,
+      x: cx * CHUNK_SIZE + r(0) * CHUNK_SIZE,
+      y: cy * CHUNK_SIZE + r(1) * CHUNK_SIZE,
+      size,
       mediaIndex: Math.abs(Math.floor(r(3) * 1_000_000)),
     });
   }
 
-  chunkCache.set(key, planes);
-  while (chunkCache.size > MAX_CACHE) {
-    chunkCache.delete(chunkCache.keys().next().value);
+  planeCache.set(key, planes);
+  while (planeCache.size > MAX_CACHE) {
+    planeCache.delete(planeCache.keys().next().value);
   }
   return planes;
 }
@@ -59,188 +61,175 @@ function generateChunkLayout(cx, cy, totalItems) {
 const loader = new THREE.TextureLoader();
 const texCache = new Map();
 
-function loadTexture(url, onLoaded) {
-  if (texCache.has(url)) {
-    onLoaded(texCache.get(url));
-    return;
-  }
+function loadTexture(url, cb) {
+  if (texCache.has(url)) { cb(texCache.get(url)); return; }
   loader.load(url, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     texCache.set(url, tex);
-    onLoaded(tex);
+    cb(tex);
   });
 }
 
-// ─── Image Plane ──────────────────────────────────────────────────
-const scaleVec = new THREE.Vector3();
+// ─── Main Galaxy Component ────────────────────────────────────────
+export default function Galaxy({ onSelectItem }) {
+  const canvasRef = useRef(null);
+  const stateRef = useRef(null); // holds all Three.js state
+  const [contextMenu, setContextMenu] = React.useState(null);
+  const chunkMeshesRef = useRef(new Map()); // key -> [meshes]
+  const activeChunksRef = useRef(new Set());
 
-function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
-  const { scene } = useThree();
-  const meshRef = useRef(null);
-  const hoveredRef = useRef(false);
+  const { data: mediaItems = [] } = useQuery({
+    queryKey: ['galaxy-items'],
+    queryFn: () => base44.entities.MediaItem.list('-created_date', 500),
+  });
 
-  // Build the mesh imperatively — never touches R3F applyProps
-  useEffect(() => {
-    const geo = new THREE.PlaneGeometry(size, size);
-    const mat = new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, toneMapped: false });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(lx, ly, 0);
-    scene.add(mesh);
-    meshRef.current = mesh;
+  const media = useMemo(() =>
+    mediaItems.filter(i => !i.is_forgotten && i.file_url && (i.content_type === 'image' || i.content_type === 'video')),
+    [mediaItems]
+  );
+  const mediaRef = useRef(media);
+  useEffect(() => { mediaRef.current = media; }, [media]);
 
-    if (url) {
-      loadTexture(url, (tex) => {
-        mat.map = tex;
-        mat.needsUpdate = true;
+  // ── Chunk management ────────────────────────────────────────────
+  const spawnChunk = useCallback((cx, cy) => {
+    const key = `${cx},${cy}`;
+    if (chunkMeshesRef.current.has(key)) return;
+
+    const st = stateRef.current;
+    if (!st || !mediaRef.current.length) return;
+
+    const planes = generateChunkPlanes(cx, cy, mediaRef.current.length);
+    const meshes = [];
+
+    planes.forEach((p) => {
+      const item = mediaRef.current[p.mediaIndex % mediaRef.current.length];
+      if (!item?.file_url) return;
+
+      const geo = new THREE.PlaneGeometry(p.size, p.size);
+      const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(p.x, p.y, 0);
+      mesh.userData.item = item;
+      st.scene.add(mesh);
+      meshes.push(mesh);
+
+      loadTexture(item.file_url, (tex) => {
         const img = tex.image;
         if (img?.width && img?.height) {
           const a = img.width / img.height;
-          const w = size * (a >= 1 ? 1 : a);
-          const h = size * (a >= 1 ? 1 / a : 1);
+          const w = p.size * (a >= 1 ? 1 : a);
+          const h = p.size * (a >= 1 ? 1 / a : 1);
           geo.dispose();
-          const newGeo = new THREE.PlaneGeometry(w, h);
-          mesh.geometry = newGeo;
+          mesh.geometry = new THREE.PlaneGeometry(w, h);
         }
+        mat.map = tex;
+        mat.needsUpdate = true;
+        // Fade in
+        mat.opacity = 0;
+        mesh.userData.fadeIn = true;
       });
-    }
+    });
 
-    return () => {
-      scene.remove(mesh);
-      mesh.geometry.dispose();
-      mat.map = null;
-      mat.dispose();
-      meshRef.current = null;
-    };
-  }, [lx, ly, size, url, scene]);
+    chunkMeshesRef.current.set(key, meshes);
+  }, []);
 
-  useFrame(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    const t = hoveredRef.current ? 1.06 : 1;
-    scaleVec.set(t, t, t);
-    mesh.scale.lerp(scaleVec, 0.1);
-  });
+  const destroyChunk = useCallback((key) => {
+    const st = stateRef.current;
+    if (!st) return;
+    const meshes = chunkMeshesRef.current.get(key);
+    if (!meshes) return;
+    meshes.forEach((m) => {
+      st.scene.remove(m);
+      m.geometry.dispose();
+      m.material.dispose();
+    });
+    chunkMeshesRef.current.delete(key);
+  }, []);
 
-  // Handle pointer events via raycasting on the parent canvas is complex;
-  // instead we register the mesh in a click/context handler via a tiny overlay approach.
-  // For simplicity, attach userData so the Scene-level raycaster can dispatch events.
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    mesh.userData.onClick = onClick;
-    mesh.userData.onContextMenu = onContextMenu;
-    mesh.userData.setHovered = (v) => { hoveredRef.current = v; };
-  });
+  const syncChunks = useCallback((camX, camY) => {
+    const cx = Math.floor(camX / CHUNK_SIZE);
+    const cy = Math.floor(camY / CHUNK_SIZE);
+    const needed = new Set();
 
-  return null;
-}
-
-// ─── Chunk ────────────────────────────────────────────────────────
-function Chunk({ cx, cy, media, onClickItem, onContextMenu }) {
-  const [planes, setPlanes] = useState([]);
-
-  useEffect(() => {
-    if (!media.length) return;
-    const run = () => {
-      const layout = generateChunkLayout(cx, cy, media.length);
-      const resolved = layout.map((p) => ({
-        ...p,
-        url: media[p.mediaIndex % media.length]?.file_url,
-        item: media[p.mediaIndex % media.length],
-      }));
-      setPlanes(resolved);
-    };
-
-    if (typeof requestIdleCallback !== 'undefined') {
-      const id = requestIdleCallback(run, { timeout: 100 });
-      return () => cancelIdleCallback(id);
-    }
-    const id = setTimeout(run, 0);
-    return () => clearTimeout(id);
-  }, [cx, cy, media]);
-
-  return (
-    <>
-      {planes.map((p) => (
-        <ImagePlane
-          key={p.id}
-          lx={p.lx}
-          ly={p.ly}
-          size={p.size}
-          url={p.url}
-          onClick={() => onClickItem?.(p.item)}
-          onContextMenu={(e, _) => onContextMenu?.(e, p.item)}
-        />
-      ))}
-    </>
-  );
-}
-
-// ─── Camera controller ────────────────────────────────────────────
-function CameraController({ onCameraChunkChange }) {
-  const { camera, gl } = useThree();
-  const dragRef = useRef({ active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0 });
-  const pinchRef = useRef({ active: false, lastDist: 0 });
-  const lastChunkRef = useRef({ cx: null, cy: null });
-
-  useEffect(() => {
-    camera.position.set(0, 0, 18);
-    camera.near = 0.01;
-    camera.far = 2000;
-    camera.updateProjectionMatrix();
-  }, [camera]);
-
-  const worldDelta = useCallback((dxS, dyS) => {
-    const fov = camera.fov * (Math.PI / 180);
-    const h = 2 * Math.tan(fov / 2) * camera.position.z;
-    const w = h * camera.aspect;
-    const el = gl.domElement;
-    return { dx: -(dxS / el.clientWidth) * w, dy: (dyS / el.clientHeight) * h };
-  }, [camera, gl]);
-
-  useFrame(() => {
-    const d = dragRef.current;
-    if (!d.active) {
-      if (Math.abs(d.vx) > 0.001 || Math.abs(d.vy) > 0.001) {
-        camera.position.x += d.vx;
-        camera.position.y += d.vy;
-        d.vx *= 0.9;
-        d.vy *= 0.9;
+    for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++) {
+      for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++) {
+        needed.add(`${cx + dx},${cy + dy}`);
       }
     }
-    // Notify chunk change
-    const cx = Math.floor(camera.position.x / CHUNK_SIZE);
-    const cy = Math.floor(camera.position.y / CHUNK_SIZE);
-    const last = lastChunkRef.current;
-    if (cx !== last.cx || cy !== last.cy) {
-      last.cx = cx; last.cy = cy;
-      onCameraChunkChange(cx, cy);
-    }
-  });
 
+    // Spawn new
+    needed.forEach((key) => {
+      if (!chunkMeshesRef.current.has(key)) {
+        const [kcx, kcy] = key.split(',').map(Number);
+        spawnChunk(kcx, kcy);
+      }
+    });
+
+    // Destroy old
+    chunkMeshesRef.current.forEach((_, key) => {
+      if (!needed.has(key)) destroyChunk(key);
+    });
+
+    activeChunksRef.current = needed;
+  }, [spawnChunk, destroyChunk]);
+
+  // ── Three.js init ────────────────────────────────────────────────
   useEffect(() => {
-    const el = gl.domElement;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const down = (e) => {
-      const d = dragRef.current;
-      d.active = true; d.startX = e.clientX; d.startY = e.clientY;
-      d.camX = camera.position.x; d.camY = camera.position.y;
-      d.vx = 0; d.vy = 0;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 5000);
+    camera.position.set(0, 0, 60);
+
+    stateRef.current = { renderer, scene, camera };
+
+    // ── Input state ──
+    const drag = { active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0 };
+    const pinch = { active: false, lastDist: 0 };
+    let lastChunkCX = null, lastChunkCY = null;
+
+    const worldDelta = (dxS, dyS) => {
+      const fov = camera.fov * (Math.PI / 180);
+      const h = 2 * Math.tan(fov / 2) * camera.position.z;
+      const w = h * camera.aspect;
+      return { dx: -(dxS / canvas.clientWidth) * w, dy: (dyS / canvas.clientHeight) * h };
     };
-    const move = (e) => {
-      const d = dragRef.current;
-      if (!d.active) return;
-      const { dx, dy } = worldDelta(e.clientX - d.startX, e.clientY - d.startY);
-      const nx = d.camX + dx, ny = d.camY + dy;
-      d.vx = nx - camera.position.x; d.vy = ny - camera.position.y;
-      camera.position.x = nx; camera.position.y = ny;
+
+    // ── Event handlers ──
+    const onMouseDown = (e) => {
+      drag.active = true;
+      drag.startX = e.clientX; drag.startY = e.clientY;
+      drag.camX = camera.position.x; drag.camY = camera.position.y;
+      drag.vx = 0; drag.vy = 0;
+      drag.moved = false;
     };
-    const up = () => { dragRef.current.active = false; };
-    const wheel = (e) => {
+    const onMouseMove = (e) => {
+      if (!drag.active) return;
+      const { dx, dy } = worldDelta(e.clientX - drag.startX, e.clientY - drag.startY);
+      const nx = drag.camX + dx, ny = drag.camY + dy;
+      drag.vx = nx - camera.position.x;
+      drag.vy = ny - camera.position.y;
+      camera.position.x = nx;
+      camera.position.y = ny;
+      drag.moved = true;
+    };
+    const onMouseUp = (e) => {
+      if (!drag.moved) {
+        // treat as click — raycast
+        handleClick(e.clientX, e.clientY);
+      }
+      drag.active = false;
+    };
+    const onWheel = (e) => {
       e.preventDefault();
       const factor = e.deltaY > 0 ? 1.08 : 0.93;
-      const newZ = Math.max(2, Math.min(80, camera.position.z * factor));
-      const rect = el.getBoundingClientRect();
+      const newZ = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z * factor));
+      const rect = canvas.getBoundingClientRect();
       const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       const fov = camera.fov * (Math.PI / 180);
@@ -254,179 +243,167 @@ function CameraController({ onCameraChunkChange }) {
       camera.position.z = newZ;
     };
 
-    const tstart = (e) => {
+    const onTouchStart = (e) => {
       if (e.touches.length === 1) {
-        const d = dragRef.current;
-        d.active = true; d.startX = e.touches[0].clientX; d.startY = e.touches[0].clientY;
-        d.camX = camera.position.x; d.camY = camera.position.y;
-        d.vx = 0; d.vy = 0;
+        drag.active = true; drag.moved = false;
+        drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY;
+        drag.camX = camera.position.x; drag.camY = camera.position.y;
+        drag.vx = 0; drag.vy = 0;
       } else if (e.touches.length === 2) {
-        dragRef.current.active = false;
+        drag.active = false;
         const ddx = e.touches[0].clientX - e.touches[1].clientX;
         const ddy = e.touches[0].clientY - e.touches[1].clientY;
-        pinchRef.current = { active: true, lastDist: Math.sqrt(ddx * ddx + ddy * ddy) };
+        pinch.active = true;
+        pinch.lastDist = Math.sqrt(ddx * ddx + ddy * ddy);
       }
     };
-    const tmove = (e) => {
+    const onTouchMove = (e) => {
       e.preventDefault();
-      if (e.touches.length === 1 && dragRef.current.active) {
-        const d = dragRef.current;
-        const { dx, dy } = worldDelta(e.touches[0].clientX - d.startX, e.touches[0].clientY - d.startY);
-        const nx = d.camX + dx, ny = d.camY + dy;
-        d.vx = nx - camera.position.x; d.vy = ny - camera.position.y;
+      if (e.touches.length === 1 && drag.active) {
+        const { dx, dy } = worldDelta(e.touches[0].clientX - drag.startX, e.touches[0].clientY - drag.startY);
+        const nx = drag.camX + dx, ny = drag.camY + dy;
+        drag.vx = nx - camera.position.x; drag.vy = ny - camera.position.y;
         camera.position.x = nx; camera.position.y = ny;
-      } else if (e.touches.length === 2 && pinchRef.current.active) {
+        drag.moved = true;
+      } else if (e.touches.length === 2 && pinch.active) {
         const ddx = e.touches[0].clientX - e.touches[1].clientX;
         const ddy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-        camera.position.z = Math.max(2, Math.min(80, camera.position.z * (pinchRef.current.lastDist / dist)));
-        pinchRef.current.lastDist = dist;
+        camera.position.z = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z * (pinch.lastDist / dist)));
+        pinch.lastDist = dist;
       }
     };
-    const tend = () => { dragRef.current.active = false; pinchRef.current.active = false; };
+    const onTouchEnd = () => { drag.active = false; pinch.active = false; };
 
-    el.addEventListener('mousedown', down);
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-    el.addEventListener('wheel', wheel, { passive: false });
-    el.addEventListener('touchstart', tstart, { passive: false });
-    el.addEventListener('touchmove', tmove, { passive: false });
-    el.addEventListener('touchend', tend);
-    return () => {
-      el.removeEventListener('mousedown', down);
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      el.removeEventListener('wheel', wheel);
-      el.removeEventListener('touchstart', tstart);
-      el.removeEventListener('touchmove', tmove);
-      el.removeEventListener('touchend', tend);
+    // ── Context menu ──
+    const onContextMenu = (e) => {
+      e.preventDefault();
+      const hit = raycast(e.clientX, e.clientY);
+      if (hit) setContextMenu({ item: hit.userData.item, x: e.clientX, y: e.clientY });
     };
-  }, [camera, gl, worldDelta]);
 
-  return null;
-}
-
-// ─── Raycaster event dispatcher ───────────────────────────────────
-function PointerDispatcher({ onContextMenu }) {
-  const { camera, scene, gl } = useThree();
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
-
-  useEffect(() => {
-    const el = gl.domElement;
-    const getNDC = (clientX, clientY) => {
-      const rect = el.getBoundingClientRect();
-      return new THREE.Vector2(
+    const raycast = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
         ((clientX - rect.left) / rect.width) * 2 - 1,
         -((clientY - rect.top) / rect.height) * 2 + 1
       );
+      const rc = new THREE.Raycaster();
+      rc.setFromCamera(ndc, camera);
+      const hits = rc.intersectObjects(scene.children, false);
+      return hits.find(h => h.object.userData.item)?.object ?? null;
     };
 
-    const getHit = (clientX, clientY) => {
-      raycaster.setFromCamera(getNDC(clientX, clientY), camera);
-      const hits = raycaster.intersectObjects(scene.children, false);
-      return hits.find(h => h.object.userData.onClick || h.object.userData.onContextMenu) || null;
+    const handleClick = (clientX, clientY) => {
+      const hit = raycast(clientX, clientY);
+      if (hit?.userData.item) onSelectItem?.(hit.userData.item);
     };
 
-    const handleClick = (e) => {
-      const hit = getHit(e.clientX, e.clientY);
-      if (hit?.object.userData.onClick) hit.object.userData.onClick();
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd);
+    canvas.addEventListener('contextmenu', onContextMenu);
+
+    // ── Resize ──
+    const onResize = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
     };
-    const handleContext = (e) => {
-      e.preventDefault();
-      const hit = getHit(e.clientX, e.clientY);
-      if (hit?.object.userData.onContextMenu) hit.object.userData.onContextMenu(e);
-    };
+    const ro = new ResizeObserver(onResize);
+    ro.observe(canvas);
 
-    let lastMove = { x: 0, y: 0 };
-    const handleMove = (e) => {
-      lastMove = { x: e.clientX, y: e.clientY };
-      const hit = getHit(e.clientX, e.clientY);
-      scene.children.forEach(obj => {
-        if (obj.userData.setHovered) obj.userData.setHovered(false);
-      });
-      if (hit?.object.userData.setHovered) hit.object.userData.setHovered(true);
-    };
+    // ── Animation loop ──
+    let rafId;
+    const animate = () => {
+      rafId = requestAnimationFrame(animate);
 
-    el.addEventListener('click', handleClick);
-    el.addEventListener('contextmenu', handleContext);
-    el.addEventListener('mousemove', handleMove);
-    return () => {
-      el.removeEventListener('click', handleClick);
-      el.removeEventListener('contextmenu', handleContext);
-      el.removeEventListener('mousemove', handleMove);
-    };
-  }, [camera, scene, gl, raycaster, onContextMenu]);
-
-  return null;
-}
-
-// ─── Scene ────────────────────────────────────────────────────────
-function Scene({ media, onClickItem, onContextMenu }) {
-  const [camChunk, setCamChunk] = useState({ cx: 0, cy: 0 });
-
-  const chunks = useMemo(() => {
-    const list = [];
-    for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++) {
-      for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++) {
-        const cx = camChunk.cx + dx;
-        const cy = camChunk.cy + dy;
-        list.push({ key: `${cx},${cy}`, cx, cy });
+      // Inertia
+      if (!drag.active && (Math.abs(drag.vx) > 0.001 || Math.abs(drag.vy) > 0.001)) {
+        camera.position.x += drag.vx;
+        camera.position.y += drag.vy;
+        drag.vx *= 0.9;
+        drag.vy *= 0.9;
       }
-    }
-    return list;
-  }, [camChunk]);
 
-  const handleChunkChange = useCallback((cx, cy) => {
-    setCamChunk(prev => (prev.cx === cx && prev.cy === cy ? prev : { cx, cy }));
-  }, []);
+      // Chunk sync
+      const cx = Math.floor(camera.position.x / CHUNK_SIZE);
+      const cy = Math.floor(camera.position.y / CHUNK_SIZE);
+      if (cx !== lastChunkCX || cy !== lastChunkCY) {
+        lastChunkCX = cx; lastChunkCY = cy;
+        syncChunks(camera.position.x, camera.position.y);
+      }
 
-  return (
-    <>
-      <CameraController onCameraChunkChange={handleChunkChange} />
-      <PointerDispatcher onContextMenu={onContextMenu} />
-      {chunks.map(({ key, cx, cy }) => (
-        <Chunk
-          key={key}
-          cx={cx}
-          cy={cy}
-          media={media}
-          onClickItem={onClickItem}
-          onContextMenu={onContextMenu}
-        />
-      ))}
-    </>
-  );
-}
+      // Fade in meshes
+      scene.children.forEach((m) => {
+        if (m.userData.fadeIn) {
+          m.material.opacity = Math.min(1, m.material.opacity + 0.04);
+          if (m.material.opacity >= 1) m.userData.fadeIn = false;
+        }
+      });
 
-// ─── Main page ────────────────────────────────────────────────────
-export default function Galaxy({ onSelectItem }) {
-  const [contextMenu, setContextMenu] = useState(null);
-  const [randomizeSeed, setRandomizeSeed] = useState(0);
+      renderer.render(scene, camera);
+    };
+    animate();
 
-  const { data: mediaItems = [] } = useQuery({
-    queryKey: ['galaxy-items'],
-    queryFn: () => base44.entities.MediaItem.list('-created_date', 500),
-  });
+    // Initial chunks
+    syncChunks(0, 0);
 
-  const media = useMemo(() =>
-    mediaItems.filter(i => !i.is_forgotten && i.file_url && (i.content_type === 'image' || i.content_type === 'video')),
-    [mediaItems]
-  );
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+      canvas.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+      canvas.removeEventListener('contextmenu', onContextMenu);
+      // cleanup all meshes
+      chunkMeshesRef.current.forEach((meshes) => {
+        meshes.forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
+      });
+      chunkMeshesRef.current.clear();
+      renderer.dispose();
+      stateRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Re-sync chunks when media loads
+  useEffect(() => {
+    if (!media.length || !stateRef.current) return;
+    // Destroy existing chunks so they respawn with real images
+    chunkMeshesRef.current.forEach((meshes, key) => {
+      const st = stateRef.current;
+      meshes.forEach((m) => { st.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+    });
+    chunkMeshesRef.current.clear();
+    const cam = stateRef.current.camera;
+    syncChunks(cam.position.x, cam.position.y);
+  }, [media, syncChunks]);
+
+  // Randomize
   useEffect(() => {
     const handler = () => {
-      chunkCache.clear();
-      setRandomizeSeed(s => s + 1);
+      planeCache.clear();
+      if (!stateRef.current) return;
+      chunkMeshesRef.current.forEach((meshes) => {
+        const st = stateRef.current;
+        meshes.forEach((m) => { st.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      });
+      chunkMeshesRef.current.clear();
+      const cam = stateRef.current.camera;
+      syncChunks(cam.position.x, cam.position.y);
     };
     window.addEventListener('randomize-memory', handler);
     return () => window.removeEventListener('randomize-memory', handler);
-  }, []);
-
-  const handleContextMenu = useCallback((e, item) => {
-    if (!item) return;
-    const native = e.nativeEvent || e;
-    setContextMenu({ item, x: native.clientX, y: native.clientY });
-  }, []);
+  }, [syncChunks]);
 
   return (
     <div className="fixed inset-0 bg-background">
@@ -441,19 +418,10 @@ export default function Galaxy({ onSelectItem }) {
         drag · scroll to zoom
       </div>
 
-      <Canvas
-        key={randomizeSeed}
-        style={{ width: '100%', height: '100%' }}
-        camera={{ position: [0, 0, 18], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        <Scene
-          media={media}
-          onClickItem={onSelectItem}
-          onContextMenu={handleContextMenu}
-        />
-      </Canvas>
+      <canvas
+        ref={canvasRef}
+        style={{ width: '100%', height: '100%', display: 'block', cursor: 'grab' }}
+      />
 
       {contextMenu && (
         <ItemContextMenu
