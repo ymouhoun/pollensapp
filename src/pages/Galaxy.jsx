@@ -306,6 +306,60 @@ function CameraController({ onCameraChunkChange }) {
   return null;
 }
 
+// ─── Raycaster event dispatcher ───────────────────────────────────
+function PointerDispatcher({ onContextMenu }) {
+  const { camera, scene, gl } = useThree();
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const getNDC = (clientX, clientY) => {
+      const rect = el.getBoundingClientRect();
+      return new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1
+      );
+    };
+
+    const getHit = (clientX, clientY) => {
+      raycaster.setFromCamera(getNDC(clientX, clientY), camera);
+      const hits = raycaster.intersectObjects(scene.children, false);
+      return hits.find(h => h.object.userData.onClick || h.object.userData.onContextMenu) || null;
+    };
+
+    const handleClick = (e) => {
+      const hit = getHit(e.clientX, e.clientY);
+      if (hit?.object.userData.onClick) hit.object.userData.onClick();
+    };
+    const handleContext = (e) => {
+      e.preventDefault();
+      const hit = getHit(e.clientX, e.clientY);
+      if (hit?.object.userData.onContextMenu) hit.object.userData.onContextMenu(e);
+    };
+
+    let lastMove = { x: 0, y: 0 };
+    const handleMove = (e) => {
+      lastMove = { x: e.clientX, y: e.clientY };
+      const hit = getHit(e.clientX, e.clientY);
+      scene.children.forEach(obj => {
+        if (obj.userData.setHovered) obj.userData.setHovered(false);
+      });
+      if (hit?.object.userData.setHovered) hit.object.userData.setHovered(true);
+    };
+
+    el.addEventListener('click', handleClick);
+    el.addEventListener('contextmenu', handleContext);
+    el.addEventListener('mousemove', handleMove);
+    return () => {
+      el.removeEventListener('click', handleClick);
+      el.removeEventListener('contextmenu', handleContext);
+      el.removeEventListener('mousemove', handleMove);
+    };
+  }, [camera, scene, gl, raycaster, onContextMenu]);
+
+  return null;
+}
+
 // ─── Scene ────────────────────────────────────────────────────────
 function Scene({ media, onClickItem, onContextMenu }) {
   const [camChunk, setCamChunk] = useState({ cx: 0, cy: 0 });
@@ -329,6 +383,7 @@ function Scene({ media, onClickItem, onContextMenu }) {
   return (
     <>
       <CameraController onCameraChunkChange={handleChunkChange} />
+      <PointerDispatcher onContextMenu={onContextMenu} />
       {chunks.map(({ key, cx, cy }) => (
         <Chunk
           key={key}
