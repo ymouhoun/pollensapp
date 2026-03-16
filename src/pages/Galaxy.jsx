@@ -102,20 +102,19 @@ function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
     meshRef.current.scale.lerp(scaleVec, 0.1);
   });
 
-  // Don't render until we have something to show
   if (!url) return null;
 
   return (
     <mesh
       ref={meshRef}
       position={[lx, ly, 0]}
+      material={mat}
       onClick={(e) => { e.stopPropagation(); onClick?.({ lx, ly, url }); }}
       onContextMenu={(e) => { e.stopPropagation(); onContextMenu?.(e, { lx, ly, url }); }}
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
       <planeGeometry key={`${dims.w.toFixed(3)}-${dims.h.toFixed(3)}`} args={[dims.w, dims.h]} />
-      <meshBasicMaterial ref={matRef} transparent toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
