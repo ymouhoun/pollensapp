@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
