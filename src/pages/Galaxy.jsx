@@ -9,8 +9,8 @@ import ItemContextMenu from '@/components/memory/ItemContextMenu';
 const CHUNK_SIZE = 400;          // world units per chunk
 const RENDER_RADIUS = 3;         // chunks in each direction (7×7 = 49 chunks)
 const PLANES_PER_CHUNK = 8;
-const MIN_ZOOM = 0.02;           // very zoomed out
-const MAX_ZOOM = 8;              // very zoomed in
+const MIN_ZOOM = 0.005;          // very zoomed out
+const MAX_ZOOM = 20;             // very zoomed in
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
