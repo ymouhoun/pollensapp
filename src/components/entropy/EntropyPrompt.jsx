@@ -28,16 +28,29 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         }}
       >
         {/* Text input */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 relative">
+          {!prompt && (
+            <motion.span
+              className="absolute top-4 left-5 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)',
+                backgroundSize: '200% 100%',
+                fontFamily: 'var(--font-sans)',
+              }}
+              animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+            >
+              What do you want to create...
+            </motion.span>
+          )}
           <textarea
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onGenerate()}
-            placeholder="What do you want to create..."
             disabled={generating}
             rows={1}
-            className="w-full bg-transparent text-white/75 placeholder-white/30 text-[15px] outline-none resize-none overflow-hidden"
+            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden"
             style={{ fontFamily: 'var(--font-sans)' }}
             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
