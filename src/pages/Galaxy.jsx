@@ -6,9 +6,9 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
-const CHUNK_SIZE = 600;          // world units per chunk
-const RENDER_RADIUS = 2;         // chunks in each direction
-const PLANES_PER_CHUNK = 6;
+const CHUNK_SIZE = 400;          // world units per chunk
+const RENDER_RADIUS = 3;         // chunks in each direction (7×7 = 49 chunks)
+const PLANES_PER_CHUNK = 8;
 const MIN_ZOOM = 0.02;           // very zoomed out
 const MAX_ZOOM = 8;              // very zoomed in
 
