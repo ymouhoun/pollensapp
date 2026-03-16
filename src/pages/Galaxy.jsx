@@ -200,7 +200,8 @@ export default function Galaxy({ onSelectItem }) {
     // ── Pointer / input state ──
     const drag = { active: false, startX: 0, startY: 0, camX: 0, camY: 0, vx: 0, vy: 0, moved: false };
     const pinch = { active: false, lastDist: 0, midX: 0, midY: 0 };
-    let lastCX = null, lastCY = null, lastZoomChunk = null;
+    let lastCX = null, lastCY = null;
+    let lastZoomChunk = null;
 
     // Screen px → world coords
     const screenToWorld = (sx, sy) => {
