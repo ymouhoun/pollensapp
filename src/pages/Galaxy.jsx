@@ -73,7 +73,7 @@ function ImagePlane({ item, onClick, onContextMenu }) {
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
-      <planeGeometry args={[dims.w, dims.h]} />
+      <planeGeometry key={`${dims.w}-${dims.h}`} args={[dims.w, dims.h]} />
       <meshBasicMaterial ref={matRef} transparent toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
