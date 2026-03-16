@@ -74,13 +74,22 @@ function loadTexture(url, onLoaded) {
 // ─── Image Plane ──────────────────────────────────────────────────
 const scaleVec = new THREE.Vector3();
 
-const EMPTY_MAT = new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, toneMapped: false });
-
 function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
   const [dims, setDims] = useState({ w: size, h: size });
-  const [mat] = useState(() => EMPTY_MAT.clone());
+
+  // Create material once, entirely outside of R3F's prop system
+  const mat = useMemo(() => new THREE.MeshBasicMaterial({
+    transparent: true,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  }), []);
+
+  // Attach material imperatively so applyProps never touches it
+  useEffect(() => {
+    if (meshRef.current) meshRef.current.material = mat;
+  }, [mat]);
 
   useEffect(() => {
     if (!url) return;
@@ -93,7 +102,10 @@ function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
         setDims({ w: size * (a >= 1 ? 1 : a), h: size * (a >= 1 ? 1 / a : 1) });
       }
     });
+    return () => { mat.map = null; mat.needsUpdate = true; };
   }, [url, size, mat]);
+
+  useEffect(() => () => mat.dispose(), [mat]);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -108,9 +120,8 @@ function ImagePlane({ lx, ly, size, url, onClick, onContextMenu }) {
     <mesh
       ref={meshRef}
       position={[lx, ly, 0]}
-      material={mat}
-      onClick={(e) => { e.stopPropagation(); onClick?.({ lx, ly, url }); }}
-      onContextMenu={(e) => { e.stopPropagation(); onContextMenu?.(e, { lx, ly, url }); }}
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onContextMenu={(e) => { e.stopPropagation(); onContextMenu?.(e); }}
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
     >
