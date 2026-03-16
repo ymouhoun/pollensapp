@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
 const SAMPLERS = ['RES_2S', 'EULER', 'DPM++', 'DDIM'];
 const SCHEDULERS = ['KL_OPTIMAL', 'KARRAS', 'NORMAL', 'EXPONENTIAL'];
