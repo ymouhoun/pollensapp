@@ -372,18 +372,12 @@ export default function Galaxy({ onSelectItem }) {
         syncChunks(s);
       }
 
-      // Fade in / fade by depth per mesh
+      // Fade per mesh
       const camZ = s.basePos.z;
       const camCx = ccx, camCy = ccy, camCz = ccz;
 
       scene.children.forEach(m => {
         if (!m.userData.item) return;
-
-        // Fade in on load
-        if (m.userData.fadeIn) {
-          m.material.opacity = Math.min(m.material.opacity + 0.04, 1);
-          if (m.material.opacity >= 1) m.userData.fadeIn = false;
-        }
 
         // Distance-based fade (chunk grid distance)
         const dist = Math.max(
@@ -401,10 +395,12 @@ export default function Galaxy({ onSelectItem }) {
           ? 1
           : Math.max(0, 1 - (absDepth - DEPTH_FADE_START) / Math.max(DEPTH_FADE_END - DEPTH_FADE_START, 0.001));
 
-        const targetOpacity = gridFade * depthFade;
+        // Target opacity: 0 until texture loaded, then spatial fades apply
+        const hasTexture = !!m.material.map;
+        const targetOpacity = hasTexture ? gridFade * depthFade : 0;
 
-        if (m.userData.fadeIn) return; // let fade-in handle it
-        m.material.opacity += (targetOpacity - m.material.opacity) * 0.08;
+        // Smooth lerp — same rate for fade-in and fade-out, no flag needed
+        m.material.opacity += (targetOpacity - m.material.opacity) * 0.06;
       });
 
       renderer.render(scene, camera);
