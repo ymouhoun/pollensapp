@@ -263,8 +263,11 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     const onMouseUp = (e) => {
       canvas.style.cursor = 'grab';
       if (!drag.moved) {
-        const hit = raycast(e.clientX, e.clientY);
-        if (hit?.userData.item) onSelectItem?.(hit.userData.item);
+        // Don't raycast if click originated on a UI element (not the canvas itself)
+        if (e.target === canvas) {
+          const hit = raycast(e.clientX, e.clientY);
+          if (hit?.userData.item) onSelectItem?.(hit.userData.item);
+        }
       }
       drag.active = false;
     };
