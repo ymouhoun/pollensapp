@@ -6,6 +6,8 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
+let GLOBAL_SEED_OFFSET = 0; // incremented on each randomize
+
 const CHUNK_SIZE = 120;         // world units per chunk
 const RENDER_RADIUS = 2;        // chunks radius in X/Y
 const RENDER_DEPTH = 3;         // chunks depth in Z
