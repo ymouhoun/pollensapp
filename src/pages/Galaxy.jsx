@@ -225,6 +225,8 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     chunk.meshes.forEach(m => {
       s.scene.remove(m);
       m.geometry.dispose();
+      if (m.userData.videoEl) { m.userData.videoEl.pause(); m.userData.videoEl.src = ''; }
+      if (m.material.map) m.material.map.dispose();
       m.material.dispose();
       // Remove from activeMeshes
       const idx = s.activeMeshes.indexOf(m);
