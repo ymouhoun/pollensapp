@@ -210,6 +210,7 @@ export default function Galaxy({ onSelectItem }) {
     const s = stateRef.current;
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     s.renderer = renderer;
