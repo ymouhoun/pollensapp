@@ -211,9 +211,11 @@ export default function Galaxy({ onSelectItem }) {
     if (!canvas) return;
     const s = stateRef.current;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setClearColor(isDarkMode ? 0x000000 : 0xffffff, 1);
     s.renderer = renderer;
 
     const scene = new THREE.Scene();
