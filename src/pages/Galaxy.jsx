@@ -429,7 +429,7 @@ export default function Galaxy({ onSelectItem }) {
       meshes.forEach((m) => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
     });
     chunkMeshesRef.current.clear();
-    syncChunks(vpRef.current.x, vpRef.current.y);
+    syncChunks(vpRef.current.x, vpRef.current.y, vpRef.current.zoom);
   }, [media, syncChunks]);
 
   // Randomize event
