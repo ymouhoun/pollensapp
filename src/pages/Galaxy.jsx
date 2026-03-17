@@ -140,7 +140,13 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   // ── Chunk management ──────────────────────────────────────────
   function destroyAllChunks(s) {
     s.chunks.forEach(({ meshes }) => {
-      meshes.forEach(m => { s.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      meshes.forEach(m => {
+        s.scene.remove(m);
+        m.geometry.dispose();
+        if (m.userData.videoEl) { m.userData.videoEl.pause(); m.userData.videoEl.src = ''; }
+        if (m.material.map) m.material.map.dispose();
+        m.material.dispose();
+      });
     });
     s.chunks.clear();
     s.activeMeshes = [];
