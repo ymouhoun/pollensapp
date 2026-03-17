@@ -171,19 +171,43 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       meshes.push(mesh);
       s.activeMeshes.push(mesh);
 
-      loadTexture(item.file_url, (tex) => {
-        if (!mesh.parent) return;
-        const img = tex.image;
-        if (img?.width && img?.height) {
-          const a = img.width / img.height;
+      if (item.content_type === 'video') {
+        const vid = document.createElement('video');
+        vid.src = item.file_url;
+        vid.muted = true;
+        vid.loop = true;
+        vid.playsInline = true;
+        vid.autoplay = true;
+        vid.play().catch(() => {});
+        const tex = new THREE.VideoTexture(vid);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        mesh.userData.videoEl = vid;
+        // Set geometry once video metadata is loaded
+        vid.addEventListener('loadedmetadata', () => {
+          if (!mesh.parent) return;
+          const a = vid.videoWidth / vid.videoHeight;
           const w = a >= 1 ? p.size : p.size * a;
           const h = a >= 1 ? p.size / a : p.size;
           mesh.geometry.dispose();
           mesh.geometry = new THREE.PlaneGeometry(w, h);
-        }
+        }, { once: true });
         mat.map = tex;
         mat.needsUpdate = true;
-      });
+      } else {
+        loadTexture(item.file_url, (tex) => {
+          if (!mesh.parent) return;
+          const img = tex.image;
+          if (img?.width && img?.height) {
+            const a = img.width / img.height;
+            const w = a >= 1 ? p.size : p.size * a;
+            const h = a >= 1 ? p.size / a : p.size;
+            mesh.geometry.dispose();
+            mesh.geometry = new THREE.PlaneGeometry(w, h);
+          }
+          mat.map = tex;
+          mat.needsUpdate = true;
+        });
+      }
     });
 
     s.chunks.set(key, { meshes, cx, cy, cz });
