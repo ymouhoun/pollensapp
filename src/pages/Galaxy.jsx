@@ -172,7 +172,6 @@ export default function Galaxy({ onSelectItem }) {
         }
         mat.map = tex;
         mat.needsUpdate = true;
-        mesh.userData.fadeIn = true;
       });
     });
 
