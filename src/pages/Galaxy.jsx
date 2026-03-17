@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -6,18 +6,18 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
-let GLOBAL_SEED_OFFSET = 0; // incremented on each randomize
+let GLOBAL_SEED_OFFSET = 0;
 
-const CHUNK_SIZE = 120;         // world units per chunk
-const RENDER_RADIUS = 2;        // chunks radius in X/Y
-const RENDER_DEPTH = 3;         // chunks depth in Z
+const CHUNK_SIZE = 120;
+const RENDER_RADIUS = 2;
+const RENDER_DEPTH = 3;
 const PLANES_PER_CHUNK = 5;
 const DEPTH_FADE_START = 180;
 const DEPTH_FADE_END = 320;
 const CHUNK_FADE_MARGIN = 1.5;
 const RENDER_DISTANCE = RENDER_RADIUS;
+const OPACITY_THRESHOLD = 0.005; // skip lerp when close enough
 
-// chunk offsets: 5x5 grid × 7 depth layers = 175 chunks max
 const CHUNK_OFFSETS = [];
 for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
   for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++)
@@ -38,7 +38,7 @@ function hashString(str) {
   return Math.abs(h);
 }
 
-// ─── Chunk plane generation (deterministic + LRU cached) ──────────
+// ─── Chunk plane generation ───────────────────────────────────────
 const MAX_PLANE_CACHE = 256;
 const planeCache = new Map();
 
@@ -54,11 +54,9 @@ function generateChunkPlanes(cx, cy, cz) {
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 1000;
     const r = (n) => seededRandom(s + n);
-    // Size varies more dramatically on randomize
     const minSize = 8 + seededRandom(GLOBAL_SEED_OFFSET + i) * 8;
     const maxSize = 14 + seededRandom(GLOBAL_SEED_OFFSET + i + 500) * 28;
     const size = minSize + r(4) * (maxSize - minSize);
-    // Scatter density also varies
     const scatter = 0.55 + seededRandom(GLOBAL_SEED_OFFSET + i + 200) * 0.45;
     planes.push({
       id: `${cx}-${cy}-${cz}-${i}`,
@@ -77,7 +75,7 @@ function generateChunkPlanes(cx, cy, cz) {
 }
 
 // ─── Texture loader & LRU cache ───────────────────────────────────
-const MAX_TEX_CACHE = 200;
+const MAX_TEX_CACHE = 150;
 const texLoader = new THREE.TextureLoader();
 const texCache = new Map();
 
@@ -87,6 +85,9 @@ function loadTexture(url, cb) {
   }
   texLoader.load(url, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
+    // Reduce memory: use smaller mipmaps
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
     texCache.set(url, tex);
     while (texCache.size > MAX_TEX_CACHE) {
       const first = texCache.keys().next().value;
@@ -97,25 +98,25 @@ function loadTexture(url, cb) {
   });
 }
 
+// Reusable raycaster (avoid allocating on every click)
+const sharedRaycaster = new THREE.Raycaster();
+const sharedNDC = new THREE.Vector2();
+
 // ─── Main Component ───────────────────────────────────────────────
 export default function Galaxy({ onSelectItem, filteredMedia }) {
   const canvasRef = useRef(null);
   const stateRef = useRef({
-    // Camera base position in world space (moves with pan/zoom)
     basePos: new THREE.Vector3(0, 0, 0),
-    // Current chunk the camera is in
-    cx: 0, cy: 0, cz: 0,
-    // Active meshes: key → { meshes[], chunkCx, chunkCy, chunkCz }
     chunks: new Map(),
-    // Input state
+    // meshes list for fast per-frame iteration (avoids scene.children overhead)
+    activeMeshes: [],
     drag: { active: false, startX: 0, startY: 0, bx: 0, by: 0, vx: 0, vy: 0, moved: false },
     pinch: { active: false, lastDist: 0 },
-    // THREE objects (set after init)
     scene: null, camera: null, renderer: null,
     rafId: null,
     media: [],
   });
-  const [contextMenu, setContextMenu] = React.useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const { data: mediaItems = [] } = useQuery({
     queryKey: ['galaxy-items'],
@@ -131,7 +132,6 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   // Keep media ref in sync
   useEffect(() => {
     stateRef.current.media = media;
-    // Rebuild chunks with real media
     const s = stateRef.current;
     if (!s.scene || !media.length) return;
     destroyAllChunks(s);
@@ -144,6 +144,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       meshes.forEach(m => { s.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
     });
     s.chunks.clear();
+    s.activeMeshes = [];
   }
 
   function spawnChunk(s, cx, cy, cz) {
@@ -159,13 +160,17 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
       const geo = new THREE.PlaneGeometry(p.size, p.size);
       const mat = new THREE.MeshBasicMaterial({
-        transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false,
+        transparent: true, opacity: 0,
+        side: THREE.FrontSide, // FrontSide only — halves fragment work
+        toneMapped: false,
+        depthWrite: false, // transparent planes don't need depth writes
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(p.position);
-      mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz };
+      mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz, targetOpacity: 0 };
       s.scene.add(mesh);
       meshes.push(mesh);
+      s.activeMeshes.push(mesh);
 
       loadTexture(item.file_url, (tex) => {
         if (!mesh.parent) return;
@@ -188,7 +193,14 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   function destroyChunk(s, key) {
     const chunk = s.chunks.get(key);
     if (!chunk) return;
-    chunk.meshes.forEach(m => { s.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+    chunk.meshes.forEach(m => {
+      s.scene.remove(m);
+      m.geometry.dispose();
+      m.material.dispose();
+      // Remove from activeMeshes
+      const idx = s.activeMeshes.indexOf(m);
+      if (idx !== -1) s.activeMeshes.splice(idx, 1);
+    });
     s.chunks.delete(key);
   }
 
@@ -215,26 +227,24 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     if (!canvas) return;
     const s = stateRef.current;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    // antialias: false — big perf gain on high-DPI displays
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // cap at 1.5x
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     s.renderer = renderer;
 
     const scene = new THREE.Scene();
     s.scene = scene;
 
-    // Perspective camera — gives true 3D depth
     const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
-    camera.position.set(0, 0, 200); // start pulled back on Z
+    camera.position.set(0, 0, 200);
     s.camera = camera;
     s.basePos.set(0, 0, 0);
 
-    // ── Input handlers ──
     const screenToWorldDelta = (dx, dy) => {
-      // Convert screen delta to world units at current depth
       const fovRad = (camera.fov * Math.PI) / 180;
-      const depth = Math.abs(camera.position.z - 0); // approximate world plane depth
+      const depth = Math.abs(camera.position.z - 0);
       const heightAtDepth = 2 * Math.tan(fovRad / 2) * depth;
       const scale = heightAtDepth / canvas.clientHeight;
       return { wx: -dx * scale, wy: dy * scale };
@@ -262,21 +272,16 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
     const onMouseUp = (e) => {
       canvas.style.cursor = 'grab';
-      if (!drag.moved) {
-        // Don't raycast if click originated on a UI element (not the canvas itself)
-        if (e.target === canvas) {
-          const hit = raycast(e.clientX, e.clientY);
-          if (hit?.userData.item) onSelectItem?.(hit.userData.item);
-        }
+      if (!drag.moved && e.target === canvas) {
+        const hit = raycast(e.clientX, e.clientY);
+        if (hit?.userData.item) onSelectItem?.(hit.userData.item);
       }
       drag.active = false;
     };
 
     const onWheel = (e) => {
       e.preventDefault();
-      // Scroll moves camera forward/backward in Z (true depth)
-      const speed = 0.5;
-      s.basePos.z += e.deltaY * speed * 0.1;
+      s.basePos.z += e.deltaY * 0.05;
     };
 
     const onTouchStart = (e) => {
@@ -309,8 +314,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
         const ddx = e.touches[0].clientX - e.touches[1].clientX;
         const ddy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-        const delta = pinch.lastDist - dist;
-        s.basePos.z += delta * 0.3;
+        s.basePos.z += (pinch.lastDist - dist) * 0.3;
         pinch.lastDist = dist;
       }
     };
@@ -325,13 +329,12 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
     const raycast = (clientX, clientY) => {
       const rect = canvas.getBoundingClientRect();
-      const ndc = new THREE.Vector2(
+      sharedNDC.set(
         ((clientX - rect.left) / rect.width) * 2 - 1,
         -((clientY - rect.top) / rect.height) * 2 + 1
       );
-      const rc = new THREE.Raycaster();
-      rc.setFromCamera(ndc, camera);
-      const hits = rc.intersectObjects(scene.children, false);
+      sharedRaycaster.setFromCamera(sharedNDC, camera);
+      const hits = sharedRaycaster.intersectObjects(s.activeMeshes, false);
       return hits.find(h => h.object.userData.item)?.object ?? null;
     };
 
@@ -358,21 +361,17 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     const animate = () => {
       s.rafId = requestAnimationFrame(animate);
 
-      // Inertia (pan only)
-      if (!drag.active) {
-        if (Math.abs(drag.vx) > 0.001 || Math.abs(drag.vy) > 0.001) {
-          s.basePos.x += drag.vx;
-          s.basePos.y += drag.vy;
-          drag.vx *= 0.88;
-          drag.vy *= 0.88;
-        }
+      // Inertia
+      if (!drag.active && (Math.abs(drag.vx) > 0.001 || Math.abs(drag.vy) > 0.001)) {
+        s.basePos.x += drag.vx;
+        s.basePos.y += drag.vy;
+        drag.vx *= 0.88;
+        drag.vy *= 0.88;
       }
 
-      // Move camera to track basePos
       camera.position.set(s.basePos.x, s.basePos.y, s.basePos.z + 200);
       camera.lookAt(s.basePos.x, s.basePos.y, s.basePos.z);
 
-      // Sync chunks when camera crosses chunk boundary
       const ccx = Math.floor(s.basePos.x / CHUNK_SIZE);
       const ccy = Math.floor(s.basePos.y / CHUNK_SIZE);
       const ccz = Math.floor(s.basePos.z / CHUNK_SIZE);
@@ -381,36 +380,37 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
         syncChunks(s);
       }
 
-      // Fade per mesh
+      // Per-mesh fade — iterate activeMeshes (our own list, not scene.children)
       const camZ = s.basePos.z;
-      const camCx = ccx, camCy = ccy, camCz = ccz;
+      const meshes = s.activeMeshes;
+      for (let i = 0; i < meshes.length; i++) {
+        const m = meshes[i];
+        const ud = m.userData;
 
-      scene.children.forEach(m => {
-        if (!m.userData.item) return;
-
-        // Distance-based fade (chunk grid distance)
         const dist = Math.max(
-          Math.abs(m.userData.chunkCx - camCx),
-          Math.abs(m.userData.chunkCy - camCy),
-          Math.abs(m.userData.chunkCz - camCz),
+          Math.abs(ud.chunkCx - ccx),
+          Math.abs(ud.chunkCy - ccy),
+          Math.abs(ud.chunkCz - ccz),
         );
         const gridFade = dist <= RENDER_DISTANCE
           ? 1
-          : Math.max(0, 1 - (dist - RENDER_DISTANCE) / Math.max(CHUNK_FADE_MARGIN, 0.001));
+          : Math.max(0, 1 - (dist - RENDER_DISTANCE) / CHUNK_FADE_MARGIN);
 
-        // Depth fade (too far behind or ahead)
         const absDepth = Math.abs(m.position.z - camZ);
         const depthFade = absDepth <= DEPTH_FADE_START
           ? 1
-          : Math.max(0, 1 - (absDepth - DEPTH_FADE_START) / Math.max(DEPTH_FADE_END - DEPTH_FADE_START, 0.001));
+          : Math.max(0, 1 - (absDepth - DEPTH_FADE_START) / (DEPTH_FADE_END - DEPTH_FADE_START));
 
-        // Target opacity: 0 until texture loaded, then spatial fades apply
-        const hasTexture = !!m.material.map;
-        const targetOpacity = hasTexture ? gridFade * depthFade : 0;
+        const target = m.material.map ? gridFade * depthFade : 0;
 
-        // Smooth lerp — same rate for fade-in and fade-out, no flag needed
-        m.material.opacity += (targetOpacity - m.material.opacity) * 0.06;
-      });
+        // Skip lerp if already settled
+        const diff = target - m.material.opacity;
+        if (Math.abs(diff) > OPACITY_THRESHOLD) {
+          m.material.opacity += diff * 0.06;
+        } else if (m.material.opacity !== target) {
+          m.material.opacity = target;
+        }
+      }
 
       renderer.render(scene, camera);
     };
@@ -433,7 +433,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Randomize event — only fires when Galaxy is visible
+  // Randomize event
   useEffect(() => {
     const handler = () => {
       GLOBAL_SEED_OFFSET = Math.floor(Math.random() * 999983) + 1;
