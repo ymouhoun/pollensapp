@@ -93,6 +93,8 @@ function loadTexture(url, cb) {
 // ─── Main Component ───────────────────────────────────────────────
 export default function Galaxy({ onSelectItem }) {
   const canvasRef = useRef(null);
+  const [zoom, setZoom] = useState(50); // 0–100 mapped to Z depth
+  const isDark = document.documentElement.classList.contains('dark');
   const stateRef = useRef({
     // Camera base position in world space (moves with pan/zoom)
     basePos: new THREE.Vector3(0, 0, 0),
