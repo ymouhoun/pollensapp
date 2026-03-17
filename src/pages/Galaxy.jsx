@@ -58,26 +58,36 @@ const MAX_PLANE_CACHE = 256;
 const planeCache = new Map();
 
 function generateChunkPlanes(cx, cy, cz) {
-  const key = `${cx},${cy},${cz}`;
+  const key = `${cx},${cy},${cz}|${galaxySeed}`;
   if (planeCache.has(key)) {
     const v = planeCache.get(key);
     planeCache.delete(key); planeCache.set(key, v);
     return v;
   }
-  const seed = hashString(key);
+  const seed = hashString(`${cx},${cy},${cz}`);
+  const gp = getGalaxyParams();
   const planes = [];
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 1000;
     const r = (n) => seededRandom(s + n);
-    const size = 12 + r(4) * 10;
+    // Cluster bias: lerp between edge-scattered and center-biased
+    const bx = r(0) * 2 - 1; // -1..1
+    const by = r(1) * 2 - 1;
+    const bz = r(2) * 2 - 1;
+    const cx2 = bx * (1 - gp.clusterBias * 0.5); // cluster bias shrinks toward center
+    const cy2 = by * (1 - gp.clusterBias * 0.5);
+    const cz2 = bz * (1 - gp.clusterBias * 0.5);
+    const size = gp.sizeMin + r(4) * (gp.sizeMax - gp.sizeMin);
     planes.push({
       id: `${cx}-${cy}-${cz}-${i}`,
       position: new THREE.Vector3(
-        cx * CHUNK_SIZE + r(0) * CHUNK_SIZE - CHUNK_SIZE / 2,
-        cy * CHUNK_SIZE + r(1) * CHUNK_SIZE - CHUNK_SIZE / 2,
-        cz * CHUNK_SIZE + r(2) * CHUNK_SIZE - CHUNK_SIZE / 2,
+        cx * CHUNK_SIZE + cx2 * CHUNK_SIZE * gp.scatterX,
+        cy * CHUNK_SIZE + cy2 * CHUNK_SIZE * gp.scatterY,
+        cz * CHUNK_SIZE + cz2 * CHUNK_SIZE * gp.scatterZ,
       ),
       size,
+      rotationX: gp.tiltX * (r(6) * 2 - 1),
+      rotationY: gp.tiltY * (r(7) * 2 - 1),
       mediaIndex: Math.abs(Math.floor(r(5) * 1_000_000)),
     });
   }
