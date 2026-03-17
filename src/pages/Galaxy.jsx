@@ -382,7 +382,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
       // Per-mesh fade — iterate activeMeshes (our own list, not scene.children)
       const camZ = s.basePos.z;
-      const meshes = s.activeMeshes;
+      const meshes = s.activeMeshes || [];
       for (let i = 0; i < meshes.length; i++) {
         const m = meshes[i];
         const ud = m.userData;
