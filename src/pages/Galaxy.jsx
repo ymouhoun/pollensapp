@@ -397,7 +397,7 @@ export default function Galaxy({ onSelectItem }) {
     };
     animate();
 
-    syncChunks(0, 0);
+    syncChunks(0, 0, 1);
 
     return () => {
       cancelAnimationFrame(rafId);
