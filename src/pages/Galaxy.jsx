@@ -266,9 +266,10 @@ export default function Galaxy({ onSelectItem }) {
 
     const onWheel = (e) => {
       e.preventDefault();
-      // Scroll moves camera forward/backward in Z (true depth)
-      const speed = 0.5;
-      s.basePos.z += e.deltaY * speed * 0.1;
+      s.basePos.z += e.deltaY * 0.05;
+      // sync slider (0–100 maps to z 0–200)
+      const clamped = Math.max(0, Math.min(200, s.basePos.z));
+      setZoom(Math.round((clamped / 200) * 100));
     };
 
     const onTouchStart = (e) => {
