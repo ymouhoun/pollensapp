@@ -430,11 +430,12 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Randomize event
+  // Randomize event — only fires when Galaxy is visible
   useEffect(() => {
     const handler = () => {
-      const s = stateRef.current;
+      GLOBAL_SEED_OFFSET = Math.floor(Math.random() * 999983) + 1;
       planeCache.clear();
+      const s = stateRef.current;
       if (!s.scene) return;
       destroyAllChunks(s);
       syncChunks(s);
