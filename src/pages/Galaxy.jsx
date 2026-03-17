@@ -15,6 +15,23 @@ const DEPTH_FADE_END = 320;
 const CHUNK_FADE_MARGIN = 1.5;
 const RENDER_DISTANCE = RENDER_RADIUS;
 
+// ─── Galaxy physics seed (changes on randomize) ───────────────────
+// Each seed gives different gravity rules: scatter, size, density
+let galaxySeed = 0;
+function getGalaxyParams() {
+  const r = (n) => seededRandom(galaxySeed * 999 + n);
+  return {
+    sizeMin: 6 + r(1) * 14,        // 6–20
+    sizeMax: 16 + r(2) * 30,       // 16–46
+    scatterX: 0.4 + r(3) * 0.9,    // how spread items are in X (0.4–1.3 × CHUNK_SIZE/2)
+    scatterY: 0.4 + r(4) * 0.9,    // same for Y
+    scatterZ: 0.3 + r(5) * 1.1,    // depth scatter
+    clusterBias: r(6),              // 0=uniform, 1=clustered toward chunk center
+    tiltX: (r(7) - 0.5) * 0.6,     // plane tilt angle X
+    tiltY: (r(8) - 0.5) * 0.6,     // plane tilt angle Y
+  };
+}
+
 // chunk offsets: 5x5 grid × 7 depth layers = 175 chunks max
 const CHUNK_OFFSETS = [];
 for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
