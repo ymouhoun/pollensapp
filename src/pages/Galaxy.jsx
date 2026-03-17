@@ -452,15 +452,25 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Randomize event
+  const handleGalaxyRandomize = () => {
+    galaxySeed = Math.floor(Math.random() * 100000);
+    const s = stateRef.current;
+    planeCache.clear();
+    if (!s.scene) return;
+    // Warp camera to a new random position for dramatic effect
+    s.basePos.set(
+      (Math.random() - 0.5) * CHUNK_SIZE * 2,
+      (Math.random() - 0.5) * CHUNK_SIZE * 2,
+      Math.random() * CHUNK_SIZE * 3
+    );
+    s.drag.vx = 0; s.drag.vy = 0;
+    destroyAllChunks(s);
+    syncChunks(s);
+  };
+
+  // Also respond to the grid randomize event
   useEffect(() => {
-    const handler = () => {
-      const s = stateRef.current;
-      planeCache.clear();
-      if (!s.scene) return;
-      destroyAllChunks(s);
-      syncChunks(s);
-    };
+    const handler = () => handleGalaxyRandomize();
     window.addEventListener('randomize-memory', handler);
     return () => window.removeEventListener('randomize-memory', handler);
   }, []);
