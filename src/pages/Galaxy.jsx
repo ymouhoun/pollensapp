@@ -443,17 +443,74 @@ export default function Galaxy({ onSelectItem }) {
     return () => window.removeEventListener('randomize-memory', handler);
   }, []);
 
+  const handleZoomSlider = (e) => {
+    const val = Number(e.target.value);
+    setZoom(val);
+    stateRef.current.basePos.z = (val / 100) * 200;
+  };
+
+  const bgColor = isDark ? '#000000' : '#ffffff';
+  const textMuted = isDark ? 'text-white/20' : 'text-black/20';
+  const closeBg = isDark ? 'bg-white/10 hover:bg-white/20 border-white/15' : 'bg-black/8 hover:bg-black/15 border-black/10';
+  const closeIcon = isDark ? 'text-white/70' : 'text-black/60';
+
   return (
-    <div className="fixed inset-0 bg-black">
+    <div className="fixed inset-0" style={{ background: bgColor }}>
+      {/* Close button */}
       <button
         onClick={() => window.history.back()}
-        className="fixed top-6 right-6 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/15"
+        className={`fixed top-6 right-6 z-30 p-2 rounded-full backdrop-blur-sm transition-colors border ${closeBg}`}
       >
-        <X className="w-4 h-4 text-white/70" strokeWidth={1.5} />
+        <X className={`w-4 h-4 ${closeIcon}`} strokeWidth={1.5} />
       </button>
 
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-10 text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
+      {/* Hint */}
+      <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-10 text-[10px] tracking-widest uppercase ${textMuted} pointer-events-none select-none`}>
         drag · scroll to explore depth
+      </div>
+
+      {/* Zoom slider — right side, centered */}
+      <div
+        className="fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center justify-center gap-3 px-3 py-4 rounded-2xl"
+        style={{
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(200,180,220,0.05) 50%, rgba(180,160,210,0.08) 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(220,210,240,0.35) 50%, rgba(210,200,230,0.45) 100%)',
+          boxShadow: isDark
+            ? '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)'
+            : '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.05)',
+          border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.6)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
+      >
+        {/* + label */}
+        <span className={`text-[9px] tracking-widest font-medium select-none ${isDark ? 'text-white/40' : 'text-black/40'}`}>+</span>
+
+        {/* Vertical range input */}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={zoom}
+          onChange={handleZoomSlider}
+          className="appearance-none cursor-pointer"
+          style={{
+            writingMode: 'vertical-lr',
+            direction: 'rtl',
+            width: '4px',
+            height: '120px',
+            WebkitAppearance: 'slider-vertical',
+            background: `linear-gradient(to top, ${isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'} ${zoom}%, ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'} ${zoom}%)`,
+            borderRadius: '2px',
+            outline: 'none',
+            border: 'none',
+            accentColor: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)',
+          }}
+        />
+
+        {/* – label */}
+        <span className={`text-[9px] tracking-widest font-medium select-none ${isDark ? 'text-white/40' : 'text-black/40'}`}>–</span>
       </div>
 
       <canvas
