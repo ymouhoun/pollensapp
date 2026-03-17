@@ -172,18 +172,21 @@ export default function Galaxy({ onSelectItem }) {
     chunkMeshesRef.current.delete(key);
   }, []);
 
-  const syncChunks = useCallback((worldX, worldY) => {
-    const cx = Math.floor(worldX / CHUNK_SIZE);
-    const cy = Math.floor(worldY / CHUNK_SIZE);
+  const syncChunks = useCallback((worldX, worldY, zoom) => {
+    const zoomLevel = getZoomLevel(zoom);
+    const chunkSize = getChunkSize(zoomLevel);
+    const cx = Math.floor(worldX / chunkSize);
+    const cy = Math.floor(worldY / chunkSize);
     const needed = new Set();
     for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
       for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++)
-        needed.add(`${cx + dx},${cy + dy}`);
+        needed.add(`${zoomLevel}:${cx + dx},${cy + dy}`);
 
     needed.forEach((key) => {
       if (!chunkMeshesRef.current.has(key)) {
-        const [kcx, kcy] = key.split(',').map(Number);
-        spawnChunk(kcx, kcy);
+        const [zl, coords] = key.split(':');
+        const [kcx, kcy] = coords.split(',').map(Number);
+        spawnChunk(kcx, kcy, parseInt(zl));
       }
     });
     chunkMeshesRef.current.forEach((_, key) => {
