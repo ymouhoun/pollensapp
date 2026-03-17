@@ -119,13 +119,13 @@ export default function Galaxy({ onSelectItem }) {
   useEffect(() => { mediaRef.current = media; }, [media]);
 
   // ── Chunk management ───────────────────────────────────────────
-  const spawnChunk = useCallback((cx, cy) => {
-    const key = `${cx},${cy}`;
+  const spawnChunk = useCallback((cx, cy, zoomLevel) => {
+    const key = `${zoomLevel}:${cx},${cy}`;
     if (chunkMeshesRef.current.has(key)) return;
     const scene = sceneRef.current;
     if (!scene || !mediaRef.current.length) return;
 
-    const planes = generateChunkPlanes(cx, cy);
+    const planes = generateChunkPlanes(cx, cy, zoomLevel);
     const meshes = [];
 
     planes.forEach((p) => {
