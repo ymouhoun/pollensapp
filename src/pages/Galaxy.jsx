@@ -156,7 +156,7 @@ export default function Galaxy({ onSelectItem }) {
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(p.position);
-      mesh.userData = { item, fadeIn: false, chunkCx: cx, chunkCy: cy, chunkCz: cz };
+      mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz };
       s.scene.add(mesh);
       meshes.push(mesh);
 
