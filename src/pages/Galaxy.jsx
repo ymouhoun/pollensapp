@@ -91,7 +91,7 @@ function loadTexture(url, cb) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────
-export default function Galaxy({ onSelectItem }) {
+export default function Galaxy({ onSelectItem, filteredMedia }) {
   const canvasRef = useRef(null);
   const stateRef = useRef({
     // Camera base position in world space (moves with pan/zoom)
