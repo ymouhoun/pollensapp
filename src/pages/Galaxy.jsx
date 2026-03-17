@@ -441,7 +441,7 @@ export default function Galaxy({ onSelectItem }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black">
+    <div className="fixed inset-0 bg-background">
       <button
         onClick={() => window.history.back()}
         className="fixed top-6 right-6 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/15"
