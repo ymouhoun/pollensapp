@@ -116,9 +116,9 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   });
 
   const media = useMemo(() =>
-    mediaItems.filter(i => !i.is_forgotten && i.file_url &&
+    filteredMedia ?? mediaItems.filter(i => !i.is_forgotten && i.file_url &&
       (i.content_type === 'image' || i.content_type === 'video')),
-    [mediaItems]
+    [mediaItems, filteredMedia]
   );
 
   // Keep media ref in sync
