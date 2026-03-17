@@ -160,9 +160,10 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       const geo = new THREE.PlaneGeometry(p.size, p.size);
       const mat = new THREE.MeshBasicMaterial({
         transparent: true, opacity: 0,
-        side: THREE.FrontSide, // FrontSide only — halves fragment work
+        side: THREE.FrontSide,
         toneMapped: false,
-        depthWrite: false, // transparent planes don't need depth writes
+        depthWrite: false,
+        blending: THREE.MultiplyBlending,
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(p.position);
