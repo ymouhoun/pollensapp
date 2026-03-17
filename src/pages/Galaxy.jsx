@@ -183,6 +183,8 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(p.position);
+      mesh.rotation.x = p.rotationX || 0;
+      mesh.rotation.y = p.rotationY || 0;
       mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz };
       s.scene.add(mesh);
       meshes.push(mesh);
