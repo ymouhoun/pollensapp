@@ -487,7 +487,10 @@ export default function Memory() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <Galaxy onSelectItem={setSelectedItem} />
+          <Galaxy
+            onSelectItem={setSelectedItem}
+            filteredMedia={search ? filtered.filter(i => !i.is_forgotten && i.file_url && (i.content_type === 'image' || i.content_type === 'video')) : null}
+          />
         </div>
       )}
 
