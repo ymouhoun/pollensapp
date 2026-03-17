@@ -440,8 +440,18 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       destroyAllChunks(s);
       syncChunks(s);
     };
+    const keyHandler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        handler();
+      }
+    };
     window.addEventListener('randomize-memory', handler);
-    return () => window.removeEventListener('randomize-memory', handler);
+    window.addEventListener('keydown', keyHandler);
+    return () => {
+      window.removeEventListener('randomize-memory', handler);
+      window.removeEventListener('keydown', keyHandler);
+    };
   }, []);
 
   return (
