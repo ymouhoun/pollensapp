@@ -6,11 +6,35 @@ import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
-const CHUNK_SIZE = 400;          // world units per chunk
-const RENDER_RADIUS = 3;         // chunks in each direction (7×7 = 49 chunks)
+const BASE_CHUNK_SIZE = 400;     // world units per chunk at zoom level 0
+const RENDER_RADIUS = 3;         // chunks in each direction
 const PLANES_PER_CHUNK = 8;
-const MIN_ZOOM = 0.005;          // very zoomed out
-const MAX_ZOOM = 20;             // very zoomed in
+const MIN_ZOOM = 0.005;
+const MAX_ZOOM = 80;             // allow deep zoom
+
+// Zoom level: each integer step doubles detail density
+// zoom < 0.25  → level 0 (coarse)
+// zoom < 1     → level 1
+// zoom < 4     → level 2
+// zoom < 16    → level 3
+// zoom >= 16   → level 4
+function getZoomLevel(zoom) {
+  if (zoom < 0.25) return 0;
+  if (zoom < 1)    return 1;
+  if (zoom < 4)    return 2;
+  if (zoom < 16)   return 3;
+  return 4;
+}
+
+// At deeper zoom levels, chunk size shrinks so more chunks fill the same world area
+function getChunkSize(zoomLevel) {
+  return BASE_CHUNK_SIZE / Math.pow(2, zoomLevel);
+}
+
+// Image size also scales down so things look naturally denser when zoomed in
+function getPlaneSize(zoomLevel) {
+  return (60 + Math.random() * 80) / Math.pow(1.6, zoomLevel);
+}
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
