@@ -374,12 +374,14 @@ export default function Galaxy({ onSelectItem }) {
       }
 
       // Chunk sync on pan or zoom change
-      const cx = Math.floor(vpRef.current.x / CHUNK_SIZE);
-      const cy = Math.floor(vpRef.current.y / CHUNK_SIZE);
-      const zoomChunk = Math.floor(Math.log2(Math.max(0.001, vpRef.current.zoom)) * 4);
-      if (cx !== last.cx || cy !== last.cy || zoomChunk !== last.zoomChunk) {
-        last.cx = cx; last.cy = cy; last.zoomChunk = zoomChunk;
-        syncChunks(vpRef.current.x, vpRef.current.y);
+      const { x: vx, y: vy, zoom: vz } = vpRef.current;
+      const zl = getZoomLevel(vz);
+      const cs = getChunkSize(zl);
+      const cx = Math.floor(vx / cs);
+      const cy = Math.floor(vy / cs);
+      if (cx !== last.cx || cy !== last.cy || zl !== last.zoomChunk) {
+        last.cx = cx; last.cy = cy; last.zoomChunk = zl;
+        syncChunks(vx, vy, vz);
       }
 
       // Fade in
