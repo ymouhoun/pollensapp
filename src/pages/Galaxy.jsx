@@ -43,7 +43,7 @@ const MAX_PLANE_CACHE = 256;
 const planeCache = new Map();
 
 function generateChunkPlanes(cx, cy, cz) {
-  const key = `${cx},${cy},${cz}`;
+  const key = `${cx},${cy},${cz},${GLOBAL_SEED_OFFSET}`;
   if (planeCache.has(key)) {
     const v = planeCache.get(key);
     planeCache.delete(key); planeCache.set(key, v);
@@ -54,13 +54,18 @@ function generateChunkPlanes(cx, cy, cz) {
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 1000;
     const r = (n) => seededRandom(s + n);
-    const size = 12 + r(4) * 10;
+    // Size varies more dramatically on randomize
+    const minSize = 8 + seededRandom(GLOBAL_SEED_OFFSET + i) * 8;
+    const maxSize = 14 + seededRandom(GLOBAL_SEED_OFFSET + i + 500) * 28;
+    const size = minSize + r(4) * (maxSize - minSize);
+    // Scatter density also varies
+    const scatter = 0.55 + seededRandom(GLOBAL_SEED_OFFSET + i + 200) * 0.45;
     planes.push({
       id: `${cx}-${cy}-${cz}-${i}`,
       position: new THREE.Vector3(
-        cx * CHUNK_SIZE + r(0) * CHUNK_SIZE - CHUNK_SIZE / 2,
-        cy * CHUNK_SIZE + r(1) * CHUNK_SIZE - CHUNK_SIZE / 2,
-        cz * CHUNK_SIZE + r(2) * CHUNK_SIZE - CHUNK_SIZE / 2,
+        cx * CHUNK_SIZE + (r(0) - 0.5) * CHUNK_SIZE * scatter * 2,
+        cy * CHUNK_SIZE + (r(1) - 0.5) * CHUNK_SIZE * scatter * 2,
+        cz * CHUNK_SIZE + (r(2) - 0.5) * CHUNK_SIZE * scatter * 2,
       ),
       size,
       mediaIndex: Math.abs(Math.floor(r(5) * 1_000_000)),
