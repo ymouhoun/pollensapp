@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react'
 import * as THREE from 'three';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { X, Shuffle } from 'lucide-react';
+import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
 
 // ─── Constants ────────────────────────────────────────────────────
@@ -14,23 +14,6 @@ const DEPTH_FADE_START = 180;
 const DEPTH_FADE_END = 320;
 const CHUNK_FADE_MARGIN = 1.5;
 const RENDER_DISTANCE = RENDER_RADIUS;
-
-// ─── Galaxy physics seed (changes on randomize) ───────────────────
-// Each seed gives different gravity rules: scatter, size, density
-let galaxySeed = 0;
-function getGalaxyParams() {
-  const r = (n) => seededRandom(galaxySeed * 999 + n);
-  return {
-    sizeMin: 6 + r(1) * 14,        // 6–20
-    sizeMax: 16 + r(2) * 30,       // 16–46
-    scatterX: 0.4 + r(3) * 0.9,    // how spread items are in X (0.4–1.3 × CHUNK_SIZE/2)
-    scatterY: 0.4 + r(4) * 0.9,    // same for Y
-    scatterZ: 0.3 + r(5) * 1.1,    // depth scatter
-    clusterBias: r(6),              // 0=uniform, 1=clustered toward chunk center
-    tiltX: (r(7) - 0.5) * 0.6,     // plane tilt angle X
-    tiltY: (r(8) - 0.5) * 0.6,     // plane tilt angle Y
-  };
-}
 
 // chunk offsets: 5x5 grid × 7 depth layers = 175 chunks max
 const CHUNK_OFFSETS = [];
@@ -58,36 +41,26 @@ const MAX_PLANE_CACHE = 256;
 const planeCache = new Map();
 
 function generateChunkPlanes(cx, cy, cz) {
-  const key = `${cx},${cy},${cz}|${galaxySeed}`;
+  const key = `${cx},${cy},${cz}`;
   if (planeCache.has(key)) {
     const v = planeCache.get(key);
     planeCache.delete(key); planeCache.set(key, v);
     return v;
   }
-  const seed = hashString(`${cx},${cy},${cz}`);
-  const gp = getGalaxyParams();
+  const seed = hashString(key);
   const planes = [];
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 1000;
     const r = (n) => seededRandom(s + n);
-    // Cluster bias: lerp between edge-scattered and center-biased
-    const bx = r(0) * 2 - 1; // -1..1
-    const by = r(1) * 2 - 1;
-    const bz = r(2) * 2 - 1;
-    const cx2 = bx * (1 - gp.clusterBias * 0.5); // cluster bias shrinks toward center
-    const cy2 = by * (1 - gp.clusterBias * 0.5);
-    const cz2 = bz * (1 - gp.clusterBias * 0.5);
-    const size = gp.sizeMin + r(4) * (gp.sizeMax - gp.sizeMin);
+    const size = 12 + r(4) * 10;
     planes.push({
       id: `${cx}-${cy}-${cz}-${i}`,
       position: new THREE.Vector3(
-        cx * CHUNK_SIZE + cx2 * CHUNK_SIZE * gp.scatterX,
-        cy * CHUNK_SIZE + cy2 * CHUNK_SIZE * gp.scatterY,
-        cz * CHUNK_SIZE + cz2 * CHUNK_SIZE * gp.scatterZ,
+        cx * CHUNK_SIZE + r(0) * CHUNK_SIZE - CHUNK_SIZE / 2,
+        cy * CHUNK_SIZE + r(1) * CHUNK_SIZE - CHUNK_SIZE / 2,
+        cz * CHUNK_SIZE + r(2) * CHUNK_SIZE - CHUNK_SIZE / 2,
       ),
       size,
-      rotationX: gp.tiltX * (r(6) * 2 - 1),
-      rotationY: gp.tiltY * (r(7) * 2 - 1),
       mediaIndex: Math.abs(Math.floor(r(5) * 1_000_000)),
     });
   }
@@ -183,8 +156,6 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(p.position);
-      mesh.rotation.x = p.rotationX || 0;
-      mesh.rotation.y = p.rotationY || 0;
       mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz };
       s.scene.add(mesh);
       meshes.push(mesh);
@@ -452,25 +423,15 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleGalaxyRandomize = () => {
-    galaxySeed = Math.floor(Math.random() * 100000);
-    const s = stateRef.current;
-    planeCache.clear();
-    if (!s.scene) return;
-    // Warp camera to a new random position for dramatic effect
-    s.basePos.set(
-      (Math.random() - 0.5) * CHUNK_SIZE * 2,
-      (Math.random() - 0.5) * CHUNK_SIZE * 2,
-      Math.random() * CHUNK_SIZE * 3
-    );
-    s.drag.vx = 0; s.drag.vy = 0;
-    destroyAllChunks(s);
-    syncChunks(s);
-  };
-
-  // Also respond to the grid randomize event
+  // Randomize event
   useEffect(() => {
-    const handler = () => handleGalaxyRandomize();
+    const handler = () => {
+      const s = stateRef.current;
+      planeCache.clear();
+      if (!s.scene) return;
+      destroyAllChunks(s);
+      syncChunks(s);
+    };
     window.addEventListener('randomize-memory', handler);
     return () => window.removeEventListener('randomize-memory', handler);
   }, []);
@@ -484,21 +445,8 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
         <X className="w-4 h-4 text-white/70" strokeWidth={1.5} />
       </button>
 
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3">
-        <button
-          onClick={handleGalaxyRandomize}
-          className="flex items-center gap-2 px-4 py-3 rounded-full text-white/70 hover:text-white transition-all duration-300 group border border-white/15 backdrop-blur-xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(200,180,220,0.07) 50%, rgba(180,160,210,0.10) 100%)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
-          }}
-          title="New galaxy"
-        >
-          <Shuffle className="w-4 h-4 transition-all duration-300 group-hover:scale-110" style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }} strokeWidth={1.5} />
-        </button>
-        <div className="text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
-          drag · scroll to explore depth
-        </div>
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-10 text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
+        drag · scroll to explore depth
       </div>
 
       <canvas
