@@ -484,8 +484,21 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
         <X className="w-4 h-4 text-white/70" strokeWidth={1.5} />
       </button>
 
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-10 text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
-        drag · scroll to explore depth
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3">
+        <button
+          onClick={handleGalaxyRandomize}
+          className="flex items-center gap-2 px-4 py-3 rounded-full text-white/70 hover:text-white transition-all duration-300 group border border-white/15 backdrop-blur-xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(200,180,220,0.07) 50%, rgba(180,160,210,0.10) 100%)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+          }}
+          title="New galaxy"
+        >
+          <Shuffle className="w-4 h-4 transition-all duration-300 group-hover:scale-110" style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }} strokeWidth={1.5} />
+        </button>
+        <div className="text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
+          drag · scroll to explore depth
+        </div>
       </div>
 
       <canvas
