@@ -108,8 +108,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   const stateRef = useRef({
     basePos: new THREE.Vector3(0, 0, 0),
     chunks: new Map(),
-    // meshes list for fast per-frame iteration (avoids scene.children overhead)
-    activeMeshes: [],
+    activeMeshes: [] as any[],
     drag: { active: false, startX: 0, startY: 0, bx: 0, by: 0, vx: 0, vy: 0, moved: false },
     pinch: { active: false, lastDist: 0 },
     scene: null, camera: null, renderer: null,
