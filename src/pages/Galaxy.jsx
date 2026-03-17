@@ -50,23 +50,26 @@ function hashChunk(cx, cy) {
 const MAX_CACHE = 512;
 const planeCache = new Map();
 
-function generateChunkPlanes(cx, cy) {
-  const key = `${cx},${cy}`;
+function generateChunkPlanes(cx, cy, zoomLevel) {
+  const key = `${zoomLevel}:${cx},${cy}`;
   if (planeCache.has(key)) {
     const v = planeCache.get(key);
     planeCache.delete(key); planeCache.set(key, v);
     return v;
   }
-  const seed = hashChunk(cx, cy);
+  const chunkSize = getChunkSize(zoomLevel);
+  // Mix zoom level into seed so each zoom level has unique placement
+  const seed = hashChunk(cx + zoomLevel * 999983, cy + zoomLevel * 999979);
+  const baseSize = 30 + 60 / Math.pow(1.6, zoomLevel);
   const planes = [];
   for (let i = 0; i < PLANES_PER_CHUNK; i++) {
     const s = seed + i * 997;
     const r = (n) => seededRandom(s + n);
-    const size = 80 + r(4) * 120;
+    const size = baseSize * (0.6 + r(4) * 0.8);
     planes.push({
-      id: `${cx}-${cy}-${i}`,
-      x: cx * CHUNK_SIZE + r(0) * CHUNK_SIZE,
-      y: cy * CHUNK_SIZE + r(1) * CHUNK_SIZE,
+      id: `${zoomLevel}-${cx}-${cy}-${i}`,
+      x: cx * chunkSize + r(0) * chunkSize,
+      y: cy * chunkSize + r(1) * chunkSize,
       size,
       mediaIndex: Math.abs(Math.floor(r(3) * 1_000_000)),
     });
