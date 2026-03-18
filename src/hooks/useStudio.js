@@ -212,6 +212,9 @@ export default function useStudio() {
     setPreviewImageUrl(null);
     setGenProgress({ value: 0, max: steps || 40 });
 
+    // Store params for persistence after generation
+    const genParams = { positivePrompt, steps, cfg, shift, aspectRatio, sampler, scheduler, seed };
+
     const baseUrl = baseUrlRef.current;
     const clientId = clientIdRef.current;
     let abortController = new AbortController();
@@ -295,6 +298,21 @@ export default function useStudio() {
             if (filename) {
               const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', { baseUrl, filename })).data;
               setGeneratedImageUrl(proxyResult.imageDataUrl);
+
+              // Persist image to GeneratedImage entity
+              try {
+                const res = await fetch(proxyResult.imageDataUrl);
+                const blob = await res.blob();
+                const file = new File([blob], `gen-${Date.now()}.png`, { type: blob.type });
+                const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                await base44.entities.GeneratedImage.create({
+                  file_url,
+                  prompt: genParams.positivePrompt || '',
+                  params: { steps: genParams.steps, cfg: genParams.cfg, shift: genParams.shift, aspectRatio: genParams.aspectRatio, sampler: genParams.sampler, scheduler: genParams.scheduler, seed: genParams.seed },
+                });
+              } catch (e) {
+                console.warn('Failed to persist generated image:', e);
+              }
             }
             setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
             setGeneratingPromptId(null);

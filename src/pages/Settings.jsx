@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Upload, Trash2, Loader2, Type, Image } from 'lucide-react';
+import { Upload, Trash2, Loader2, Type, Image, Zap } from 'lucide-react';
 
 export default function Settings() {
   const [uploading, setUploading] = useState(false);
@@ -27,6 +27,24 @@ export default function Settings() {
   });
 
   const currentLogo = logos[0] || null;
+
+  const { data: generatedImages = [] } = useQuery({
+    queryKey: ['generated-images'],
+    queryFn: () => base44.entities.GeneratedImage.list('-created_date'),
+  });
+
+  const [deletingGenerated, setDeletingGenerated] = useState(false);
+
+  const handleDeleteAllGenerated = async () => {
+    if (!confirm('Delete all generated images? This cannot be undone.')) return;
+    setDeletingGenerated(true);
+    const ids = generatedImages.map(i => i.id);
+    for (const id of ids) {
+      await base44.entities.GeneratedImage.delete(id);
+    }
+    setDeletingGenerated(false);
+    queryClient.invalidateQueries({ queryKey: ['generated-images'] });
+  };
 
   const getFormat = (filename) => {
     const ext = filename.split('.').pop().toLowerCase();
@@ -140,6 +158,29 @@ export default function Settings() {
             {logoUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" strokeWidth={1.5} />}
             {currentLogo ? 'Replace logo' : 'Upload logo'}
           </button>
+        </div>
+      </section>
+
+      {/* Generated Images section */}
+      <section className="mb-10">
+        <h2 className="text-[11px] tracking-widest uppercase text-muted-foreground mb-4">Generated Images</h2>
+        <div className="border border-border/40 rounded-lg p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Zap className="w-4 h-4 text-muted-foreground/40" strokeWidth={1.5} />
+              <span className="text-sm text-muted-foreground">
+                {generatedImages.length} image{generatedImages.length !== 1 ? 's' : ''} stored
+              </span>
+            </div>
+            <button
+              onClick={handleDeleteAllGenerated}
+              disabled={deletingGenerated || generatedImages.length === 0}
+              className="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-destructive hover:bg-destructive/10 disabled:opacity-30 transition-colors"
+            >
+              {deletingGenerated ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" strokeWidth={1.5} />}
+              Delete all
+            </button>
+          </div>
         </div>
       </section>
 
