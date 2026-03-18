@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { encode as base64Encode } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -13,9 +14,8 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Failed to fetch image' }, { status: 502 });
   }
 
-  const imageBlob = await imageRes.blob();
-  const arrayBuffer = await imageBlob.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  const arrayBuffer = await imageRes.arrayBuffer();
+  const base64 = base64Encode(new Uint8Array(arrayBuffer));
   const contentType = imageRes.headers.get('content-type') || 'image/png';
 
   return Response.json({ 
