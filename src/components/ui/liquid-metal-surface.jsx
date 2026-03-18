@@ -56,7 +56,7 @@ export default function LiquidMetalSurface({ children, className = "", style = {
   return (
     <div
       className={className}
-      style={{ position: "relative", overflow: "hidden", borderRadius, ...style }}
+      style={{ position: "relative", borderRadius, ...style }}
     >
       {/* Shader background */}
       <div
@@ -66,7 +66,6 @@ export default function LiquidMetalSurface({ children, className = "", style = {
           position: "absolute",
           inset: 0,
           borderRadius,
-          overflow: "hidden",
           zIndex: 0,
         }}
       />
@@ -78,10 +77,11 @@ export default function LiquidMetalSurface({ children, className = "", style = {
           borderRadius: `calc(${borderRadius} - 1.5px)`,
           background: "linear-gradient(180deg, rgba(15,15,20,0.92) 0%, rgba(0,0,0,0.95) 100%)",
           zIndex: 1,
+          overflow: "hidden",
         }}
       />
       {/* Content */}
-      <div style={{ position: "relative", zIndex: 2 }}>
+      <div style={{ position: "relative", zIndex: 2, overflow: "hidden", borderRadius }}>
         {children}
       </div>
     </div>
