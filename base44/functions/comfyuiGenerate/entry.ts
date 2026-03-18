@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { baseUrl, positivePrompt, seed, steps, cfg, aspectRatio, sampler, scheduler } = await req.json();
+  const { baseUrl, positivePrompt, seed, steps, cfg, shift, aspectRatio, sampler, scheduler } = await req.json();
 
   const workflow = {
     "1": { inputs: { samples: ["16", 0], vae: ["3", 0] }, class_type: "VAEDecode" },
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     "6": { inputs: { clip_name: "qwen_2.5_vl_7b_fp8_scaled.safetensors", type: "qwen_image", device: "default" }, class_type: "CLIPLoader" },
     "7": { inputs: { megapixel: "1.8", aspect_ratio: aspectRatio || "3:4 (Golden Ratio)", divisible_by: "64", custom_ratio: false, custom_aspect_ratio: "1:1" }, class_type: "FluxResolutionNode" },
     "8": { inputs: { text: "unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face", clip: ["6", 0] }, class_type: "CLIPTextEncode" },
-    "9": { inputs: { shift: 1, model: ["10", 0] }, class_type: "ModelSamplingAuraFlow" },
+    "9": { inputs: { shift: shift || 1.0, model: ["10", 0] }, class_type: "ModelSamplingAuraFlow" },
     "10": { inputs: { unet_name: "editorial.safetensors", weight_dtype: "default" }, class_type: "UNETLoader" },
     "13": { inputs: { text: positivePrompt, clip: ["6", 0] }, class_type: "CLIPTextEncode" },
     "14": { inputs: { width: ["7", 0], height: ["7", 1], batch_size: 1 }, class_type: "EmptySD3LatentImage" },

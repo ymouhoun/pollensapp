@@ -197,7 +197,7 @@ export default function useStudio() {
     resetInactivity();
   }, [resetInactivity]);
 
-  const generate = useCallback(async ({ positivePrompt, steps, cfg, aspectRatio, sampler, scheduler }) => {
+  const generate = useCallback(async ({ positivePrompt, steps, cfg, shift, aspectRatio, sampler, scheduler }) => {
     if (status !== 'READY' || !baseUrlRef.current) return;
     resetInactivity();
     setGeneratingPromptId('pending');
@@ -210,6 +210,7 @@ export default function useStudio() {
       seed,
       steps: steps || 40,
       cfg: cfg || 3.0,
+      shift: shift || 1.0,
       aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
       sampler: sampler || 'res_2s',
       scheduler: scheduler || 'kl_optimal',
