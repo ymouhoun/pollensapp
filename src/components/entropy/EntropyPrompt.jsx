@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
-import GenerateButton from './GenerateButton';
 import { MODELS } from '@/hooks/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
@@ -42,7 +41,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed bottom-4 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
       <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
@@ -143,20 +142,19 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+            <button
+              onClick={generating ? onCancelGeneration : handleGenerate}
+              disabled={!generating && disabled}
+              className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-white/15 transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              {generating
+                ? <Square className="w-2.5 h-2.5 text-white/70 fill-white/70" />
+                : <Play className="w-2.5 h-2.5 text-white/70 fill-white/70 ml-px" />
+              }
+            </button>
           </div>
         </div>
       </div>
-
-      {/* Generate button below the prompt bar */}
-      {isReady && (
-        <div className="flex justify-center mt-4">
-          <GenerateButton
-            generating={generating}
-            onStart={handleGenerate}
-            onStop={onCancelGeneration}
-          />
-        </div>
-      )}
     </motion.div>
   );
 }
