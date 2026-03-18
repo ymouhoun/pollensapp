@@ -24,6 +24,7 @@ export default function Entropy() {
       positivePrompt: prompt,
       steps: params.steps,
       cfg: params.cfg,
+      shift: params.shift,
       aspectRatio: params.aspectRatio,
       sampler: params.sampler,
       scheduler: params.scheduler,
