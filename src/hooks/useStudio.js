@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before shutdown
