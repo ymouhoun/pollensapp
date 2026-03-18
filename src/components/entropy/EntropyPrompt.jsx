@@ -121,11 +121,11 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex flex-col gap-3 px-5 py-2.5 md:flex-row md:items-center md:justify-between"
+          className="flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
           {/* Left params */}
-          <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-widest">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] tracking-widest">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
             <Divider />
             <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
@@ -142,7 +142,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           </div>
 
           {/* Right — sampler, scheduler */}
-          <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-widest">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] tracking-widest">
             <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
@@ -182,7 +182,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
   };
 
   return (
-    <span className="text-white/35 flex items-center gap-1.5 group">
+    <span className="text-white/35 flex items-center gap-1 group">
       {label}{' '}
       <span
         onPointerDown={handlePointerDown}
