@@ -332,6 +332,10 @@ export default function useStudio() {
     resetInactivity();
   }, [resetInactivity]);
 
+  const clearGeneratedImage = useCallback(() => {
+    setGeneratedImageUrl(null);
+  }, []);
+
   // Check for existing running instance on mount
   useEffect(() => {
     const checkExisting = async () => {
@@ -392,6 +396,7 @@ export default function useStudio() {
     stopStudio,
     generate,
     cancelGeneration,
+    clearGeneratedImage,
     keepAlive,
     resetInactivity,
   };
