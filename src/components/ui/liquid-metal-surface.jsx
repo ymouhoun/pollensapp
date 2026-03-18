@@ -56,7 +56,7 @@ export default function LiquidMetalSurface({ children, className = "", style = {
   return (
     <div
       className={className}
-      style={{ position: "relative", borderRadius, ...style }}
+      style={{ position: "relative", borderRadius, overflow: "visible", ...style }}
     >
       {/* Shader background */}
       <div
@@ -64,7 +64,7 @@ export default function LiquidMetalSurface({ children, className = "", style = {
         className="lm-surface-shader"
         style={{
           position: "absolute",
-          inset: 0,
+          inset: "-2px",
           borderRadius,
           zIndex: 0,
         }}
