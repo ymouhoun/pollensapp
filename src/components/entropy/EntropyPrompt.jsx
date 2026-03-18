@@ -71,12 +71,6 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               </span>
             </button>
           ))}
-          <SeedControl
-            mode={seedMode}
-            onModeChange={setSeedMode}
-            value={seedValue}
-            onValueChange={setSeedValue}
-          />
         </div>
         <div className="pt-1">
           <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
@@ -146,6 +140,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+            <Divider />
+            <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
             <button
               onClick={generating ? undefined : handleGenerate}
               disabled={disabled}
