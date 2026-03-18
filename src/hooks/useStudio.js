@@ -217,7 +217,7 @@ export default function useStudio() {
     let abortController = new AbortController();
     wsRef.current = abortController; // reuse ref for cleanup
 
-    // 1. Submit prompt via normal invoke, then poll for progress via SSE proxy
+    // Submit prompt via normal invoke, then poll for progress via SSE proxy
     const seed = Math.floor(Math.random() * 2147483647);
 
     // Start SSE proxy first to listen for events
