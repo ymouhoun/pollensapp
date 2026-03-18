@@ -29,6 +29,7 @@ export default function Entropy() {
       aspectRatio: params.aspectRatio,
       sampler: params.sampler,
       scheduler: params.scheduler,
+      seed: params.seed,
     });
   };
 

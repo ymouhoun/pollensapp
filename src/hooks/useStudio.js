@@ -204,7 +204,7 @@ export default function useStudio() {
     resetInactivity();
   }, [resetInactivity]);
 
-  const generate = useCallback(async ({ positivePrompt, steps, cfg, shift, aspectRatio, sampler, scheduler }) => {
+  const generate = useCallback(async ({ positivePrompt, steps, cfg, shift, aspectRatio, sampler, scheduler, seed }) => {
     if (status !== 'READY' || !baseUrlRef.current) return;
     resetInactivity();
     setGeneratingPromptId('pending');
@@ -218,7 +218,7 @@ export default function useStudio() {
     wsRef.current = abortController; // reuse ref for cleanup
 
     // Submit prompt via normal invoke, then poll for progress via SSE proxy
-    const seed = Math.floor(Math.random() * 2147483647);
+    const generationSeed = seed;
 
     // Start SSE proxy first to listen for events
     const fnBase = appParams.appBaseUrl || '';
@@ -267,7 +267,7 @@ export default function useStudio() {
           if (data.type === 'connected' && !promptSubmitted) {
             promptSubmitted = true;
             const result = (await base44.functions.invoke('comfyuiGenerate', {
-              baseUrl, positivePrompt, seed,
+              baseUrl, positivePrompt, seed: generationSeed,
               steps: steps || 40, cfg: cfg || 3.0, shift: shift || 1.0,
               aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
               sampler: sampler || 'res_2s', scheduler: scheduler || 'kl_optimal',
