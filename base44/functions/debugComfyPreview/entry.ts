@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { baseUrl } = await req.json();
+    const { baseUrl, positivePrompt, seed } = await req.json();
     if (!baseUrl) return Response.json({ error: 'Missing baseUrl' }, { status: 400 });
 
     const clientId = crypto.randomUUID();
@@ -41,10 +41,9 @@ Deno.serve(async (req) => {
           "8": { inputs: { text: "unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face", clip: ["6", 0] }, class_type: "CLIPTextEncode" },
           "9": { inputs: { shift: 1.0, model: ["10", 0] }, class_type: "ModelSamplingAuraFlow" },
           "10": { inputs: { unet_name: "editorial.safetensors", weight_dtype: "default" }, class_type: "UNETLoader" },
-          "13": { inputs: { text: "portrait photo of a woman in a forest", clip: ["6", 0] }, class_type: "CLIPTextEncode" },
-          "14": { inputs: { width: ["7", 0], height: ["7", 1], batch_size: 1 }, class_type: "EmptySD3LatentImage" },
-          "15": { inputs: { filename_prefix: "debug-preview", images: ["1", 0] }, class_type: "SaveImage" },
-          "16": { inputs: { seed: 12345, steps: 8, cfg: 3.0, sampler_name: "res_2s", scheduler: "kl_optimal", denoise: 1, model: ["9", 0], positive: ["13", 0], negative: ["8", 0], latent_image: ["14", 0] }, class_type: "KSampler" }
+          "13": { inputs: { text: positivePrompt || `portrait photo of a woman in a forest ${Date.now()}`, clip: ["6", 0] }, class_type: "CLIPTextEncode" },
+...
+          "16": { inputs: { seed: seed || Math.floor(Math.random() * 2147483647), steps: 8, cfg: 3.0, sampler_name: "res_2s", scheduler: "kl_optimal", denoise: 1, model: ["9", 0], positive: ["13", 0], negative: ["8", 0], latent_image: ["14", 0] }, class_type: "KSampler" }
         };
 
         const submitRes = await fetch(`${baseUrl}/prompt`, {
