@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
 
@@ -149,14 +149,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <button
               onClick={generating ? undefined : handleGenerate}
               disabled={disabled}
-              className="ml-1 flex items-center justify-center w-6 h-6 rounded-full transition-all hover:opacity-80 disabled:opacity-20 disabled:cursor-not-allowed"
+              className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-white/15 transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              <img
-                src="https://media.base44.com/images/public/69b2e952528daefdb8ba4906/2a8798180_circle-fading-arrow-up.png"
-                alt="Generate"
-                className="w-5 h-5 opacity-70"
-                style={{ filter: 'invert(1)' }}
-              />
+              {generating
+                ? <Square className="w-2.5 h-2.5 text-white/70 fill-white/70" />
+                : <Play className="w-2.5 h-2.5 text-white/70 fill-white/70 ml-px" />
+              }
             </button>
           </div>
         </div>
