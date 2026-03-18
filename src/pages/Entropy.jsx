@@ -38,6 +38,8 @@ export default function Entropy() {
     await studio.stopStudio();
   };
 
+  const loadingPhase = /downloading|loading models/i.test(studio.statusMessage) ? 'orange' : 'red';
+
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
@@ -53,6 +55,7 @@ export default function Entropy() {
             costPerHour={studio.costPerHour}
             statusMessage={studio.statusMessage}
             bootProgress={studio.bootProgress}
+            phase={loadingPhase}
           />
         )}
         {studio.status === 'ERROR' && (
@@ -72,11 +75,16 @@ export default function Entropy() {
           <GenerationPreview
             previewUrl={studio.previewImageUrl}
             progress={studio.genProgress}
+            phase="purple"
           />
         )}
         {studio.status === 'READY' && studio.generatedImageUrl && (
-          <div className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl">
-            <img src={studio.generatedImageUrl} alt="" className="w-full h-full object-contain" />
+          <div className="w-[min(34rem,calc(100vw-3rem))]">
+            <EdgeGlowFrame phase="blue" innerClassName="p-2">
+              <div className="max-h-[70vh] overflow-hidden rounded-[23px] bg-black/40">
+                <img src={studio.generatedImageUrl} alt="" className="w-full h-full object-contain" />
+              </div>
+            </EdgeGlowFrame>
           </div>
         )}
       </div>
