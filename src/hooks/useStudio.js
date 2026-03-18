@@ -296,8 +296,16 @@ export default function useStudio() {
           if (data.type === 'executed' && data.data?.node === '15') {
             const filename = data.data.output?.images?.[0]?.filename;
             if (filename) {
-              const imageRes = await base44.functions.invoke('comfyuiProxyImage', { baseUrl, filename });
-              const blob = imageRes.data instanceof Blob ? imageRes.data : new Blob([imageRes.data], { type: 'image/png' });
+              const fnBase = appParams.appBaseUrl || '';
+              const blobRes = await fetch(`${fnBase}/functions/comfyuiProxyImage`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
+                },
+                body: JSON.stringify({ baseUrl, filename }),
+              });
+              const blob = await blobRes.blob();
               const blobUrl = URL.createObjectURL(blob);
               setGeneratedImageUrl(blobUrl);
 
