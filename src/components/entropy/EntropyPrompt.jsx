@@ -122,7 +122,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         {/* Metadata bar */}
         <div
           className="flex items-center justify-between px-4 py-2 text-[10px] tracking-widest"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-banana)' }}
         >
           {/* Left group */}
           <div className="flex items-center gap-2">
