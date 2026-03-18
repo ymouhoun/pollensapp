@@ -6,7 +6,6 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
-import DisplayGlowOverlay from '@/components/entropy/DisplayGlowOverlay';
 import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {
@@ -38,18 +37,8 @@ export default function Entropy() {
     await studio.stopStudio();
   };
 
-  const loadingPhase = /downloading|loading models/i.test(studio.statusMessage) ? 'orange' : 'red';
-  const displayGlowPhase = studio.status === 'STARTING'
-    ? loadingPhase
-    : studio.status === 'READY' && studio.generatingPromptId
-      ? 'purple'
-      : studio.status === 'READY' && studio.generatedImageUrl
-        ? 'blue'
-        : null;
-
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
-      {displayGlowPhase && <DisplayGlowOverlay phase={displayGlowPhase} />}
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
 
       {/* Center area — state dependent */}

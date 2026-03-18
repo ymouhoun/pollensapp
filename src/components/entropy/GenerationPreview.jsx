@@ -6,8 +6,8 @@ export default function GenerationPreview({ previewUrl, progress }) {
   const blur = Math.max(0, 8 - ratio * 8);
 
   return (
-    <div className="flex flex-col items-center gap-4 w-[min(34rem,calc(100vw-3rem))]">
-      <div className="relative max-h-[70vh] overflow-hidden rounded-sm shadow-2xl">
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl">
         {previewUrl ? (
           <img
             src={previewUrl}
@@ -20,9 +20,7 @@ export default function GenerationPreview({ previewUrl, progress }) {
           />
         ) : (
           <div className="w-64 h-80 flex items-center justify-center">
-            <p className="text-[10px] text-white/24 tracking-[0.28em] uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
-              Generating preview
-            </p>
+            <div className="w-6 h-6 border border-white/20 border-t-white/60 rounded-full animate-spin" />
           </div>
         )}
       </div>
