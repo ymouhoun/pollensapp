@@ -105,25 +105,26 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         >
           {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
-            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" />
+            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
             <Divider />
-            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} />
+            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
             <Divider />
             <SelectParam
               label="RATIO"
               value={ratio}
               options={ASPECT_RATIOS}
               onChange={setRatio}
+              defaultValue="3:4 (Golden Ratio)"
             />
             <Divider />
-            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" />
+            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
           </div>
 
           {/* Right — sampler, scheduler, studio indicator */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
-            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} />
+            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
-            <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} />
+            <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
           </div>
         </div>
       </div>
@@ -131,7 +132,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   );
 }
 
-function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number' }) {
+function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue }) {
   const displayValue = type === 'float' ? value.toFixed(1) : value;
   const startX = React.useRef(0);
   const startValue = React.useRef(value);
@@ -164,6 +165,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
       {label}{' '}
       <span
         onPointerDown={handlePointerDown}
+        onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
         className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-white/90 transition-colors"
       >
         {displayValue}
@@ -176,14 +178,14 @@ function Divider() {
   return <span className="text-white/15">|</span>;
 }
 
-function SelectParam({ label, value, options, onChange }) {
+function SelectParam({ label, value, options, onChange, defaultValue }) {
   // Show short display label
   const raw = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
   const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
   return (
     <span className="relative text-white/35 flex items-center gap-1">
-      {label}{' '}
-      <span className="text-white/65 font-medium">{display}</span>
+      <span onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}>{label}{' '}
+      <span className="text-white/65 font-medium">{display}</span></span>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
