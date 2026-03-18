@@ -27,24 +27,39 @@ Deno.serve(async (req) => {
 
       const ws = new WebSocket(wsUrl);
 
+      const detectMime = (bytes) => {
+        if (bytes.length >= 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+        if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+        if (bytes.length >= 4 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return 'image/webp';
+        return 'image/jpeg';
+      };
+
       ws.onopen = () => {
         send({ type: 'connected' });
       };
 
       ws.onmessage = async (event) => {
-        if (event.data instanceof Blob) {
-          const arrayBuffer = await event.data.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
-            const imageData = bytes.slice(8);
-            const b64 = base64Encode(imageData);
-            send({ type: 'preview', image: b64 });
-          }
-        } else if (typeof event.data === 'string') {
+        if (typeof event.data === 'string') {
           try {
             const msg = JSON.parse(event.data);
             send(msg);
           } catch {}
+          return;
+        }
+
+        let bytes = null;
+        if (event.data instanceof Blob) {
+          bytes = new Uint8Array(await event.data.arrayBuffer());
+        } else if (event.data instanceof ArrayBuffer) {
+          bytes = new Uint8Array(event.data);
+        } else if (ArrayBuffer.isView(event.data)) {
+          bytes = new Uint8Array(event.data.buffer);
+        }
+
+        if (bytes && bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
+          const imageData = bytes.slice(8);
+          const b64 = base64Encode(imageData);
+          send({ type: 'preview', image: b64, mime: detectMime(imageData) });
         }
       };
 
