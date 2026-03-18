@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
 
@@ -41,7 +41,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[680px] max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
       <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
@@ -121,26 +121,42 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex flex-wrap items-center gap-2 px-4 py-2 text-[10px] tracking-widest"
+          className="flex items-center justify-between px-4 py-2 text-[10px] tracking-widest"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
-          <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
-          <Divider />
-          <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
-          <Divider />
-          <SelectParam
-            label="RATIO"
-            value={ratio}
-            options={ASPECT_RATIOS}
-            onChange={setRatio}
-            defaultValue="3:4 (Golden Ratio)"
-          />
-          <Divider />
-          <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
-          <Divider />
-          <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
-          <Divider />
-          <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+          {/* Left group */}
+          <div className="flex items-center gap-2">
+            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
+            <Divider />
+            <SelectParam
+              label="RATIO"
+              value={ratio}
+              options={ASPECT_RATIOS}
+              onChange={setRatio}
+              defaultValue="3:4 (Golden Ratio)"
+            />
+            <Divider />
+            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
+            <Divider />
+            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
+          </div>
+
+          {/* Right group */}
+          <div className="flex items-center gap-2">
+            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
+            <Divider />
+            <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+            <button
+              onClick={generating ? undefined : handleGenerate}
+              disabled={disabled}
+              className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-white/15 transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              {generating
+                ? <Square className="w-2.5 h-2.5 text-white/70 fill-white/70" />
+                : <Play className="w-2.5 h-2.5 text-white/70 fill-white/70 ml-px" />
+              }
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
