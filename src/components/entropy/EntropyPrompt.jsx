@@ -19,7 +19,7 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange, isDark = true }) {
   const [cfg, setCfg] = useState(3.0);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [shift, setShift] = useState(1.0);
@@ -50,28 +50,40 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         <div className="flex flex-wrap items-center gap-2">
           {MODELS.map(m => (
             <button
-              key={m.checkpoint}
-              onClick={() => onModelChange(m.checkpoint)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
-              style={{
-                background: selectedModel === m.checkpoint
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
-                boxShadow: selectedModel === m.checkpoint
-                  ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
-                  : 'none',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              <motion.span
-                className="w-1 h-1 rounded-full bg-white"
-                animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
-                transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
-              />
-              <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
-                {m.label}
-              </span>
-            </button>
+                key={m.checkpoint}
+                onClick={() => onModelChange(m.checkpoint)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border backdrop-blur-2xl transition-all ${
+                  isDark ? 'border-white/10' : 'border-black/10'
+                }`}
+                style={{
+                  background: selectedModel === m.checkpoint
+                    ? isDark 
+                      ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
+                      : 'linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(50,30,100,0.08) 100%)'
+                    : isDark
+                      ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)'
+                      : 'linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(50,30,100,0.03) 100%)',
+                  boxShadow: selectedModel === m.checkpoint
+                    ? isDark
+                      ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
+                      : '0 4px 20px rgba(0,0,0,0.1), inset 0 1px 0 rgba(0,0,0,0.12)'
+                    : 'none',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <motion.span
+                  className={`w-1 h-1 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`}
+                  animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
+                  transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
+                />
+                <span className={`text-[9px] tracking-widest uppercase ${
+                  selectedModel === m.checkpoint 
+                    ? isDark ? 'text-white/80' : 'text-black/80'
+                    : isDark ? 'text-white/30' : 'text-black/30'
+                }`}>
+                  {m.label}
+                </span>
+              </button>
           ))}
         </div>
         <div className="pt-1">
