@@ -296,30 +296,34 @@ export default function useStudio() {
           if (data.type === 'executed' && data.data?.node === '15') {
             const filename = data.data.output?.images?.[0]?.filename;
             if (filename) {
-              const fnBase = appParams.appBaseUrl || '';
-              const blobRes = await fetch(`${fnBase}/functions/comfyuiProxyImage`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
-                },
-                body: JSON.stringify({ baseUrl, filename }),
-              });
-              const blob = await blobRes.blob();
-              const blobUrl = URL.createObjectURL(blob);
-              setGeneratedImageUrl(blobUrl);
-
-              // Persist image to GeneratedImage entity
               try {
-                const file = new File([blob], `gen-${Date.now()}.png`, { type: 'image/png' });
-                const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                await base44.entities.GeneratedImage.create({
-                  file_url,
-                  prompt: genParams.positivePrompt || '',
-                  params: { steps: genParams.steps, cfg: genParams.cfg, shift: genParams.shift, aspectRatio: genParams.aspectRatio, sampler: genParams.sampler, scheduler: genParams.scheduler, seed: genParams.seed },
+                const fnBase = appParams.appBaseUrl || '';
+                const blobRes = await fetch(`${fnBase}/functions/comfyuiProxyImage`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
+                  },
+                  body: JSON.stringify({ baseUrl, filename }),
                 });
+                const blob = await blobRes.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                setGeneratedImageUrl(blobUrl);
+
+                // Persist image to GeneratedImage entity
+                try {
+                  const file = new File([blob], `gen-${Date.now()}.png`, { type: 'image/png' });
+                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                  await base44.entities.GeneratedImage.create({
+                    file_url,
+                    prompt: genParams.positivePrompt || '',
+                    params: { steps: genParams.steps, cfg: genParams.cfg, shift: genParams.shift, aspectRatio: genParams.aspectRatio, sampler: genParams.sampler, scheduler: genParams.scheduler, seed: genParams.seed },
+                  });
+                } catch (e) {
+                  console.warn('Failed to persist generated image:', e);
+                }
               } catch (e) {
-                console.warn('Failed to persist generated image:', e);
+                console.error('Failed to fetch generated image:', e);
               }
             }
             setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
