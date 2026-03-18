@@ -143,9 +143,9 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
           {/* Right — sampler, scheduler */}
           <div className="flex flex-wrap items-center gap-2 text-[10px] tracking-widest">
-            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
+            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
-            <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+            <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
           </div>
         </div>
       </div>
@@ -265,6 +265,53 @@ function SeedModeButton({ active, onClick, children }) {
     >
       {children}
     </button>
+  );
+}
+
+function DragCycleParam({ label, value, options, onChange, defaultValue }) {
+  const startX = React.useRef(0);
+  const startIndex = React.useRef(0);
+  const hasChanged = React.useRef(false);
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    startX.current = e.clientX;
+    startIndex.current = Math.max(0, options.indexOf(value));
+    hasChanged.current = false;
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const handlePointerMove = (e) => {
+    const delta = e.clientX - startX.current;
+    const stepWidth = 24;
+    const stepDelta = Math.trunc(delta / stepWidth);
+    const nextIndex = Math.max(0, Math.min(options.length - 1, startIndex.current + stepDelta));
+    if (nextIndex !== options.indexOf(value)) {
+      hasChanged.current = true;
+      onChange(options[nextIndex]);
+    }
+  };
+
+  const handlePointerUp = () => {
+    document.removeEventListener('pointermove', handlePointerMove);
+    document.removeEventListener('pointerup', handlePointerUp);
+  };
+
+  const raw = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
+  const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
+
+  return (
+    <span className="text-white/35 flex items-center gap-1">
+      {label}{' '}
+      <span
+        onPointerDown={handlePointerDown}
+        onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
+        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+      >
+        {display}
+      </span>
+    </span>
   );
 }
 
