@@ -67,10 +67,14 @@ Deno.serve(async (req) => {
           bytes = new Uint8Array(event.data.buffer);
         }
 
-        if (bytes && bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
-          const imageData = bytes.slice(8);
-          const b64 = base64Encode(imageData);
-          send({ type: 'preview', image: b64, mime: detectMime(imageData) });
+        if (bytes) {
+          const preview = extractPreviewImage(bytes);
+          if (preview) {
+            const b64 = base64Encode(preview.imageData);
+            send({ type: 'preview', image: b64, mime: preview.mime });
+          } else {
+            console.log('comfyuiWsProxy: non-image binary packet', Array.from(bytes.slice(0, 12)));
+          }
         }
       };
 
