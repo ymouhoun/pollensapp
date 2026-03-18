@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import EntropyPrompt from '@/components/entropy/EntropyPrompt';
+import EntropyContextMenu from '@/components/entropy/EntropyContextMenu';
 import StudioStopped from '@/components/entropy/StudioStopped';
 import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
 import useStudio from '@/hooks/useStudio';
+import { base44 } from '@/api/base44Client';
 
 export default function Entropy() {
   const [prompt, setPrompt] = useState(() => {
