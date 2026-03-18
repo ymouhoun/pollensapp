@@ -231,7 +231,12 @@ export default function useStudio() {
           promptId: result.promptId,
         })).data;
         if (pollResult.done) {
-          setGeneratedImageUrl(pollResult.imageUrl);
+          // Proxy the image through backend since ComfyUI URL isn't publicly accessible
+          const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', {
+            baseUrl: baseUrlRef.current,
+            filename: pollResult.filename,
+          })).data;
+          setGeneratedImageUrl(proxyResult.imageDataUrl);
           setGeneratingPromptId(null);
           resetInactivity();
           return;
