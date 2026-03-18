@@ -149,7 +149,8 @@ function Divider() {
 
 function SelectParam({ label, value, options, onChange }) {
   // Show short display label
-  const display = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
+  const raw = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
+  const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
   return (
     <span className="relative text-white/35 flex items-center gap-1">
       {label}{' '}
