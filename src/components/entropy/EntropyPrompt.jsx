@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
@@ -17,7 +18,7 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, selectedModel, onModelChange }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onStopGeneration, generating, inputRef, studioStatus, gpuName, onStopStudio, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.0);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [shift, setShift] = useState(1.0);
@@ -90,33 +91,49 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)',
         }}
       >
-        {/* Text input */}
-        <div className="px-5 py-4 relative">
-          {!prompt && (
-            <motion.span
-              className="absolute top-4 left-5 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
-              style={{
-                backgroundImage: 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)',
-                backgroundSize: '200% 100%',
-                fontFamily: 'var(--font-sans)',
-              }}
-              animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+        {/* Text input + action button */}
+        <div className="px-5 py-4 relative flex items-end gap-3">
+          <div className="flex-1 relative">
+            {!prompt && (
+              <motion.span
+                className="absolute top-0 left-0 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)',
+                  backgroundSize: '200% 100%',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+              >
+                {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
+              </motion.span>
+            )}
+            <textarea
+              ref={inputRef}
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady && !generating) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
+              disabled={!isReady}
+              rows={1}
+              className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
+              style={{ fontFamily: 'var(--font-sans)' }}
+              onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+            />
+          </div>
+          {isReady && (
+            <LiquidButton
+              size="icon"
+              onClick={generating ? onStopGeneration : handleGenerate}
+              disabled={!generating && !prompt.trim()}
+              className="shrink-0 h-8 w-8 rounded-full"
             >
-              {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
-            </motion.span>
+              {generating ? (
+                <Square className="w-3 h-3 text-white/80 fill-white/80" />
+              ) : (
+                <Play className="w-3 h-3 text-white/80 fill-white/80 ml-0.5" />
+              )}
+            </LiquidButton>
           )}
-          <textarea
-            ref={inputRef}
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
-            disabled={disabled}
-            rows={1}
-            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
-            style={{ fontFamily: 'var(--font-sans)' }}
-            onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-          />
         </div>
 
         {/* Metadata bar */}

@@ -321,6 +321,16 @@ export default function useStudio() {
     });
   }, [status, resetInactivity]);
 
+  const stopGeneration = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.abort();
+      wsRef.current = null;
+    }
+    setGeneratingPromptId(null);
+    setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+    setGenProgress({ value: 0, max: 1 });
+  }, []);
+
   // Check for existing running instance on mount
   useEffect(() => {
     const checkExisting = async () => {
@@ -379,6 +389,7 @@ export default function useStudio() {
     genProgress,
     startStudio,
     stopStudio,
+    stopGeneration,
     generate,
     keepAlive,
     resetInactivity,

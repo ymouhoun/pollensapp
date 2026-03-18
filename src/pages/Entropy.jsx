@@ -85,6 +85,7 @@ export default function Entropy() {
         prompt={prompt}
         setPrompt={setPrompt}
         onGenerate={handleGenerate}
+        onStopGeneration={studio.stopGeneration}
         generating={!!studio.generatingPromptId}
         inputRef={inputRef}
         studioStatus={studio.status}
