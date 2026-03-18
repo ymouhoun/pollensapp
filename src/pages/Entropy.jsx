@@ -6,7 +6,7 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
-import useStudio from '@/components/useStudio';
+import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {
   const [prompt, setPrompt] = useState(() => {

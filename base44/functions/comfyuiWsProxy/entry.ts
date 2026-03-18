@@ -26,15 +26,15 @@ Deno.serve(async (req) => {
       };
 
       const ws = new WebSocket(wsUrl);
-      ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
         send({ type: 'connected' });
       };
 
-      ws.onmessage = (event) => {
-        if (event.data instanceof ArrayBuffer) {
-          const bytes = new Uint8Array(event.data);
+      ws.onmessage = async (event) => {
+        if (event.data instanceof Blob) {
+          const arrayBuffer = await event.data.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
           if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
             const imageData = bytes.slice(8);
             const b64 = base64Encode(imageData);

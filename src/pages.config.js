@@ -47,22 +47,8 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Entropy from './pages/Entropy';
-import Galaxy from './pages/Galaxy';
-import Iterate from './pages/Iterate';
-import Memory from './pages/Memory';
-import Settings from './pages/Settings';
-
-
-export const PAGES = {
-    "Entropy": Entropy,
-    "Galaxy": Galaxy,
-    "Iterate": Iterate,
-    "Memory": Memory,
-    "Settings": Settings,
-}
 
 export const pagesConfig = {
-    mainPage: "Memory",
-    Pages: PAGES,
-};
+	Pages: {}
+}
+
