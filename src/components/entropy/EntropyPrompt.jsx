@@ -101,7 +101,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         >
           {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
-            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.5} type="float" />
+            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" />
             <Divider />
             <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} />
             <Divider />
