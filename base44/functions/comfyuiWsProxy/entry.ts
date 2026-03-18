@@ -12,8 +12,17 @@ Deno.serve(async (req) => {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
+      let closed = false;
       const send = (data) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch { closed = true; }
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch {}
       };
 
       const ws = new WebSocket(wsUrl);
@@ -32,22 +41,23 @@ Deno.serve(async (req) => {
             send({ type: 'preview', image: b64 });
           }
         } else if (typeof event.data === 'string') {
-          const msg = JSON.parse(event.data);
-          send(msg);
+          try {
+            const msg = JSON.parse(event.data);
+            send(msg);
+          } catch {}
         }
       };
 
       ws.onerror = () => {
         send({ type: 'error', message: 'WebSocket error' });
-        controller.close();
+        close();
       };
 
       ws.onclose = () => {
         send({ type: 'ws_closed' });
-        controller.close();
+        close();
       };
 
-      // Close WS if client disconnects
       req.signal.addEventListener('abort', () => {
         ws.close();
       });

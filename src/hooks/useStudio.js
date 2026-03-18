@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before shutdown
@@ -221,15 +220,11 @@ export default function useStudio() {
     const seed = Math.floor(Math.random() * 2147483647);
 
     // Start SSE proxy first to listen for events
-    const fnUrl = `${appParams.appBaseUrl}/functions/comfyuiWsProxy`;
     let proxyRes;
     try {
-      proxyRes = await fetch(fnUrl, {
+      proxyRes = await base44.functions.fetch('/comfyuiWsProxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseUrl, clientId }),
         signal: abortController.signal,
       });
