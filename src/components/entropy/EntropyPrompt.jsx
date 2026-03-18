@@ -67,7 +67,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         >
           {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
-            <MetaParam label="CFG" value={cfg} />
+            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.5} type="float" />
             <Divider />
             <SelectParam
               label="RATIO"
@@ -76,7 +76,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               onChange={setRatio}
             />
             <Divider />
-            <MetaParam label="STEPS" value={steps} />
+            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} />
           </div>
 
           {/* Right — studio indicator */}
@@ -87,10 +87,19 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   );
 }
 
-function MetaParam({ label, value }) {
+function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number' }) {
   return (
-    <span className="text-white/35">
-      {label} <span className="text-white/65 font-medium">{value}</span>
+    <span className="text-white/35 flex items-center gap-1">
+      {label}{' '}
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(type === 'float' ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0)}
+        min={min}
+        max={max}
+        step={step}
+        className="bg-transparent text-white/65 font-medium w-10 text-center outline-none text-[10px] tracking-widest [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
     </span>
   );
 }
