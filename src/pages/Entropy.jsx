@@ -7,7 +7,7 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
-import useStudio from '@/hooks/useStudio';
+import useStudio from '@/lib/useStudio';
 import { base44 } from '@/api/base44Client';
 
 export default function Entropy() {
