@@ -146,6 +146,17 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           </div>
         </div>
       </div>
+
+      {/* Generate button below the prompt bar */}
+      {isReady && (
+        <div className="flex justify-center mt-4">
+          <GenerateButton
+            generating={generating}
+            onStart={handleGenerate}
+            onStop={onCancelGeneration}
+          />
+        </div>
+      )}
     </motion.div>
   );
 }
