@@ -127,17 +127,21 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 }
 
 function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number' }) {
+  const displayValue = type === 'float' ? value.toFixed(1) : value;
   return (
-    <span className="text-white/35 flex items-center gap-1">
+    <span className="text-white/35 flex items-center gap-1.5 group">
       {label}{' '}
+      <span className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center">{displayValue}</span>
       <input
-        type="number"
+        type="range"
         value={value}
-        onChange={e => onChange(type === 'float' ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0)}
+        onChange={e => onChange(type === 'float' ? parseFloat(e.target.value) : parseInt(e.target.value))}
         min={min}
         max={max}
         step={step}
-        className="bg-transparent text-white/65 font-medium w-10 text-center outline-none text-[10px] tracking-widest [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-14 h-[3px] appearance-none bg-white/10 rounded-full cursor-pointer outline-none
+          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white/50 [&::-webkit-slider-thumb]:hover:bg-white/80 [&::-webkit-slider-thumb]:transition-colors
+          [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:h-2 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white/50 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:hover:bg-white/80"
       />
     </span>
   );
