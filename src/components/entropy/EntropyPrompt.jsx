@@ -137,11 +137,11 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
           {/* Right group */}
           <div className="flex items-center gap-1">
+            <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
+            <Divider />
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
-            <Divider />
-            <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
             <button
               onClick={generating ? undefined : handleGenerate}
               disabled={disabled}
