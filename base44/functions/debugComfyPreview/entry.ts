@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
 
     const packetSummary = [];
     const textTypes = [];
+    const textSamples = [];
     let opened = false;
 
     await new Promise((resolve, reject) => {
@@ -59,7 +60,8 @@ Deno.serve(async (req) => {
           try {
             const msg = JSON.parse(event.data);
             textTypes.push(msg.type || 'unknown');
-            console.log('debugComfyPreview text', msg.type || 'unknown');
+            if (textSamples.length < 12) textSamples.push(msg);
+            console.log('debugComfyPreview text', JSON.stringify(msg));
           } catch {
             textTypes.push('non_json_text');
           }
@@ -102,7 +104,7 @@ Deno.serve(async (req) => {
       };
     });
 
-    return Response.json({ opened, textTypes, packetSummaryCount: packetSummary.length, packetSummary });
+    return Response.json({ opened, textTypes, textSamples, packetSummaryCount: packetSummary.length, packetSummary });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
