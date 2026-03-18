@@ -72,13 +72,25 @@ function EntropyContent() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
+    <div className={`fixed inset-0 overflow-hidden transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-white'}`}>
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className={`fixed top-8 right-8 z-40 p-2 rounded-lg transition-all ${
+          isDark 
+            ? 'bg-white/10 hover:bg-white/20 text-white/60 hover:text-white/80' 
+            : 'bg-black/10 hover:bg-black/20 text-black/60 hover:text-black/80'
+        }`}
+      >
+        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
+      <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} isDark={isDark} />
 
       {/* Center area — state dependent */}
       <div className="w-full h-full flex items-center justify-center">
         {studio.status === 'STOPPED' && (
-          <StudioStopped onStart={() => studio.startStudio(selectedModel)} />
+          <StudioStopped onStart={() => studio.startStudio(selectedModel)} isDark={isDark} />
         )}
         {studio.status === 'STARTING' && (
           <StudioLoading
@@ -86,18 +98,19 @@ function EntropyContent() {
             costPerHour={studio.costPerHour}
             statusMessage={studio.statusMessage}
             bootProgress={studio.bootProgress}
+            isDark={isDark}
           />
         )}
         {studio.status === 'ERROR' && (
-          <StudioError message={studio.errorMessage} onRetry={handleRetry} />
+          <StudioError message={studio.errorMessage} onRetry={handleRetry} isDark={isDark} />
         )}
         {studio.status === 'STOPPING' && (
-          <p className="text-xs text-white/30 tracking-widest uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
+          <p className={`text-xs tracking-widest uppercase ${isDark ? 'text-white/30' : 'text-black/30'}`} style={{ fontFamily: 'var(--font-sans)' }}>
             Session ended
           </p>
         )}
         {studio.status === 'READY' && !studio.generatedImageUrl && !studio.generatingPromptId && images.length === 0 && (
-          <p className="text-white/10 text-xs tracking-widest uppercase select-none" style={{ fontFamily: 'var(--font-sans)' }}>
+          <p className={`text-xs tracking-widest uppercase select-none ${isDark ? 'text-white/10' : 'text-black/10'}`} style={{ fontFamily: 'var(--font-sans)' }}>
             entropy
           </p>
         )}
@@ -140,7 +153,16 @@ function EntropyContent() {
         onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        isDark={isDark}
       />
     </div>
+  );
+}
+
+export default function Entropy() {
+  return (
+    <ThemeProvider>
+      <EntropyContent />
+    </ThemeProvider>
   );
 }
