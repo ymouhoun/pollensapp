@@ -103,17 +103,19 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         <div className="px-5 pt-4 pb-2 relative">
           {!prompt && (
             <motion.span
-              className="absolute top-4 left-5 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
-              style={{
-                backgroundImage: 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)',
-                backgroundSize: '200% 100%',
-                fontFamily: 'var(--font-sans)',
-              }}
-              animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
-            >
-              {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
-            </motion.span>
+                className="absolute top-4 left-5 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: isDark
+                    ? 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)'
+                    : 'linear-gradient(110deg, #c0c0c0, 35%, #707070, 50%, #c0c0c0, 75%, #c0c0c0)',
+                  backgroundSize: '200% 100%',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+              >
+                {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
+              </motion.span>
           )}
           <textarea
             ref={inputRef}
@@ -122,7 +124,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
             disabled={disabled}
             rows={1}
-            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
+            className={`w-full bg-transparent text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30 ${isDark ? 'text-white/75' : 'text-black/75'}`}
             style={{ fontFamily: 'var(--font-sans)' }}
             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
@@ -134,29 +136,30 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           style={{ fontFamily: 'var(--font-banana)' }}
         >
           {/* Left group */}
-          <div className="flex items-center gap-1">
-            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
-            <Divider />
-            <SelectParam
-              label="RATIO"
-              value={ratio}
-              options={ASPECT_RATIOS}
-              onChange={setRatio}
-              defaultValue="3:4 (Golden Ratio)"
-            />
-            <Divider />
-            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
-            <Divider />
-            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
-          </div>
+           <div className="flex items-center gap-1">
+             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} isDark={isDark} />
+             <Divider isDark={isDark} />
+             <SelectParam
+               label="RATIO"
+               value={ratio}
+               options={ASPECT_RATIOS}
+               onChange={setRatio}
+               defaultValue="3:4 (Golden Ratio)"
+               isDark={isDark}
+             />
+             <Divider isDark={isDark} />
+             <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} isDark={isDark} />
+             <Divider isDark={isDark} />
+             <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} isDark={isDark} />
+           </div>
 
-          {/* Right group */}
-          <div className="flex items-center gap-1">
-            <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
-            <Divider />
-            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
-            <Divider />
-            <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+           {/* Right group */}
+           <div className="flex items-center gap-1">
+             <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} isDark={isDark} />
+             <Divider isDark={isDark} />
+             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" isDark={isDark} />
+             <Divider isDark={isDark} />
+             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" isDark={isDark} />
             <div className="ml-1" style={{ opacity: (!generating && disabled) ? 0.2 : 1, pointerEvents: (!generating && disabled) ? 'none' : 'auto', transform: 'scale(0.52)', transformOrigin: 'center', marginTop: '-8px', marginBottom: '-8px', marginRight: '-10px' }}>
               <LiquidMetalButton
                 viewMode="icon"
@@ -212,8 +215,8 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
   );
 }
 
-function Divider() {
-  return <span className="text-white/15">|</span>;
+function Divider({ isDark = true }) {
+  return <span className={isDark ? 'text-white/15' : 'text-black/15'}>|</span>;
 }
 
 function SeedParam({ mode, onModeChange, value, onValueChange }) {
