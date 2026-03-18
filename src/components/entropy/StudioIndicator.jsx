@@ -7,8 +7,8 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
   return (
     <div className="flex items-center gap-2 text-[10px] tracking-widest" style={{ fontFamily: 'var(--font-sans)' }}>
       <motion.div
-        className="w-1.5 h-1.5 rounded-full bg-emerald-400"
-        animate={{ opacity: [0.5, 1, 0.5], boxShadow: ['0 0 3px 1px rgba(52,211,153,0.2)', '0 0 8px 3px rgba(52,211,153,0.6)', '0 0 3px 1px rgba(52,211,153,0.2)'] }}
+        className="w-1.5 h-1.5 rounded-full bg-white"
+        animate={{ boxShadow: ['0 0 4px 2px rgba(255,255,255,0.3)', '0 0 12px 6px rgba(255,255,255,0.8)', '0 0 4px 2px rgba(255,255,255,0.3)'] }}
         transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
       />
       <span className="text-white/30">{gpuName || 'GPU'}</span>
