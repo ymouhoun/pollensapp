@@ -19,10 +19,17 @@ Deno.serve(async (req) => {
   }
 
   const data = await res.json();
-  // The API returns the instance directly when querying by ID
-  const instance = Array.isArray(data.instances)
-    ? data.instances.find(i => String(i.id) === String(instanceId))
-    : (data.id ? data : null);
+  console.log('vastaiPoll raw keys:', Object.keys(data), 'has id:', !!data.id, 'has instances:', !!data.instances);
+  
+  // The API may return the instance directly, or wrapped in an object
+  let instance = null;
+  if (data.id) {
+    instance = data;
+  } else if (Array.isArray(data.instances)) {
+    instance = data.instances.find(i => String(i.id) === String(instanceId)) || data.instances[0];
+  } else if (data.instances && typeof data.instances === 'object') {
+    instance = data.instances;
+  }
 
   if (!instance) {
     return Response.json({ status: 'not_found' });
