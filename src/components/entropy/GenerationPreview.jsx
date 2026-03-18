@@ -1,5 +1,4 @@
 import React from 'react';
-import ProgressVisualization from '@/components/entropy/ProgressVisualization';
 
 export default function GenerationPreview({ previewUrl, progress }) {
   const { value, max } = progress;
@@ -20,7 +19,9 @@ export default function GenerationPreview({ previewUrl, progress }) {
             }}
           />
         ) : (
-          <ProgressVisualization ratio={ratio} />
+          <div className="w-64 h-80 flex items-center justify-center">
+            <div className="w-6 h-6 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+          </div>
         )}
       </div>
       <p

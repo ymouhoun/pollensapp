@@ -281,7 +281,7 @@ export default function useStudio() {
             const binary = atob(data.image);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const blob = new Blob([bytes], { type: data.mime || 'image/jpeg' });
+            const blob = new Blob([bytes], { type: 'image/jpeg' });
             const url = URL.createObjectURL(blob);
             setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
           }
