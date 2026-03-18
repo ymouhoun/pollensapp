@@ -217,17 +217,33 @@ export default function useStudio() {
     let abortController = new AbortController();
     wsRef.current = abortController; // reuse ref for cleanup
 
-    // 1. Start SSE proxy (backend connects WebSocket to ComfyUI)
+    // 1. Submit prompt via normal invoke, then poll for progress via SSE proxy
+    const seed = Math.floor(Math.random() * 2147483647);
+
+    // Start SSE proxy first to listen for events
     const fnUrl = `${appParams.appBaseUrl}/functions/comfyuiWsProxy`;
-    const proxyRes = await fetch(fnUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
-      },
-      body: JSON.stringify({ baseUrl, clientId }),
-      signal: abortController.signal,
-    });
+    let proxyRes;
+    try {
+      proxyRes = await fetch(fnUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
+        },
+        body: JSON.stringify({ baseUrl, clientId }),
+        signal: abortController.signal,
+      });
+    } catch (err) {
+      console.error('SSE proxy fetch failed:', err);
+      setGeneratingPromptId(null);
+      return;
+    }
+
+    if (!proxyRes.ok) {
+      console.error('SSE proxy returned', proxyRes.status);
+      setGeneratingPromptId(null);
+      return;
+    }
 
     const reader = proxyRes.body.getReader();
     const decoder = new TextDecoder();
@@ -245,12 +261,11 @@ export default function useStudio() {
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-          const data = JSON.parse(line.slice(6));
+          let data;
+          try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
           if (data.type === 'connected' && !promptSubmitted) {
             promptSubmitted = true;
-            // Submit prompt now that WS is connected
-            const seed = Math.floor(Math.random() * 2147483647);
             const result = (await base44.functions.invoke('comfyuiGenerate', {
               baseUrl, positivePrompt, seed,
               steps: steps || 40, cfg: cfg || 3.0, shift: shift || 1.0,
@@ -300,7 +315,8 @@ export default function useStudio() {
       }
     };
 
-    processEvents().catch(() => {
+    processEvents().catch((err) => {
+      if (err?.name !== 'AbortError') console.error('SSE processing error:', err);
       setGeneratingPromptId(null);
     });
   }, [status, resetInactivity]);
