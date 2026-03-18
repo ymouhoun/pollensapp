@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const PALETTE = [
   "#BC82F3", "#F5B9EA", "#8D9FFF", "#AA6EEE",
@@ -75,46 +75,56 @@ function GlowLayer({ stops, blur, strokeWidth, opacity, angle }) {
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
 export default function AppleGlowBorder({ children }) {
-  const [fromStops, setFromStops] = useState(() => generateStops(PALETTE));
-  const [toStops, setToStops] = useState(() => generateStops(PALETTE));
-  const [progress, setProgress] = useState(0);
-  const [angle, setAngle] = useState(0);
-  const rafRef = useRef(null);
-  const lastRef = useRef(performance.now());
-  const cycleMs = useRef(randomBetween(1800, 2800));
+  const [, forceRender] = useState(0);
 
-  const tick = useCallback((now) => {
-    const dt = now - lastRef.current;
-    const newProgress = progress + dt / cycleMs.current;
-    if (newProgress >= 1) {
-      setFromStops(toStops);
-      setToStops(generateStops(PALETTE));
-      setProgress(0);
-      cycleMs.current = randomBetween(1800, 2800);
-    } else {
-      setProgress(newProgress);
-    }
-    setAngle((prev) => (prev + dt * 0.012) % 360);
-    lastRef.current = now;
-    rafRef.current = requestAnimationFrame(tick);
-  }, [progress, toStops]);
+  const stateRef = useRef({
+    fromStops: generateStops(PALETTE),
+    toStops: generateStops(PALETTE),
+    progress: 0,
+    angle: 0,
+    cycleMs: randomBetween(1800, 2800),
+    lastTime: performance.now(),
+  });
 
   useEffect(() => {
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [tick]);
+    let raf;
+    const tick = (now) => {
+      const s = stateRef.current;
+      const dt = now - s.lastTime;
+      s.lastTime = now;
 
-  const t = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-  const currentStops = interpolateStops(fromStops, toStops, t);
-  const angle2 = (angle + 137) % 360;
+      s.progress += dt / s.cycleMs;
+      if (s.progress >= 1) {
+        s.fromStops = s.toStops;
+        s.toStops = generateStops(PALETTE);
+        s.progress = 0;
+        s.cycleMs = randomBetween(1800, 2800);
+      }
+
+      s.angle = (s.angle + dt * 0.012) % 360;
+
+      forceRender((n) => n + 1);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const s = stateRef.current;
+  const t = s.progress < 0.5
+    ? 2 * s.progress * s.progress
+    : 1 - Math.pow(-2 * s.progress + 2, 2) / 2;
+
+  const currentStops = interpolateStops(s.fromStops, s.toStops, t);
+  const angle2 = (s.angle + 137) % 360;
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#000", overflow: "hidden" }}>
       <GrainFilter />
       <GlowLayer stops={currentStops} blur={38} strokeWidth={32} opacity={0.45} angle={angle2} />
-      <GlowLayer stops={currentStops} blur={18} strokeWidth={18} opacity={0.6} angle={angle} />
+      <GlowLayer stops={currentStops} blur={18} strokeWidth={18} opacity={0.6} angle={s.angle} />
       <GlowLayer stops={currentStops} blur={7} strokeWidth={10} opacity={0.75} angle={angle2} />
-      <GlowLayer stops={currentStops} blur={0} strokeWidth={4} opacity={0.9} angle={angle} />
+      <GlowLayer stops={currentStops} blur={0} strokeWidth={4} opacity={0.9} angle={s.angle} />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", filter: "url(#glow-grain)", mixBlendMode: "overlay", opacity: 0.35, zIndex: 2 }} />
       <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
         {children}
