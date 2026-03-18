@@ -246,6 +246,42 @@ export default function useStudio() {
     pollResultLoop();
   }, [status, resetInactivity]);
 
+  // Check for existing running instance on mount
+  useEffect(() => {
+    const checkExisting = async () => {
+      try {
+        const result = (await base44.functions.invoke('vastaiListInstances', {})).data;
+        if (result.instances && result.instances.length > 0) {
+          const instance = result.instances[0];
+          instanceIdRef.current = instance.id;
+          setGpuName(instance.gpuName || '');
+          setCostPerHour(instance.costPerHour || 0);
+
+          if (instance.baseUrl) {
+            baseUrlRef.current = instance.baseUrl;
+            // Check if ComfyUI is ready
+            try {
+              const healthResult = (await base44.functions.invoke('comfyuiHealth', { baseUrl: instance.baseUrl })).data;
+              if (healthResult.ready) {
+                setStatus('READY');
+                resetInactivity();
+                return;
+              }
+            } catch (e) {
+              console.warn('Health check failed on existing instance');
+            }
+          }
+          // Instance exists but not ready yet — show as starting
+          setStatus('STARTING');
+          setStatusMessage('Reconnecting to your instance...');
+        }
+      } catch (e) {
+        console.warn('Failed to check existing instances:', e);
+      }
+    };
+    checkExisting();
+  }, [resetInactivity]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
