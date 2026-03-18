@@ -180,8 +180,12 @@ export default function useStudio() {
         return;
       }
       await new Promise(r => setTimeout(r, POLL_HEALTH_INTERVAL));
-      const healthResult = (await base44.functions.invoke('comfyuiHealth', { baseUrl })).data;
-      if (healthResult.ready) break;
+      try {
+        const healthResult = (await base44.functions.invoke('comfyuiHealth', { baseUrl })).data;
+        if (healthResult.ready) break;
+      } catch (e) {
+        console.warn('Health check error, retrying...', e);
+      }
     }
 
     if (cancelledRef.current) { clearInterval(progressInterval); return; }
