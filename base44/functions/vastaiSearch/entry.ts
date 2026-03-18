@@ -36,13 +36,28 @@ Deno.serve(async (req) => {
 
     const url = `https://console.vast.ai/api/v0/bundles?q=${encodeURIComponent(JSON.stringify(query))}`;
 
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${VAST_API_KEY}` },
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${VAST_API_KEY}` },
+      });
+    } catch (e) {
+      console.warn(`Fetch failed for ${gpuName}:`, e.message);
+      continue;
+    }
 
-    if (!res.ok) continue;
+    if (!res.ok) {
+      console.warn(`Vast API returned ${res.status} for ${gpuName}`);
+      continue;
+    }
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      console.warn(`JSON parse failed for ${gpuName}:`, e.message);
+      continue;
+    }
     const offers = data.offers || [];
 
     const affordable = offers.filter(o => o.dph_total <= MAX_COST_PER_HOUR);
