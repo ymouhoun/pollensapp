@@ -45,8 +45,10 @@ Deno.serve(async (req) => {
     const data = await res.json();
     const offers = data.offers || [];
 
-    if (offers.length > 0) {
-      const best = offers[0];
+    const affordable = offers.filter(o => o.dph_total <= MAX_COST_PER_HOUR);
+
+    if (affordable.length > 0) {
+      const best = affordable[0];
       return Response.json({
         found: true,
         offerId: best.id,
