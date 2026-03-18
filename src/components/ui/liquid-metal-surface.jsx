@@ -30,6 +30,7 @@ export default function LiquidMetalSurface({ children, className = "", style = {
     // Small delay to ensure layout is settled
     const timer = setTimeout(() => {
       if (mountRef.current?.destroy) mountRef.current.destroy();
+      else if (mountRef.current?.dispose) mountRef.current.dispose();
       mountRef.current = new ShaderMount(
         shaderRef.current,
         liquidMetalFragmentShader,
@@ -54,10 +55,9 @@ export default function LiquidMetalSurface({ children, className = "", style = {
 
     return () => {
       clearTimeout(timer);
-      if (mountRef.current?.destroy) {
-        mountRef.current.destroy();
-        mountRef.current = null;
-      }
+      if (mountRef.current?.destroy) mountRef.current.destroy();
+      else if (mountRef.current?.dispose) mountRef.current.dispose();
+      mountRef.current = null;
     };
   }, []);
 
@@ -67,7 +67,8 @@ export default function LiquidMetalSurface({ children, className = "", style = {
     const ro = new ResizeObserver(() => {
       if (!shaderRef.current || !mountRef.current) return;
       // Force canvas resize by destroying and recreating
-      mountRef.current.destroy();
+      if (mountRef.current?.destroy) mountRef.current.destroy();
+      else if (mountRef.current?.dispose) mountRef.current.dispose();
       mountRef.current = new ShaderMount(
         shaderRef.current,
         liquidMetalFragmentShader,
