@@ -6,7 +6,6 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
-import AppleGlowBorder from '@/components/entropy/AppleGlowBorder';
 import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {
@@ -38,11 +37,8 @@ export default function Entropy() {
     await studio.stopStudio();
   };
 
-  const showBorderLoading = studio.status === 'STARTING' || !!studio.generatingPromptId;
-
   return (
-    <AppleGlowBorder active={showBorderLoading}>
-      <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-black overflow-hidden">
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
 
       {/* Center area — state dependent */}
@@ -97,7 +93,6 @@ export default function Entropy() {
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
       />
-      </div>
-    </AppleGlowBorder>
+    </div>
   );
 }
