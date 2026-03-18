@@ -205,7 +205,7 @@ function Divider() {
   return <span className="text-white/15">|</span>;
 }
 
-function SeedControl({ mode, onModeChange, value, onValueChange }) {
+function SeedParam({ mode, onModeChange, value, onValueChange }) {
   const startX = React.useRef(0);
   const startValue = React.useRef(Number(value));
 
@@ -231,46 +231,21 @@ function SeedControl({ mode, onModeChange, value, onValueChange }) {
   };
 
   return (
-    <div
-      className="group flex items-center overflow-hidden rounded-lg border border-white/10 backdrop-blur-2xl transition-all duration-300 hover:w-[25rem] focus-within:w-[25rem]"
-      style={{
-        width: '10.75rem',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        fontFamily: 'var(--font-sans)',
-      }}
-    >
-      <div className="flex min-w-[10.75rem] items-center gap-2 px-2 py-1">
-        <span className="text-[9px] tracking-widest uppercase text-white/35">Seed</span>
-        <span
-          onPointerDown={handlePointerDown}
-          className="w-[7.25rem] cursor-ew-resize select-none text-[9px] font-medium tracking-widest text-white/75 transition-colors hover:text-white/90"
-        >
-          {value}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 border-l border-white/10 px-1.5 py-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-        <SeedModeButton active={mode === 'fixed'} onClick={() => onModeChange('fixed')}>
-          Fixed
-        </SeedModeButton>
-        <SeedModeButton active={mode === 'random'} onClick={() => onModeChange('random')}>
-          Randomize
-        </SeedModeButton>
-      </div>
-    </div>
-  );
-}
-
-function SeedModeButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded px-2 py-1 text-[9px] uppercase tracking-widest transition-colors whitespace-nowrap ${active ? 'bg-white/14 text-white/80' : 'text-white/35 hover:text-white/65'}`}
-
-    >
-      {children}
-    </button>
+    <span className="text-white/35 flex items-center gap-1">
+      <span
+        className="cursor-pointer select-none hover:text-white/55 transition-colors"
+        onClick={() => onModeChange(mode === 'random' ? 'fixed' : 'random')}
+        title={mode === 'random' ? 'Randomize (click to fix)' : 'Fixed (click to randomize)'}
+      >
+        SEED{mode === 'random' ? ' ~' : ''}
+      </span>
+      <span
+        onPointerDown={handlePointerDown}
+        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+      >
+        {value}
+      </span>
+    </span>
   );
 }
 
