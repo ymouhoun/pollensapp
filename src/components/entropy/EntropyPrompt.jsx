@@ -128,21 +128,41 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
 function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number' }) {
   const displayValue = type === 'float' ? value.toFixed(1) : value;
+  const startX = React.useRef(0);
+  const startValue = React.useRef(value);
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    startX.current = e.clientX;
+    startValue.current = value;
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const handlePointerMove = (e) => {
+    const delta = e.clientX - startX.current;
+    const range = max - min;
+    const sensitivity = 150; // pixels to drag full range
+    let newValue = startValue.current + (delta / sensitivity) * range;
+    newValue = Math.round(newValue / step) * step;
+    newValue = Math.max(min, Math.min(max, newValue));
+    onChange(type === 'float' ? parseFloat(newValue.toFixed(1)) : Math.round(newValue));
+  };
+
+  const handlePointerUp = () => {
+    document.removeEventListener('pointermove', handlePointerMove);
+    document.removeEventListener('pointerup', handlePointerUp);
+  };
+
   return (
     <span className="text-white/35 flex items-center gap-1.5 group">
       {label}{' '}
-      <span className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center">{displayValue}</span>
-      <input
-        type="range"
-        value={value}
-        onChange={e => onChange(type === 'float' ? parseFloat(e.target.value) : parseInt(e.target.value))}
-        min={min}
-        max={max}
-        step={step}
-        className="w-14 h-[3px] appearance-none bg-white/10 rounded-full cursor-pointer outline-none
-          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white/50 [&::-webkit-slider-thumb]:hover:bg-white/80 [&::-webkit-slider-thumb]:transition-colors
-          [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:h-2 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white/50 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:hover:bg-white/80"
-      />
+      <span
+        onPointerDown={handlePointerDown}
+        className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-white/90 transition-colors"
+      >
+        {displayValue}
+      </span>
     </span>
   );
 }
