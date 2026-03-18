@@ -1,0 +1,258 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+
+const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
+const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before shutdown
+const BOOT_TIMEOUT = 12 * 60 * 1000; // 12 minutes max
+const POLL_INSTANCE_INTERVAL = 10000;
+const POLL_HEALTH_INTERVAL = 10000;
+const POLL_RESULT_INTERVAL = 3000;
+
+const MODELS = [
+  { label: 'Editorial', checkpoint: 'editorial.safetensors' },
+];
+
+const STATUS_MESSAGES = [
+  'Finding the best available GPU...',
+  'Starting your instance...',
+  'Pulling Docker environment...',
+  'Downloading models from storage... (~50GB)',
+  'Loading models into GPU memory...',
+  'Almost ready...',
+];
+
+export { MODELS, STATUS_MESSAGES };
+
+export default function useStudio() {
+  const [status, setStatus] = useState('STOPPED'); // STOPPED | STARTING | READY | STOPPING | ERROR
+  const [gpuName, setGpuName] = useState('');
+  const [costPerHour, setCostPerHour] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [bootProgress, setBootProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [generatingPromptId, setGeneratingPromptId] = useState(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
+
+  const instanceIdRef = useRef(null);
+  const baseUrlRef = useRef(null);
+  const bootStartRef = useRef(null);
+  const inactivityTimerRef = useRef(null);
+  const warningTimerRef = useRef(null);
+  const pollRef = useRef(null);
+  const cancelledRef = useRef(false);
+
+  const clearTimers = useCallback(() => {
+    clearTimeout(inactivityTimerRef.current);
+    clearTimeout(warningTimerRef.current);
+    clearInterval(pollRef.current);
+  }, []);
+
+  const resetInactivity = useCallback(() => {
+    setShowInactivityWarning(false);
+    clearTimeout(inactivityTimerRef.current);
+    clearTimeout(warningTimerRef.current);
+
+    warningTimerRef.current = setTimeout(() => {
+      setShowInactivityWarning(true);
+    }, INACTIVITY_TIMEOUT - WARNING_BEFORE);
+
+    inactivityTimerRef.current = setTimeout(() => {
+      stopStudio();
+    }, INACTIVITY_TIMEOUT);
+  }, []);
+
+  const keepAlive = useCallback(() => {
+    setShowInactivityWarning(false);
+    resetInactivity();
+  }, [resetInactivity]);
+
+  const stopStudio = useCallback(async () => {
+    clearTimers();
+    cancelledRef.current = true;
+    const id = instanceIdRef.current;
+    if (id) {
+      setStatus('STOPPING');
+      await base44.functions.invoke('vastaiDestroy', { instanceId: id });
+    }
+    instanceIdRef.current = null;
+    baseUrlRef.current = null;
+    setStatus('STOPPED');
+    setGpuName('');
+    setCostPerHour(0);
+    setBootProgress(0);
+    setGeneratingPromptId(null);
+    setGeneratedImageUrl(null);
+    setShowInactivityWarning(false);
+  }, [clearTimers]);
+
+  const startStudio = useCallback(async (selectedCheckpoint) => {
+    cancelledRef.current = false;
+    setStatus('STARTING');
+    setErrorMessage('');
+    setBootProgress(0);
+    bootStartRef.current = Date.now();
+
+    // Progress ticker
+    const progressInterval = setInterval(() => {
+      if (cancelledRef.current) { clearInterval(progressInterval); return; }
+      const elapsed = Date.now() - bootStartRef.current;
+      const total = 6 * 60 * 1000; // 6 min calibration
+      const p = Math.min(elapsed / total, 0.95);
+      setBootProgress(p);
+      const msgIdx = Math.min(Math.floor(p * STATUS_MESSAGES.length), STATUS_MESSAGES.length - 1);
+      setStatusMessage(STATUS_MESSAGES[msgIdx]);
+    }, 1000);
+
+    // 1. Search Europe first
+    setStatusMessage('Finding the best available GPU...');
+    let searchResult = (await base44.functions.invoke('vastaiSearch', { europeOnly: true })).data;
+
+    if (!searchResult.found) {
+      setStatusMessage('No European GPU available — searching globally...');
+      searchResult = (await base44.functions.invoke('vastaiSearch', { europeOnly: false })).data;
+    }
+
+    if (!searchResult.found) {
+      clearInterval(progressInterval);
+      setStatus('ERROR');
+      setErrorMessage('No compatible GPU available right now. Please try again in a few minutes.');
+      return;
+    }
+
+    if (cancelledRef.current) { clearInterval(progressInterval); return; }
+
+    setGpuName(searchResult.gpuName);
+    setCostPerHour(searchResult.costPerHour);
+    setStatusMessage(`Starting your ${searchResult.gpuName} instance...`);
+
+    // 2. Create instance
+    const createResult = (await base44.functions.invoke('vastaiCreate', {
+      offerId: searchResult.offerId,
+      checkpoint: selectedCheckpoint || 'editorial.safetensors',
+      vae: 'qwen_image_vae.safetensors',
+      textEncoder: 'qwen_2.5_vl_7b_fp8_scaled.safetensors',
+    })).data;
+
+    if (!createResult.instanceId) {
+      clearInterval(progressInterval);
+      setStatus('ERROR');
+      setErrorMessage('Failed to create GPU instance. Please try again.');
+      return;
+    }
+
+    if (cancelledRef.current) { clearInterval(progressInterval); return; }
+    instanceIdRef.current = createResult.instanceId;
+
+    // 3. Poll for port / base URL
+    setStatusMessage('Pulling Docker environment...');
+    let baseUrl = null;
+    const pollStart = Date.now();
+
+    while (!baseUrl && !cancelledRef.current) {
+      if (Date.now() - pollStart > BOOT_TIMEOUT) {
+        clearInterval(progressInterval);
+        setStatus('ERROR');
+        setErrorMessage('Studio failed to start — timed out waiting for instance.');
+        return;
+      }
+      await new Promise(r => setTimeout(r, POLL_INSTANCE_INTERVAL));
+      const pollResult = (await base44.functions.invoke('vastaiPoll', { instanceId: createResult.instanceId })).data;
+      if (pollResult.baseUrl) {
+        baseUrl = pollResult.baseUrl;
+      }
+    }
+
+    if (cancelledRef.current) { clearInterval(progressInterval); return; }
+    baseUrlRef.current = baseUrl;
+    setStatusMessage('Loading models into GPU memory...');
+
+    // 4. Poll ComfyUI health
+    while (!cancelledRef.current) {
+      if (Date.now() - bootStartRef.current > BOOT_TIMEOUT) {
+        clearInterval(progressInterval);
+        setStatus('ERROR');
+        setErrorMessage('Studio failed to start.');
+        return;
+      }
+      await new Promise(r => setTimeout(r, POLL_HEALTH_INTERVAL));
+      const healthResult = (await base44.functions.invoke('comfyuiHealth', { baseUrl })).data;
+      if (healthResult.ready) break;
+    }
+
+    if (cancelledRef.current) { clearInterval(progressInterval); return; }
+
+    clearInterval(progressInterval);
+    setBootProgress(1);
+    setStatus('READY');
+    setStatusMessage('');
+    resetInactivity();
+  }, [resetInactivity]);
+
+  const generate = useCallback(async ({ positivePrompt, steps, cfg, aspectRatio }) => {
+    if (status !== 'READY' || !baseUrlRef.current) return;
+    resetInactivity();
+    setGeneratingPromptId('pending');
+    setGeneratedImageUrl(null);
+
+    const seed = Math.floor(Math.random() * 2147483647);
+    const result = (await base44.functions.invoke('comfyuiGenerate', {
+      baseUrl: baseUrlRef.current,
+      positivePrompt,
+      seed,
+      steps: steps || 40,
+      cfg: cfg || 3.0,
+      aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
+    })).data;
+
+    if (!result.promptId) {
+      setGeneratingPromptId(null);
+      return;
+    }
+
+    setGeneratingPromptId(result.promptId);
+
+    // Poll result
+    const pollResultLoop = async () => {
+      while (true) {
+        await new Promise(r => setTimeout(r, POLL_RESULT_INTERVAL));
+        const pollResult = (await base44.functions.invoke('comfyuiPollResult', {
+          baseUrl: baseUrlRef.current,
+          promptId: result.promptId,
+        })).data;
+        if (pollResult.done) {
+          setGeneratedImageUrl(pollResult.imageUrl);
+          setGeneratingPromptId(null);
+          resetInactivity();
+          return;
+        }
+      }
+    };
+    pollResultLoop();
+  }, [status, resetInactivity]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimers();
+      cancelledRef.current = true;
+    };
+  }, [clearTimers]);
+
+  return {
+    status,
+    gpuName,
+    costPerHour,
+    statusMessage,
+    bootProgress,
+    errorMessage,
+    showInactivityWarning,
+    generatingPromptId,
+    generatedImageUrl,
+    startStudio,
+    stopStudio,
+    generate,
+    keepAlive,
+    resetInactivity,
+  };
+}
