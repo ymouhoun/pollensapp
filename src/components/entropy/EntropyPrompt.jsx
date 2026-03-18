@@ -173,7 +173,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   );
 }
 
-function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue }) {
+function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue, isDark = true }) {
   const displayValue = type === 'float' ? value.toFixed(1) : value;
   const startX = React.useRef(0);
   const startValue = React.useRef(value);
@@ -202,12 +202,12 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
   };
 
   return (
-    <span className="text-white/35 flex items-center gap-1 group">
+    <span className={`flex items-center gap-1 group ${isDark ? 'text-white/35' : 'text-black/35'}`}>
       {label}{' '}
       <span
         onPointerDown={handlePointerDown}
         onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
-        className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className={`font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none transition-colors ${isDark ? 'text-white/65 hover:text-white/90' : 'text-black/65 hover:text-black/90'}`}
       >
         {displayValue}
       </span>
@@ -219,7 +219,7 @@ function Divider({ isDark = true }) {
   return <span className={isDark ? 'text-white/15' : 'text-black/15'}>|</span>;
 }
 
-function SeedParam({ mode, onModeChange, value, onValueChange }) {
+function SeedParam({ mode, onModeChange, value, onValueChange, isDark = true }) {
   const startX = React.useRef(0);
   const startValue = React.useRef(Number(value));
 
@@ -245,9 +245,9 @@ function SeedParam({ mode, onModeChange, value, onValueChange }) {
   };
 
   return (
-    <span className="text-white/35 flex items-center gap-1">
+    <span className={`flex items-center gap-1 ${isDark ? 'text-white/35' : 'text-black/35'}`}>
       <span
-        className="cursor-pointer select-none hover:text-white/55 transition-colors"
+        className={`cursor-pointer select-none transition-colors ${isDark ? 'hover:text-white/55' : 'hover:text-black/55'}`}
         onClick={() => onModeChange(mode === 'random' ? 'fixed' : 'random')}
         title={mode === 'random' ? 'Randomize (click to fix)' : 'Fixed (click to randomize)'}
       >
@@ -255,7 +255,7 @@ function SeedParam({ mode, onModeChange, value, onValueChange }) {
       </span>
       <span
         onPointerDown={handlePointerDown}
-        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className={`font-medium cursor-ew-resize select-none transition-colors ${isDark ? 'text-white/65 hover:text-white/90' : 'text-black/65 hover:text-black/90'}`}
       >
         {value}
       </span>
@@ -263,7 +263,7 @@ function SeedParam({ mode, onModeChange, value, onValueChange }) {
   );
 }
 
-function DragCycleParam({ label, value, options, onChange, defaultValue }) {
+function DragCycleParam({ label, value, options, onChange, defaultValue, isDark = true }) {
   const startX = React.useRef(0);
   const startIndex = React.useRef(0);
   const hasChanged = React.useRef(false);
@@ -297,12 +297,12 @@ function DragCycleParam({ label, value, options, onChange, defaultValue }) {
   const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
 
   return (
-    <span className="text-white/35 flex items-center gap-1">
+    <span className={`flex items-center gap-1 ${isDark ? 'text-white/35' : 'text-black/35'}`}>
       {label}{' '}
       <span
         onPointerDown={handlePointerDown}
         onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
-        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className={`font-medium cursor-ew-resize select-none transition-colors ${isDark ? 'text-white/65 hover:text-white/90' : 'text-black/65 hover:text-black/90'}`}
       >
         {display}
       </span>
@@ -310,14 +310,14 @@ function DragCycleParam({ label, value, options, onChange, defaultValue }) {
   );
 }
 
-function SelectParam({ label, value, options, onChange, defaultValue }) {
+function SelectParam({ label, value, options, onChange, defaultValue, isDark = true }) {
   // Show short display label
   const raw = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
   const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
   return (
-    <span className="relative text-white/35 flex items-center gap-1">
+    <span className={`relative flex items-center gap-1 ${isDark ? 'text-white/35' : 'text-black/35'}`}>
       <span onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}>{label}{' '}
-      <span className="text-white/65 font-medium">{display}</span></span>
+      <span className={isDark ? 'text-white/65 font-medium' : 'text-black/65 font-medium'}>{display}</span></span>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -325,7 +325,7 @@ function SelectParam({ label, value, options, onChange, defaultValue }) {
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
-      <ChevronDown className="w-2.5 h-2.5 text-white/30" />
+      <ChevronDown className={`w-2.5 h-2.5 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
     </span>
   );
 }
