@@ -1,117 +1,91 @@
 import React, { useState, useRef } from 'react';
-import useStudioSession from '@/hooks/useStudioSession';
-import StudioStopped from '@/components/entropy/StudioStopped';
-import StudioStarting from '@/components/entropy/StudioStarting';
-import StudioHeader from '@/components/entropy/StudioHeader';
-import InactivityWarning from '@/components/entropy/InactivityWarning';
-import GeneratedImage from '@/components/entropy/GeneratedImage';
+import { AnimatePresence } from 'framer-motion';
 import EntropyPrompt from '@/components/entropy/EntropyPrompt';
-
-const ASPECT_RATIOS = ["1:1", "3:4 (Golden Ratio)", "4:3", "9:16", "16:9", "21:9"];
+import StudioStopped from '@/components/entropy/StudioStopped';
+import StudioLoading from '@/components/entropy/StudioLoading';
+import StudioError from '@/components/entropy/StudioError';
+import InactivityToast from '@/components/entropy/InactivityToast';
+import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {
-  const studio = useStudioSession();
   const [prompt, setPrompt] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('prompt') || '';
   });
+  const [images, setImages] = useState([]);
   const inputRef = useRef(null);
 
+  const studio = useStudio();
+
   const handleGenerate = async (params) => {
-    if (!prompt.trim() || studio.generating) return;
-    await studio.generate({
-      prompt: prompt.trim(),
+    if (!prompt.trim() || studio.generatingPromptId) return;
+    studio.generate({
+      positivePrompt: prompt,
       steps: params.steps,
       cfg: params.cfg,
-      aspectRatio: params.ratio,
+      aspectRatio: params.aspectRatio,
     });
   };
 
-  // STOPPED state
-  if (studio.status === "STOPPED") {
-    return (
-      <StudioStopped
-        selectedModel={studio.selectedModel}
-        setSelectedModel={studio.setSelectedModel}
-        onStart={studio.startStudio}
-        error={studio.error}
-      />
-    );
-  }
+  const handleRetry = async () => {
+    await studio.stopStudio();
+  };
 
-  // STARTING state
-  if (studio.status === "STARTING") {
-    return (
-      <StudioStarting
-        gpuName={studio.gpuName}
-        costPerHour={studio.costPerHour}
-        statusMessage={studio.statusMessage}
-        bootProgress={studio.bootProgress}
-        onCancel={studio.destroyInstance}
-      />
-    );
-  }
-
-  // STOPPING state
-  if (studio.status === "STOPPING") {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/30 text-xs tracking-widest uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
-          Session ended
-        </p>
-      </div>
-    );
-  }
-
-  // READY state
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
-      <StudioHeader
-        gpuName={studio.gpuName}
-        costPerHour={studio.costPerHour}
-        onStop={studio.destroyInstance}
-      />
+      <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
 
-      <InactivityWarning
-        visible={studio.inactivityWarning}
-        onKeepAlive={studio.keepAlive}
-      />
-
-      {/* Canvas area for generated images */}
-      <div className="w-full h-full flex items-center justify-center overflow-auto pb-36 pt-16 px-4">
-        {studio.generatedImages.length === 0 && !studio.generating && (
+      {/* Center area — state dependent */}
+      <div className="w-full h-full flex items-center justify-center">
+        {studio.status === 'STOPPED' && (
+          <StudioStopped onStart={studio.startStudio} />
+        )}
+        {studio.status === 'STARTING' && (
+          <StudioLoading
+            gpuName={studio.gpuName}
+            costPerHour={studio.costPerHour}
+            statusMessage={studio.statusMessage}
+            bootProgress={studio.bootProgress}
+          />
+        )}
+        {studio.status === 'ERROR' && (
+          <StudioError message={studio.errorMessage} onRetry={handleRetry} />
+        )}
+        {studio.status === 'STOPPING' && (
+          <p className="text-xs text-white/30 tracking-widest uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
+            Session ended
+          </p>
+        )}
+        {studio.status === 'READY' && !studio.generatedImageUrl && !studio.generatingPromptId && images.length === 0 && (
           <p className="text-white/10 text-xs tracking-widest uppercase select-none" style={{ fontFamily: 'var(--font-sans)' }}>
             entropy
           </p>
         )}
-
-        {studio.generating && studio.generatedImages.length === 0 && (
+        {studio.status === 'READY' && studio.generatingPromptId && !studio.generatedImageUrl && (
           <div className="flex flex-col items-center gap-3">
-            <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
-            <p className="text-white/20 text-[10px] tracking-widest uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
+            <div className="w-6 h-6 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+            <p className="text-[11px] text-white/30 tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>
               Generating...
             </p>
           </div>
         )}
-
-        {studio.generatedImages.length > 0 && (
-          <div className="flex flex-wrap gap-3 items-center justify-center max-w-4xl">
-            {studio.generatedImages.map((img, i) => (
-              <div key={i} className="w-72 sm:w-80">
-                <GeneratedImage image={img} index={i} />
-              </div>
-            ))}
+        {studio.status === 'READY' && studio.generatedImageUrl && (
+          <div className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl">
+            <img src={studio.generatedImageUrl} alt="" className="w-full h-full object-contain" />
           </div>
         )}
       </div>
 
-      {/* Prompt bar */}
+      {/* Fixed bottom prompt bar — always visible */}
       <EntropyPrompt
         prompt={prompt}
         setPrompt={setPrompt}
         onGenerate={handleGenerate}
-        generating={studio.generating}
+        generating={!!studio.generatingPromptId}
         inputRef={inputRef}
+        studioStatus={studio.status}
+        gpuName={studio.gpuName}
+        onStopStudio={studio.stopStudio}
       />
     </div>
   );

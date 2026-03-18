@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import StudioIndicator from './StudioIndicator';
 
-const ASPECT_RATIOS = ["1:1", "3:4 (Golden Ratio)", "4:3", "9:16", "16:9", "21:9"];
+const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio }) {
   const [cfg, setCfg] = useState(3.0);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [steps, setSteps] = useState(40);
 
+  const isReady = studioStatus === 'READY';
+  const disabled = generating || !isReady;
+
   const handleGenerate = () => {
-    onGenerate({ steps, cfg, ratio });
+    onGenerate({ steps, cfg, aspectRatio: ratio });
   };
 
   return (
@@ -40,17 +44,17 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
               transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
             >
-              What do you want to create...
+              {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
             </motion.span>
           )}
           <textarea
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
-            disabled={generating}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); handleGenerate(); } }}
+            disabled={disabled}
             rows={1}
-            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden"
+            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
             style={{ fontFamily: 'var(--font-sans)' }}
             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
@@ -61,6 +65,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           className="flex items-center justify-between px-5 py-2.5"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
+          {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
             <MetaParam label="CFG" value={cfg} />
             <Divider />
@@ -74,24 +79,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <MetaParam label="STEPS" value={steps} />
           </div>
 
-          {/* Generate button */}
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !prompt.trim()}
-            className="px-4 py-1.5 rounded-lg text-[10px] tracking-widest uppercase transition-all disabled:opacity-20"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              background: generating ? 'transparent' : 'rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.5)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
-          >
-            {generating ? (
-              <div className="w-3 h-3 border border-white/20 border-t-white/50 rounded-full animate-spin" />
-            ) : (
-              'Generate'
-            )}
-          </button>
+          {/* Right — studio indicator */}
+          <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
         </div>
       </div>
     </motion.div>
@@ -111,10 +100,12 @@ function Divider() {
 }
 
 function SelectParam({ label, value, options, onChange }) {
+  // Show short display label
+  const display = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
   return (
     <span className="relative text-white/35 flex items-center gap-1">
       {label}{' '}
-      <span className="text-white/65 font-medium">{value}</span>
+      <span className="text-white/65 font-medium">{display}</span>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
