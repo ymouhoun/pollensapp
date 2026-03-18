@@ -1,7 +1,6 @@
 import React from 'react';
-import EdgeGlowFrame from './EdgeGlowFrame';
 
-export default function GenerationPreview({ previewUrl, progress, phase = 'purple' }) {
+export default function GenerationPreview({ previewUrl, progress }) {
   const { value, max } = progress;
   const ratio = max > 0 ? value / max : 0;
   const blur = Math.max(0, 8 - ratio * 8);
