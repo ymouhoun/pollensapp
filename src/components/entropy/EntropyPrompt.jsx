@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Send } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
-import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { MODELS } from '@/hooks/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
@@ -122,36 +121,26 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-[10px] tracking-widest"
+          className="flex flex-wrap items-center gap-2 px-4 py-2 text-[10px] tracking-widest"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
-            <Divider />
-            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
-            <Divider />
-            <SelectParam
-              label="RATIO"
-              value={ratio}
-              options={ASPECT_RATIOS}
-              onChange={setRatio}
-              defaultValue="3:4 (Golden Ratio)"
-            />
-            <Divider />
-            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
-            <Divider />
-            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
-            <Divider />
-            <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
-          </div>
-          <LiquidButton
-            size="icon"
-            onClick={handleGenerate}
-            disabled={disabled || !prompt.trim()}
-            className="ml-2"
-          >
-            <Send className="w-4 h-4" />
-          </LiquidButton>
+          <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
+          <Divider />
+          <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
+          <Divider />
+          <SelectParam
+            label="RATIO"
+            value={ratio}
+            options={ASPECT_RATIOS}
+            onChange={setRatio}
+            defaultValue="3:4 (Golden Ratio)"
+          />
+          <Divider />
+          <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
+          <Divider />
+          <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
+          <Divider />
+          <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
         </div>
       </div>
     </motion.div>
