@@ -29,33 +29,36 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[680px] max-w-[calc(100vw-2rem)]"
     >
-      {/* Model pill above the box */}
-      <div className="flex items-center gap-2 mb-2.5 px-1">
-        {MODELS.map(m => (
-          <button
-            key={m.checkpoint}
-            onClick={() => onModelChange(m.checkpoint)}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
-            style={{
-              background: selectedModel === m.checkpoint
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
-                : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
-              boxShadow: selectedModel === m.checkpoint
-                ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
-                : 'none',
-              fontFamily: 'var(--font-sans)',
-            }}
-          >
-            <motion.span
-              className="w-1 h-1 rounded-full bg-white"
-              animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
-              transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
-            />
-            <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
-              {m.label}
-            </span>
-          </button>
-        ))}
+      {/* Model pill + studio indicator above the box */}
+      <div className="flex items-center justify-between mb-2.5 px-1">
+        <div className="flex items-center gap-2">
+          {MODELS.map(m => (
+            <button
+              key={m.checkpoint}
+              onClick={() => onModelChange(m.checkpoint)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
+              style={{
+                background: selectedModel === m.checkpoint
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
+                boxShadow: selectedModel === m.checkpoint
+                  ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  : 'none',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <motion.span
+                className="w-1 h-1 rounded-full bg-white"
+                animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
+                transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
+              />
+              <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
+                {m.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
       </div>
 
       <div
@@ -118,7 +121,6 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} />
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} />
-            <span className="ml-1"><StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} /></span>
           </div>
         </div>
       </div>
