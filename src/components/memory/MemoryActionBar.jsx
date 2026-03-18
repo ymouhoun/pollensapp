@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Shuffle, Moon, Sun, Blend, FlaskRound } from 'lucide-react';
+import { Shuffle, Moon, Sun, Blend, MousePointerClick } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function MemoryActionBar({ onToggleGalaxy }) {
@@ -64,7 +64,7 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
           className="flex items-center gap-2 text-white/70 hover:text-white transition-all duration-300 group"
           title="Entropy Studio"
         >
-          <FlaskRound
+          <MousePointerClick
             className="w-4 h-4 transition-all duration-300 group-hover:scale-110"
             style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }}
             strokeWidth={1.5}
