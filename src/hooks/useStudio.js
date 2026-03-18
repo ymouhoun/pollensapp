@@ -218,9 +218,13 @@ export default function useStudio() {
     wsRef.current = abortController; // reuse ref for cleanup
 
     // 1. Start SSE proxy (backend connects WebSocket to ComfyUI)
-    const proxyRes = await base44.functions.fetch('comfyuiWsProxy', {
+    const fnUrl = `${appParams.appBaseUrl}/functions/comfyuiWsProxy`;
+    const proxyRes = await fetch(fnUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(appParams.token ? { 'Authorization': `Bearer ${appParams.token}` } : {}),
+      },
       body: JSON.stringify({ baseUrl, clientId }),
       signal: abortController.signal,
     });
