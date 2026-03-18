@@ -200,6 +200,30 @@ function Divider() {
 }
 
 function SeedControl({ mode, onModeChange, value, onValueChange }) {
+  const startX = React.useRef(0);
+  const startValue = React.useRef(Number(value));
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    startX.current = e.clientX;
+    startValue.current = Number(value);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const handlePointerMove = (e) => {
+    const delta = e.clientX - startX.current;
+    const digits = String(Math.max(1, Math.floor(startValue.current))).length;
+    const step = Math.max(1, 10 ** Math.max(0, digits - 4));
+    const nextValue = Math.max(0, Math.min(MAX_SEED, startValue.current + delta * step));
+    onValueChange(String(Math.round(nextValue)));
+  };
+
+  const handlePointerUp = () => {
+    document.removeEventListener('pointermove', handlePointerMove);
+    document.removeEventListener('pointerup', handlePointerUp);
+  };
+
   return (
     <div
       className="group flex items-center overflow-hidden rounded-lg border border-white/10 backdrop-blur-2xl transition-all duration-300 hover:w-[25rem] focus-within:w-[25rem]"
@@ -212,13 +236,12 @@ function SeedControl({ mode, onModeChange, value, onValueChange }) {
     >
       <div className="flex min-w-[10.75rem] items-center gap-2 px-2 py-1">
         <span className="text-[9px] tracking-widest uppercase text-white/35">Seed</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onValueChange(sanitizeSeedValue(e.target.value))}
-          className="w-[7.25rem] bg-transparent text-[9px] font-medium tracking-widest text-white/75 outline-none"
-        />
+        <span
+          onPointerDown={handlePointerDown}
+          className="w-[7.25rem] cursor-ew-resize select-none text-[9px] font-medium tracking-widest text-white/75 transition-colors hover:text-white/90"
+        >
+          {value}
+        </span>
       </div>
       <div className="flex items-center gap-1 border-l border-white/10 px-1.5 py-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
         <SeedModeButton active={mode === 'fixed'} onClick={() => onModeChange('fixed')}>
