@@ -7,6 +7,8 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { debug } = await req.json().catch(() => ({}));
+
   const res = await fetch(
     `https://console.vast.ai/api/v0/instances/?api_key=${VAST_API_KEY}`
   );
@@ -26,20 +28,35 @@ Deno.serve(async (req) => {
       let baseUrl = null;
       const ports = i.ports;
       if (ports && typeof ports === 'object') {
-        const mapping = ports['3000/tcp'];
-        if (mapping && mapping.length > 0) {
-          const host = i.public_ipaddr || mapping[0].HostIp;
-          const port = mapping[0].HostPort;
-          if (host && port) baseUrl = `http://${host}:${port}`;
+        // Try common port keys
+        const portKeys = Object.keys(ports);
+        for (const key of portKeys) {
+          const mapping = ports[key];
+          if (mapping && Array.isArray(mapping) && mapping.length > 0) {
+            const host = i.public_ipaddr || mapping[0].HostIp;
+            const port = mapping[0].HostPort;
+            if (host && port) {
+              baseUrl = `http://${host}:${port}`;
+              break;
+            }
+          }
         }
       }
-      return {
+
+      const result = {
         instanceId: i.id,
         baseUrl,
         gpuName: i.gpu_name,
         costPerHour: i.dph_total,
         status: i.actual_status,
       };
+
+      if (debug) {
+        result.ports = i.ports;
+        result.public_ipaddr = i.public_ipaddr;
+      }
+
+      return result;
     });
 
   return Response.json({ instances: running });
