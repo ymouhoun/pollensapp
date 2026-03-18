@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
-import { LiquidMetalButton } from '@/components/ui/liquid-metal-button';
 import LiquidMetalSurface from '@/components/ui/liquid-metal-surface';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
@@ -144,12 +143,6 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
-            <div className="ml-1" style={{ opacity: (!generating && disabled) ? 0.2 : 1, pointerEvents: (!generating && disabled) ? 'none' : 'auto', transform: 'scale(0.52)', transformOrigin: 'center', marginTop: '-8px', marginBottom: '-8px', marginRight: '-10px' }}>
-              <LiquidMetalButton
-                viewMode="icon"
-                onClick={generating ? onCancelGeneration : handleGenerate}
-              />
-            </div>
           </div>
         </div>
       </LiquidMetalSurface>
