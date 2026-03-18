@@ -42,7 +42,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-4 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
       <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
