@@ -6,6 +6,7 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
+import EdgeGlowFrame from '@/components/entropy/EdgeGlowFrame';
 import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {

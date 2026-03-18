@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import EdgeGlowFrame from './EdgeGlowFrame';
 
-export default function StudioLoading({ gpuName, costPerHour, statusMessage, bootProgress }) {
+export default function StudioLoading({ gpuName, costPerHour, statusMessage, bootProgress, phase }) {
   const percent = Math.round(bootProgress * 100);
 
   return (
