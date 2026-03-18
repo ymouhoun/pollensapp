@@ -33,26 +33,18 @@ Deno.serve(async (req) => {
       };
 
       ws.onmessage = (event) => {
-        const data = event.data;
-        if (data instanceof ArrayBuffer) {
-          const bytes = new Uint8Array(data);
-          console.log(`[WS] Binary message: ${bytes.length} bytes, header: [${bytes[0]},${bytes[1]},${bytes[2]},${bytes[3]},${bytes[4]},${bytes[5]},${bytes[6]},${bytes[7]}]`);
-          // ComfyUI preview: first 4 bytes = event type (1=preview), next 4 = format (1=JPEG,2=PNG)
-          if (bytes.length > 8) {
+        if (event.data instanceof ArrayBuffer) {
+          const bytes = new Uint8Array(event.data);
+          if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
             const imageData = bytes.slice(8);
             const b64 = base64Encode(imageData);
-            const format = bytes[7]; // last byte of format uint32 BE
-            const mime = format === 2 ? 'image/png' : 'image/jpeg';
-            send({ type: 'preview', image: b64, mime });
+            send({ type: 'preview', image: b64 });
           }
-        } else if (typeof data === 'string') {
-          console.log(`[WS] Text message: ${data.substring(0, 200)}`);
+        } else if (typeof event.data === 'string') {
           try {
-            const msg = JSON.parse(data);
+            const msg = JSON.parse(event.data);
             send(msg);
           } catch {}
-        } else {
-          console.log(`[WS] Unknown data type: ${typeof data}, constructor: ${data?.constructor?.name}`);
         }
       };
 
