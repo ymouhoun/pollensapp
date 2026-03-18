@@ -213,100 +213,94 @@ export default function useStudio() {
 
     const baseUrl = baseUrlRef.current;
     const clientId = clientIdRef.current;
+    let abortController = new AbortController();
+    wsRef.current = abortController; // reuse ref for cleanup
 
-    // Build WebSocket URL
-    const wsUrl = baseUrl.replace(/^http/, 'ws') + `/ws?clientId=${clientId}`;
-    let prevBlobUrl = null;
-
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    const cleanup = () => {
-      if (ws.readyState <= 1) ws.close();
-      wsRef.current = null;
-      if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
-    };
-
-    ws.onopen = async () => {
-      // Submit prompt once WebSocket is connected
-      const seed = Math.floor(Math.random() * 2147483647);
-      const result = (await base44.functions.invoke('comfyuiGenerate', {
-        baseUrl,
-        positivePrompt,
-        seed,
-        steps: steps || 40,
-        cfg: cfg || 3.0,
-        shift: shift || 1.0,
-        aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
-        sampler: sampler || 'res_2s',
-        scheduler: scheduler || 'kl_optimal',
-        clientId,
-      })).data;
-
-      if (!result.promptId) {
-        setGeneratingPromptId(null);
-        cleanup();
-        return;
+    // 1. Start SSE proxy (backend connects WebSocket to ComfyUI)
+    const proxyRes = await fetch(
+      base44.functions.getUrl('comfyuiWsProxy'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...base44.functions.getHeaders() },
+        body: JSON.stringify({ baseUrl, clientId }),
+        signal: abortController.signal,
       }
-      setGeneratingPromptId(result.promptId);
-    };
+    );
 
-    ws.onmessage = async (event) => {
-      if (event.data instanceof Blob) {
-        // Binary message — step preview image
-        const arrayBuffer = await event.data.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        // Check header: first 4 bytes [0,0,0,1] = image preview
-        if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
-          const imageData = bytes.slice(8);
-          const blob = new Blob([imageData], { type: 'image/jpeg' });
-          const url = URL.createObjectURL(blob);
-          if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
-          prevBlobUrl = url;
-          setPreviewImageUrl(url);
+    const reader = proxyRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let promptSubmitted = false;
+
+    const processEvents = async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = JSON.parse(line.slice(6));
+
+          if (data.type === 'connected' && !promptSubmitted) {
+            promptSubmitted = true;
+            // Submit prompt now that WS is connected
+            const seed = Math.floor(Math.random() * 2147483647);
+            const result = (await base44.functions.invoke('comfyuiGenerate', {
+              baseUrl, positivePrompt, seed,
+              steps: steps || 40, cfg: cfg || 3.0, shift: shift || 1.0,
+              aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
+              sampler: sampler || 'res_2s', scheduler: scheduler || 'kl_optimal',
+              clientId,
+            })).data;
+            if (!result.promptId) { setGeneratingPromptId(null); abortController.abort(); return; }
+            setGeneratingPromptId(result.promptId);
+          }
+
+          if (data.type === 'preview' && data.image) {
+            const binary = atob(data.image);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
+          }
+
+          if (data.type === 'progress') {
+            setGenProgress({ value: data.data.value, max: data.data.max });
+          }
+
+          if (data.type === 'executed' && data.data?.node === '15') {
+            const filename = data.data.output?.images?.[0]?.filename;
+            if (filename) {
+              const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', { baseUrl, filename })).data;
+              setGeneratedImageUrl(proxyResult.imageDataUrl);
+            }
+            setPreviewImageUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+            setGeneratingPromptId(null);
+            setGenProgress({ value: 0, max: 1 });
+            resetInactivity();
+            abortController.abort();
+            return;
+          }
+
+          if (data.type === 'error' || data.type === 'ws_closed') {
+            if (!abortController.signal.aborted) {
+              console.warn('WS proxy ended:', data.type);
+              setGeneratingPromptId(null);
+            }
+            return;
+          }
         }
-        return;
-      }
-
-      // Text message — JSON
-      const msg = JSON.parse(event.data);
-
-      if (msg.type === 'progress') {
-        setGenProgress({ value: msg.data.value, max: msg.data.max });
-      }
-
-      if (msg.type === 'executed' && msg.data?.node === '15') {
-        // Generation complete — fetch final image via proxy
-        const outputs = msg.data.output;
-        const images = outputs?.images;
-        const filename = images?.[0]?.filename;
-
-        if (filename) {
-          const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', {
-            baseUrl,
-            filename,
-          })).data;
-          setGeneratedImageUrl(proxyResult.imageDataUrl);
-        }
-        setPreviewImageUrl(null);
-        setGeneratingPromptId(null);
-        setGenProgress({ value: 0, max: 1 });
-        resetInactivity();
-        cleanup();
       }
     };
 
-    ws.onerror = () => {
-      console.warn('WebSocket error during generation');
-      cleanup();
+    processEvents().catch(() => {
       setGeneratingPromptId(null);
-    };
-
-    ws.onclose = () => {
-      // Only cleanup refs, state is handled by message handlers
-      wsRef.current = null;
-      if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
-    };
+    });
   }, [status, resetInactivity]);
 
   // Check for existing running instance on mount
