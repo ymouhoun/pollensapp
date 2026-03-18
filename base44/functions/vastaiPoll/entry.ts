@@ -19,7 +19,8 @@ Deno.serve(async (req) => {
   }
 
   const data = await res.json();
-  console.log('vastaiPoll raw response keys:', Object.keys(data), 'id:', data.id, 'instances:', !!data.instances);
+  const inst = data.id ? data : null;
+  if (inst) console.log('vastaiPoll ports:', JSON.stringify(inst.ports), 'public_ipaddr:', inst.public_ipaddr, 'ssh_port:', inst.ssh_port, 'direct_port_count:', inst.direct_port_count);
   
   // The API may return the instance directly, or wrapped in an object
   let instance = null;
