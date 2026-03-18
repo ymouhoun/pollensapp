@@ -12,7 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { useTheme, ThemeProvider } from '@/lib/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
-export default function Entropy() {
+function EntropyContent() {
   const [prompt, setPrompt] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('prompt') || '';
@@ -21,6 +21,7 @@ export default function Entropy() {
   const [selectedModel, setSelectedModel] = useState('editorial.safetensors');
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
+  const { isDark, toggleTheme } = useTheme();
 
   const studio = useStudio();
 
