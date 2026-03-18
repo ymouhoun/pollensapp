@@ -89,7 +89,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); handleGenerate(); } }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
             disabled={disabled}
             rows={1}
             className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
