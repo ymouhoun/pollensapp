@@ -11,6 +11,7 @@ const SCHEDULERS = ['kl_optimal', 'beta57', 'ddim_uniform', 'simple', 'bong_tang
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.0);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
+  const [shift, setShift] = useState(1.0);
   const [steps, setSteps] = useState(40);
   const [sampler, setSampler] = useState('res_2s');
   const [scheduler, setScheduler] = useState('kl_optimal');
@@ -19,7 +20,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   const disabled = generating || !isReady;
 
   const handleGenerate = () => {
-    onGenerate({ steps, cfg, aspectRatio: ratio, sampler, scheduler });
+    onGenerate({ steps, cfg, shift, aspectRatio: ratio, sampler, scheduler });
   };
 
   return (
@@ -114,6 +115,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               options={ASPECT_RATIOS}
               onChange={setRatio}
             />
+            <Divider />
+            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" />
           </div>
 
           {/* Right — sampler, scheduler, studio indicator */}
