@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { OctagonX } from 'lucide-react';
 
 export default function StudioIndicator({ status, gpuName, onStop }) {
   if (status !== 'READY') return null;
@@ -15,12 +16,14 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
       </span>
       <span className="text-white/30">{gpuName || 'GPU'}</span>
       <span className="text-white/15">|</span>
-      <button
+      <motion.button
         onClick={onStop}
-        className="text-white/25 hover:text-red-400/60 transition-colors"
+        className="text-white/25 hover:text-red-500 transition-colors"
+        whileHover={{ rotate: [0, -8, 8, -8, 8, 0] }}
+        transition={{ duration: 0.4 }}
       >
-        STOP
-      </button>
+        <OctagonX className="w-3.5 h-3.5" strokeWidth={1.5} />
+      </motion.button>
     </div>
   );
 }
