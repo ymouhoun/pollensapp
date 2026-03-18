@@ -105,11 +105,24 @@ export default function Entropy() {
           />
         )}
         {studio.status === 'READY' && studio.generatedImageUrl && (
-          <div className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl">
+          <div
+            className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl"
+            onContextMenu={handleImageContextMenu}
+          >
             <img src={studio.generatedImageUrl} alt="" className="w-full h-full object-contain" />
           </div>
         )}
       </div>
+
+      {contextMenu && studio.generatedImageUrl && (
+        <EntropyContextMenu
+          position={contextMenu}
+          onClose={() => setContextMenu(null)}
+          onSaveToMemory={handleSaveToMemory}
+          onDownload={handleDownload}
+          onDelete={handleDeleteGenerated}
+        />
+      )}
 
       {/* Fixed bottom prompt bar — always visible */}
       <EntropyPrompt
