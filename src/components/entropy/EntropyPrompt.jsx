@@ -7,6 +7,15 @@ import { MODELS } from '@/hooks/useStudio';
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
 const SCHEDULERS = ['kl_optimal', 'beta57', 'ddim_uniform', 'simple', 'bong_tangent'];
+const MAX_SEED = 999999999999;
+
+const sanitizeSeedValue = (value) => {
+  const digitsOnly = String(value).replace(/\D/g, '').slice(0, 12);
+  if (!digitsOnly) return '0';
+  return String(Math.min(Number(digitsOnly), MAX_SEED));
+};
+
+const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.0);
@@ -15,12 +24,16 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   const [steps, setSteps] = useState(40);
   const [sampler, setSampler] = useState('res_2s');
   const [scheduler, setScheduler] = useState('kl_optimal');
+  const [seedMode, setSeedMode] = useState('random');
+  const [seedValue, setSeedValue] = useState(() => String(getRandomSeed()));
 
   const isReady = studioStatus === 'READY';
   const disabled = generating || !isReady;
 
   const handleGenerate = () => {
-    onGenerate({ steps, cfg, shift, aspectRatio: ratio, sampler, scheduler });
+    const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
+    setSeedValue(String(nextSeed));
+    onGenerate({ steps, cfg, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
   };
 
   return (
@@ -100,11 +113,11 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex items-center justify-between px-5 py-2.5"
+          className="flex flex-col gap-3 px-5 py-2.5 md:flex-row md:items-center md:justify-between"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
           {/* Left params */}
-          <div className="flex items-center gap-3 text-[10px] tracking-widest">
+          <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-widest">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
             <Divider />
             <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
@@ -120,8 +133,15 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
           </div>
 
-          {/* Right — sampler, scheduler, studio indicator */}
-          <div className="flex items-center gap-3 text-[10px] tracking-widest">
+          {/* Right — seed, sampler, scheduler */}
+          <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-widest">
+            <SeedControl
+              mode={seedMode}
+              onModeChange={setSeedMode}
+              value={seedValue}
+              onValueChange={setSeedValue}
+            />
+            <Divider />
             <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
@@ -176,6 +196,41 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
 
 function Divider() {
   return <span className="text-white/15">|</span>;
+}
+
+function SeedControl({ mode, onModeChange, value, onValueChange }) {
+  return (
+    <div className="flex items-center gap-2 text-white/35">
+      <span>SEED</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onValueChange(sanitizeSeedValue(e.target.value))}
+        className="h-6 w-28 rounded-md border border-white/10 bg-white/5 px-2 text-[10px] font-medium tracking-widest text-white/75 outline-none transition-colors focus:border-white/25"
+      />
+      <div className="flex items-center rounded-md border border-white/10 bg-white/5 p-0.5">
+        <SeedModeButton active={mode === 'fixed'} onClick={() => onModeChange('fixed')}>
+          Fixed
+        </SeedModeButton>
+        <SeedModeButton active={mode === 'random'} onClick={() => onModeChange('random')}>
+          Randomize
+        </SeedModeButton>
+      </div>
+    </div>
+  );
+}
+
+function SeedModeButton({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-2 py-1 text-[9px] uppercase transition-colors ${active ? 'bg-white/14 text-white/80' : 'text-white/35 hover:text-white/65'}`}
+    >
+      {children}
+    </button>
+  );
 }
 
 function SelectParam({ label, value, options, onChange, defaultValue }) {
