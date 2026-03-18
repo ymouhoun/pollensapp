@@ -89,7 +89,7 @@ export default function useStudio() {
     setPreviewImageUrl(null);
     setGenProgress({ value: 0, max: 1 });
     setShowInactivityWarning(false);
-    if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
+    if (wsRef.current) { wsRef.current.abort(); wsRef.current = null; }
   }, [clearTimers]);
 
   const startStudio = useCallback(async (selectedCheckpoint) => {
