@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
+import { LiquidMetalButton } from '@/components/ui/liquid-metal-button';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
@@ -142,16 +143,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
-            <button
-              onClick={generating ? onCancelGeneration : handleGenerate}
-              disabled={!generating && disabled}
-              className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-white/15 transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              {generating
-                ? <Square className="w-2.5 h-2.5 text-white/70 fill-white/70" />
-                : <Play className="w-2.5 h-2.5 text-white/70 fill-white/70 ml-px" />
-              }
-            </button>
+            <div className="ml-1" style={{ opacity: (!generating && disabled) ? 0.2 : 1, pointerEvents: (!generating && disabled) ? 'none' : 'auto', transform: 'scale(0.52)', transformOrigin: 'center', marginTop: '-8px', marginBottom: '-8px', marginRight: '-10px' }}>
+              <LiquidMetalButton
+                viewMode="icon"
+                onClick={generating ? onCancelGeneration : handleGenerate}
+              />
+            </div>
           </div>
         </div>
       </div>
