@@ -65,9 +65,9 @@ function GrainFilter() {
 function GlowLayer({ stops, blur, strokeWidth, opacity, angle }) {
   const gradient = `conic-gradient(from ${angle}deg, ${stopsToCSS(stops)})`;
   return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", opacity, filter: blur > 0 ? `blur(${blur}px)` : "none" }}>
+    <div style={{ position: "absolute", inset: `-${blur}px`, overflow: "hidden", pointerEvents: "none", opacity, filter: blur > 0 ? `blur(${blur}px)` : "none" }}>
       <div style={{ position: "absolute", inset: 0, background: gradient }} />
-      <div style={{ position: "absolute", inset: strokeWidth, background: "#000" }} />
+      <div style={{ position: "absolute", inset: strokeWidth + blur, background: "#000", borderRadius: 12 }} />
     </div>
   );
 }
