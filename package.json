@@ -79,7 +79,8 @@
     "zod": "^3.24.2",
     "motion": "^11.0.0",
     "@react-three/fiber": "^8.17.10",
-    "@react-three/drei": "^9.122.0"
+    "@react-three/drei": "^9.122.0",
+    "@paper-design/shaders": "^0.0.71"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
