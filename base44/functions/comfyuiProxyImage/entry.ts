@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
-import { encode as base64Encode } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -15,10 +14,11 @@ Deno.serve(async (req) => {
   }
 
   const arrayBuffer = await imageRes.arrayBuffer();
-  const base64 = base64Encode(new Uint8Array(arrayBuffer));
   const contentType = imageRes.headers.get('content-type') || 'image/png';
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-  return Response.json({ 
-    imageDataUrl: `data:${contentType};base64,${base64}` 
+  return new Response(uint8Array, {
+    headers: { 'Content-Type': contentType },
+    status: 200,
   });
 });
