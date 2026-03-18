@@ -44,8 +44,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[680px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
-      <div className="flex items-center justify-between mb-2.5 px-1">
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {MODELS.map(m => (
             <button
               key={m.checkpoint}
@@ -71,8 +71,16 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               </span>
             </button>
           ))}
+          <SeedControl
+            mode={seedMode}
+            onModeChange={setSeedMode}
+            value={seedValue}
+            onValueChange={setSeedValue}
+          />
         </div>
-        <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
+        <div className="pt-1">
+          <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
+        </div>
       </div>
 
       <div
@@ -133,15 +141,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
           </div>
 
-          {/* Right — seed, sampler, scheduler */}
+          {/* Right — sampler, scheduler */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-widest">
-            <SeedControl
-              mode={seedMode}
-              onModeChange={setSeedMode}
-              value={seedValue}
-              onValueChange={setSeedValue}
-            />
-            <Divider />
             <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
@@ -200,16 +201,26 @@ function Divider() {
 
 function SeedControl({ mode, onModeChange, value, onValueChange }) {
   return (
-    <div className="flex items-center gap-2 text-white/35">
-      <span>SEED</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onValueChange(sanitizeSeedValue(e.target.value))}
-        className="h-6 w-28 rounded-md border border-white/10 bg-white/5 px-2 text-[10px] font-medium tracking-widest text-white/75 outline-none transition-colors focus:border-white/25"
-      />
-      <div className="flex items-center rounded-md border border-white/10 bg-white/5 p-0.5">
+    <div
+      className="group flex items-center overflow-hidden rounded-lg border border-white/10 backdrop-blur-2xl transition-all duration-300 hover:w-[25rem] focus-within:w-[25rem]"
+      style={{
+        width: '10.75rem',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        fontFamily: 'var(--font-sans)',
+      }}
+    >
+      <div className="flex min-w-[10.75rem] items-center gap-2 px-2 py-1">
+        <span className="text-[9px] tracking-widest uppercase text-white/35">Seed</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onValueChange(sanitizeSeedValue(e.target.value))}
+          className="w-[7.25rem] bg-transparent text-[9px] font-medium tracking-widest text-white/75 outline-none"
+        />
+      </div>
+      <div className="flex items-center gap-1 border-l border-white/10 px-1.5 py-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
         <SeedModeButton active={mode === 'fixed'} onClick={() => onModeChange('fixed')}>
           Fixed
         </SeedModeButton>
@@ -226,7 +237,8 @@ function SeedModeButton({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded px-2 py-1 text-[9px] uppercase transition-colors ${active ? 'bg-white/14 text-white/80' : 'text-white/35 hover:text-white/65'}`}
+      className={`rounded px-2 py-1 text-[9px] uppercase tracking-widest transition-colors whitespace-nowrap ${active ? 'bg-white/14 text-white/80' : 'text-white/35 hover:text-white/65'}`}
+
     >
       {children}
     </button>
