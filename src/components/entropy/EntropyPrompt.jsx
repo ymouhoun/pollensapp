@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
-const SAMPLERS = ['RES_2S', 'RES_5S', 'ER_SDE', 'EULER', 'DPM_2M', 'SEEDS_2', 'RK_BETA'];
-const SCHEDULERS = ['KL_OPTIMAL', 'DDIM_UNIFORM', 'BETA57', 'SIGMOID_OFFSET', 'BONG_TANGENT'];
+const ASPECT_RATIOS = ["1:1", "3:4 (Golden Ratio)", "4:3", "9:16", "16:9", "21:9"];
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef }) {
-  const [sampler, setSampler] = useState('RES_2S');
-  const [scheduler, setScheduler] = useState('KL_OPTIMAL');
-  const [cfg, setCfg] = useState(3.5);
-  const [ratio, setRatio] = useState('3:4');
-  const [steps, setSteps] = useState(50);
-  const [batch, setBatch] = useState(1);
+  const [cfg, setCfg] = useState(3.0);
+  const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
+  const [steps, setSteps] = useState(40);
+
+  const handleGenerate = () => {
+    onGenerate({ steps, cfg, ratio });
+  };
 
   return (
     <motion.div
@@ -47,7 +47,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && onGenerate()}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
             disabled={generating}
             rows={1}
             className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden"
@@ -61,33 +61,37 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           className="flex items-center justify-between px-5 py-2.5"
           style={{ fontFamily: 'var(--font-sans)' }}
         >
-          {/* Left params */}
           <div className="flex items-center gap-3 text-[10px] tracking-widest">
             <MetaParam label="CFG" value={cfg} />
             <Divider />
-            <MetaParam label="RATIO" value={ratio} />
+            <SelectParam
+              label="RATIO"
+              value={ratio}
+              options={ASPECT_RATIOS}
+              onChange={setRatio}
+            />
             <Divider />
             <MetaParam label="STEPS" value={steps} />
-            <Divider />
-            <MetaParam label="BATCH" value={batch} />
           </div>
 
-          {/* Right params */}
-          <div className="flex items-center gap-3 text-[10px] tracking-widest">
-            <SelectParam
-              label="SAMPLER"
-              value={sampler}
-              options={SAMPLERS}
-              onChange={setSampler}
-            />
-            <Divider />
-            <SelectParam
-              label="SCHEDULER"
-              value={scheduler}
-              options={SCHEDULERS}
-              onChange={setScheduler}
-            />
-          </div>
+          {/* Generate button */}
+          <button
+            onClick={handleGenerate}
+            disabled={generating || !prompt.trim()}
+            className="px-4 py-1.5 rounded-lg text-[10px] tracking-widest uppercase transition-all disabled:opacity-20"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              background: generating ? 'transparent' : 'rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.5)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            {generating ? (
+              <div className="w-3 h-3 border border-white/20 border-t-white/50 rounded-full animate-spin" />
+            ) : (
+              'Generate'
+            )}
+          </button>
         </div>
       </div>
     </motion.div>
