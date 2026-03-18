@@ -5,6 +5,7 @@ import StudioStopped from '@/components/entropy/StudioStopped';
 import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
+import GenerationPreview from '@/components/entropy/GenerationPreview';
 import useStudio from '@/hooks/useStudio';
 
 export default function Entropy() {
@@ -66,12 +67,10 @@ export default function Entropy() {
           </p>
         )}
         {studio.status === 'READY' && studio.generatingPromptId && !studio.generatedImageUrl && (
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-            <p className="text-[11px] text-white/30 tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>
-              Generating...
-            </p>
-          </div>
+          <GenerationPreview
+            previewUrl={studio.previewImageUrl}
+            progress={studio.genProgress}
+          />
         )}
         {studio.status === 'READY' && studio.generatedImageUrl && (
           <div className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl">
