@@ -6,7 +6,6 @@ const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before shutdown
 const BOOT_TIMEOUT = 12 * 60 * 1000; // 12 minutes max
 const POLL_INSTANCE_INTERVAL = 10000;
 const POLL_HEALTH_INTERVAL = 10000;
-const POLL_RESULT_INTERVAL = 3000;
 
 const MODELS = [
   { label: 'Editorial', checkpoint: 'editorial.safetensors' },
@@ -33,6 +32,8 @@ export default function useStudio() {
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const [generatingPromptId, setGeneratingPromptId] = useState(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  const [genProgress, setGenProgress] = useState({ value: 0, max: 1 });
 
   const instanceIdRef = useRef(null);
   const baseUrlRef = useRef(null);
@@ -41,6 +42,8 @@ export default function useStudio() {
   const warningTimerRef = useRef(null);
   const pollRef = useRef(null);
   const cancelledRef = useRef(false);
+  const clientIdRef = useRef(crypto.randomUUID());
+  const wsRef = useRef(null);
 
   const clearTimers = useCallback(() => {
     clearTimeout(inactivityTimerRef.current);
@@ -83,7 +86,10 @@ export default function useStudio() {
     setBootProgress(0);
     setGeneratingPromptId(null);
     setGeneratedImageUrl(null);
+    setPreviewImageUrl(null);
+    setGenProgress({ value: 0, max: 1 });
     setShowInactivityWarning(false);
+    if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
   }, [clearTimers]);
 
   const startStudio = useCallback(async (selectedCheckpoint) => {
@@ -202,49 +208,105 @@ export default function useStudio() {
     resetInactivity();
     setGeneratingPromptId('pending');
     setGeneratedImageUrl(null);
+    setPreviewImageUrl(null);
+    setGenProgress({ value: 0, max: steps || 40 });
 
-    const seed = Math.floor(Math.random() * 2147483647);
-    const result = (await base44.functions.invoke('comfyuiGenerate', {
-      baseUrl: baseUrlRef.current,
-      positivePrompt,
-      seed,
-      steps: steps || 40,
-      cfg: cfg || 3.0,
-      shift: shift || 1.0,
-      aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
-      sampler: sampler || 'res_2s',
-      scheduler: scheduler || 'kl_optimal',
-    })).data;
+    const baseUrl = baseUrlRef.current;
+    const clientId = clientIdRef.current;
 
-    if (!result.promptId) {
-      setGeneratingPromptId(null);
-      return;
-    }
+    // Build WebSocket URL
+    const wsUrl = baseUrl.replace(/^http/, 'ws') + `/ws?clientId=${clientId}`;
+    let prevBlobUrl = null;
 
-    setGeneratingPromptId(result.promptId);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
 
-    // Poll result
-    const pollResultLoop = async () => {
-      while (true) {
-        await new Promise(r => setTimeout(r, POLL_RESULT_INTERVAL));
-        const pollResult = (await base44.functions.invoke('comfyuiPollResult', {
-          baseUrl: baseUrlRef.current,
-          promptId: result.promptId,
-        })).data;
-        if (pollResult.done) {
-          // Proxy the image through backend since ComfyUI URL isn't publicly accessible
+    const cleanup = () => {
+      if (ws.readyState <= 1) ws.close();
+      wsRef.current = null;
+      if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
+    };
+
+    ws.onopen = async () => {
+      // Submit prompt once WebSocket is connected
+      const seed = Math.floor(Math.random() * 2147483647);
+      const result = (await base44.functions.invoke('comfyuiGenerate', {
+        baseUrl,
+        positivePrompt,
+        seed,
+        steps: steps || 40,
+        cfg: cfg || 3.0,
+        shift: shift || 1.0,
+        aspectRatio: aspectRatio || '3:4 (Golden Ratio)',
+        sampler: sampler || 'res_2s',
+        scheduler: scheduler || 'kl_optimal',
+        clientId,
+      })).data;
+
+      if (!result.promptId) {
+        setGeneratingPromptId(null);
+        cleanup();
+        return;
+      }
+      setGeneratingPromptId(result.promptId);
+    };
+
+    ws.onmessage = async (event) => {
+      if (event.data instanceof Blob) {
+        // Binary message — step preview image
+        const arrayBuffer = await event.data.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        // Check header: first 4 bytes [0,0,0,1] = image preview
+        if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
+          const imageData = bytes.slice(8);
+          const blob = new Blob([imageData], { type: 'image/jpeg' });
+          const url = URL.createObjectURL(blob);
+          if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
+          prevBlobUrl = url;
+          setPreviewImageUrl(url);
+        }
+        return;
+      }
+
+      // Text message — JSON
+      const msg = JSON.parse(event.data);
+
+      if (msg.type === 'progress') {
+        setGenProgress({ value: msg.data.value, max: msg.data.max });
+      }
+
+      if (msg.type === 'executed' && msg.data?.node === '15') {
+        // Generation complete — fetch final image via proxy
+        const outputs = msg.data.output;
+        const images = outputs?.images;
+        const filename = images?.[0]?.filename;
+
+        if (filename) {
           const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', {
-            baseUrl: baseUrlRef.current,
-            filename: pollResult.filename,
+            baseUrl,
+            filename,
           })).data;
           setGeneratedImageUrl(proxyResult.imageDataUrl);
-          setGeneratingPromptId(null);
-          resetInactivity();
-          return;
         }
+        setPreviewImageUrl(null);
+        setGeneratingPromptId(null);
+        setGenProgress({ value: 0, max: 1 });
+        resetInactivity();
+        cleanup();
       }
     };
-    pollResultLoop();
+
+    ws.onerror = () => {
+      console.warn('WebSocket error during generation');
+      cleanup();
+      setGeneratingPromptId(null);
+    };
+
+    ws.onclose = () => {
+      // Only cleanup refs, state is handled by message handlers
+      wsRef.current = null;
+      if (prevBlobUrl) URL.revokeObjectURL(prevBlobUrl);
+    };
   }, [status, resetInactivity]);
 
   // Check for existing running instance on mount
@@ -301,6 +363,8 @@ export default function useStudio() {
     showInactivityWarning,
     generatingPromptId,
     generatedImageUrl,
+    previewImageUrl,
+    genProgress,
     startStudio,
     stopStudio,
     generate,

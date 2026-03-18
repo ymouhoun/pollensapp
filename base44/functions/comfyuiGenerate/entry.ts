@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { baseUrl, positivePrompt, seed, steps, cfg, shift, aspectRatio, sampler, scheduler } = await req.json();
+  const { baseUrl, positivePrompt, seed, steps, cfg, shift, aspectRatio, sampler, scheduler, clientId } = await req.json();
 
   const workflow = {
     "1": { inputs: { samples: ["16", 0], vae: ["3", 0] }, class_type: "VAEDecode" },
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   const submitRes = await fetch(`${baseUrl}/prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: workflow }),
+    body: JSON.stringify({ prompt: workflow, client_id: clientId }),
   });
 
   if (!submitRes.ok) {
