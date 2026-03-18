@@ -94,9 +94,10 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       <LiquidMetalSurface
         className="shadow-2xl"
         style={{
-          boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+          boxShadow: isDark ? '0 8px 40px rgba(0,0,0,0.5)' : '0 8px 40px rgba(0,0,0,0.1)',
         }}
         borderRadius="16px"
+        isDark={isDark}
       >
         {/* Text input */}
         <div className="px-5 pt-4 pb-2 relative">
