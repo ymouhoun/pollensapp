@@ -121,10 +121,10 @@ export default function AppleGlowBorder({ children }) {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#000", overflow: "hidden" }}>
       <GrainFilter />
-      <GlowLayer stops={currentStops} blur={38} strokeWidth={32} opacity={0.45} angle={angle2} />
-      <GlowLayer stops={currentStops} blur={18} strokeWidth={18} opacity={0.6} angle={s.angle} />
-      <GlowLayer stops={currentStops} blur={7} strokeWidth={10} opacity={0.75} angle={angle2} />
-      <GlowLayer stops={currentStops} blur={0} strokeWidth={4} opacity={0.9} angle={s.angle} />
+      <GlowLayer stops={currentStops} blur={60} strokeWidth={6} opacity={0.35} angle={angle2} />
+      <GlowLayer stops={currentStops} blur={30} strokeWidth={4} opacity={0.5} angle={s.angle} />
+      <GlowLayer stops={currentStops} blur={12} strokeWidth={3} opacity={0.7} angle={angle2} />
+      <GlowLayer stops={currentStops} blur={0} strokeWidth={2} opacity={0.9} angle={s.angle} />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", filter: "url(#glow-grain)", mixBlendMode: "overlay", opacity: 0.35, zIndex: 2 }} />
       <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
         {children}
