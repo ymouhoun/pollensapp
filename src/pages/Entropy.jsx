@@ -40,17 +40,12 @@ export default function Entropy() {
 
   const showGlow = studio.status === 'STARTING' || !!studio.generatingPromptId;
 
-  return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      {showGlow && (
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <AppleGlowBorder><div className="w-full h-full" /></AppleGlowBorder>
-        </div>
-      )}
+  const content = (
+    <>
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
 
       {/* Center area — state dependent */}
-      <div className="w-full h-full flex items-center justify-center relative z-10">
+      <div className="w-full h-full flex items-center justify-center">
         {studio.status === 'STOPPED' && (
           <StudioStopped onStart={() => studio.startStudio(selectedModel)} />
         )}
@@ -101,6 +96,20 @@ export default function Entropy() {
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
       />
+    </>
+  );
+
+  if (showGlow) {
+    return (
+      <div className="fixed inset-0 overflow-hidden">
+        <AppleGlowBorder>{content}</AppleGlowBorder>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black overflow-hidden">
+      {content}
     </div>
   );
 }
