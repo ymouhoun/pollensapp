@@ -125,7 +125,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           style={{ fontFamily: 'var(--font-banana)' }}
         >
           {/* Left group */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
             <Divider />
             <SelectParam
@@ -142,7 +142,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           </div>
 
           {/* Right group */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
