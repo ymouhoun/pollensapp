@@ -8,6 +8,8 @@ const GPU_PRIORITY = [
   "RTX Pro 6000 Blackwell",
 ];
 
+const EU_COUNTRIES = ["FR", "DE", "NL", "GB", "SE", "NO", "FI", "CH", "BE", "AT", "DK", "PL"];
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
@@ -15,56 +17,43 @@ Deno.serve(async (req) => {
 
   const { europeOnly } = await req.json();
 
-  const query = {
-    verified: { eq: true },
-    rentable: { eq: true },
-    num_gpus: { eq: 1 },
-  };
-
-  if (europeOnly) {
-    query.geolocation = { in: ["FR", "DE", "NL", "GB", "SE", "NO", "FI", "CH", "BE", "AT", "DK", "PL"] };
-  }
-
-  const url = `https://console.vast.ai/api/v0/bundles?q=${encodeURIComponent(JSON.stringify(query))}`;
-
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${VAST_API_KEY}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    return Response.json({ error: `Vast.ai search failed: ${res.status} ${text}` }, { status: 502 });
-  }
-
-  const data = await res.json();
-  const offers = data.offers || [];
-
-  // Filter and sort by GPU priority
-  let bestOffer = null;
-  let bestGpuName = null;
-
+  // Search each GPU model individually to keep payloads small
   for (const gpuName of GPU_PRIORITY) {
-    const matching = offers.filter(o => {
-      const name = o.gpu_name || '';
-      return name.includes(gpuName);
+    const query = {
+      verified: { eq: true },
+      rentable: { eq: true },
+      num_gpus: { eq: 1 },
+      gpu_name: { eq: gpuName },
+      order: [["dph_total", "asc"]],
+      limit: 5,
+    };
+
+    if (europeOnly) {
+      query.geolocation = { in: EU_COUNTRIES };
+    }
+
+    const url = `https://console.vast.ai/api/v0/bundles?q=${encodeURIComponent(JSON.stringify(query))}`;
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${VAST_API_KEY}` },
     });
-    if (matching.length > 0) {
-      matching.sort((a, b) => (a.dph_total || Infinity) - (b.dph_total || Infinity));
-      bestOffer = matching[0];
-      bestGpuName = bestOffer.gpu_name;
-      break;
+
+    if (!res.ok) continue;
+
+    const data = await res.json();
+    const offers = data.offers || [];
+
+    if (offers.length > 0) {
+      const best = offers[0];
+      return Response.json({
+        found: true,
+        offerId: best.id,
+        gpuName: best.gpu_name || gpuName,
+        costPerHour: best.dph_total,
+        gpuRam: best.gpu_ram,
+      });
     }
   }
 
-  if (!bestOffer) {
-    return Response.json({ found: false });
-  }
-
-  return Response.json({
-    found: true,
-    offerId: bestOffer.id,
-    gpuName: bestGpuName,
-    costPerHour: bestOffer.dph_total,
-    gpuRam: bestOffer.gpu_ram,
-  });
+  return Response.json({ found: false });
 });
