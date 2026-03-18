@@ -35,7 +35,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           <button
             key={m.checkpoint}
             onClick={() => onModelChange(m.checkpoint)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-white/10 backdrop-blur-2xl transition-all"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
             style={{
               background: selectedModel === m.checkpoint
                 ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
@@ -47,11 +47,11 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             }}
           >
             <motion.span
-              className="w-1.5 h-1.5 rounded-full bg-white"
+              className="w-1 h-1 rounded-full bg-white"
               animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
               transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
             />
-            <span className={`text-[11px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
+            <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
               {m.label}
             </span>
           </button>
