@@ -8,6 +8,8 @@ const GPU_PRIORITY = [
   "RTX Pro 6000 Blackwell",
 ];
 
+const MAX_COST_PER_HOUR = 6.0;
+
 const EU_COUNTRIES = ["FR", "DE", "NL", "GB", "SE", "NO", "FI", "CH", "BE", "AT", "DK", "PL"];
 
 Deno.serve(async (req) => {
