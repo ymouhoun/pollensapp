@@ -30,7 +30,6 @@ export default function Entropy() {
   const handleSaveToMemory = useCallback(async () => {
     const url = studio.generatedImageUrl;
     if (!url) return;
-    // Convert data URL to file and upload, then save as MediaItem
     const res = await fetch(url);
     const blob = await res.blob();
     const file = new File([blob], `entropy-${Date.now()}.png`, { type: blob.type });
@@ -48,12 +47,7 @@ export default function Entropy() {
   }, [studio.generatedImageUrl]);
 
   const handleDeleteGenerated = useCallback(() => {
-    studio.generatedImageUrl && URL.revokeObjectURL(studio.generatedImageUrl);
-    // Clear the generated image by triggering a new empty state — reset via hook isn't exposed, so we set it null indirectly
-    // We'll just clear the URL from the page's perspective
-    studio.generatedImageUrl = null;
-    // Force re-render
-    setImages([]);
+    studio.clearGeneratedImage();
   }, [studio]);
 
   const handleGenerate = async (params) => {
