@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { baseUrl, positivePrompt, seed, steps, cfg, aspectRatio } = await req.json();
+  const { baseUrl, positivePrompt, seed, steps, cfg, aspectRatio, sampler, scheduler } = await req.json();
 
   const workflow = {
     "1": { inputs: { samples: ["16", 0], vae: ["3", 0] }, class_type: "VAEDecode" },
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     "13": { inputs: { text: positivePrompt, clip: ["6", 0] }, class_type: "CLIPTextEncode" },
     "14": { inputs: { width: ["7", 0], height: ["7", 1], batch_size: 1 }, class_type: "EmptySD3LatentImage" },
     "15": { inputs: { filename_prefix: "solweig", images: ["1", 0] }, class_type: "SaveImage" },
-    "16": { inputs: { seed: seed, steps: steps || 40, cfg: cfg || 3.0, sampler_name: "res_2s", scheduler: "kl_optimal", denoise: 1, model: ["9", 0], positive: ["13", 0], negative: ["8", 0], latent_image: ["14", 0] }, class_type: "KSampler" },
+    "16": { inputs: { seed: seed, steps: steps || 40, cfg: cfg || 3.0, sampler_name: sampler || "res_2s", scheduler: scheduler || "kl_optimal", denoise: 1, model: ["9", 0], positive: ["13", 0], negative: ["8", 0], latent_image: ["14", 0] }, class_type: "KSampler" },
   };
 
   // Submit prompt

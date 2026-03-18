@@ -13,6 +13,7 @@ export default function Entropy() {
     return params.get('prompt') || '';
   });
   const [images, setImages] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('editorial.safetensors');
   const inputRef = useRef(null);
 
   const studio = useStudio();
@@ -24,6 +25,8 @@ export default function Entropy() {
       steps: params.steps,
       cfg: params.cfg,
       aspectRatio: params.aspectRatio,
+      sampler: params.sampler,
+      scheduler: params.scheduler,
     });
   };
 
@@ -38,7 +41,7 @@ export default function Entropy() {
       {/* Center area — state dependent */}
       <div className="w-full h-full flex items-center justify-center">
         {studio.status === 'STOPPED' && (
-          <StudioStopped onStart={studio.startStudio} />
+          <StudioStopped onStart={() => studio.startStudio(selectedModel)} />
         )}
         {studio.status === 'STARTING' && (
           <StudioLoading
@@ -86,6 +89,8 @@ export default function Entropy() {
         studioStatus={studio.status}
         gpuName={studio.gpuName}
         onStopStudio={studio.stopStudio}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
       />
     </div>
   );
