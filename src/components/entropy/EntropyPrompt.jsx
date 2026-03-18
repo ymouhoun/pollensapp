@@ -4,6 +4,7 @@ import { ChevronDown, Play, Square } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/hooks/useStudio';
 import { LiquidMetalButton } from '@/components/ui/liquid-metal-button';
+import LiquidMetalSurface from '@/components/ui/liquid-metal-surface';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
@@ -78,12 +79,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         </div>
       </div>
 
-      <div
-        className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
+      <LiquidMetalSurface
+        className="shadow-2xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(200,180,220,0.05) 50%, rgba(180,160,210,0.08) 100%)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
         }}
+        borderRadius="16px"
       >
         {/* Text input */}
         <div className="px-5 pt-4 pb-2 relative">
@@ -151,7 +152,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             </div>
           </div>
         </div>
-      </div>
+      </LiquidMetalSurface>
     </motion.div>
   );
 }
