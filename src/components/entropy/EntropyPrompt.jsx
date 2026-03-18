@@ -87,7 +87,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           ))}
         </div>
         <div className="pt-1">
-          <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
+          <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} isDark={isDark} />
         </div>
       </div>
 
