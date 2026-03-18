@@ -165,7 +165,7 @@ export default function AppleGlowBorder({ children, active = true }) {
   const angle2 = (angle + 137) % 360;
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
+    <div className="fixed inset-0 overflow-hidden bg-black">
       <GrainFilter />
 
       {active && (
