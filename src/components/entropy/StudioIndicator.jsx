@@ -15,7 +15,6 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" style={{ boxShadow: '0 0 6px 2px rgba(255,255,255,0.7)' }} />
       </span>
       <span className="text-white/30">{gpuName || 'GPU'}</span>
-      <span className="text-white/15">|</span>
       <motion.button
         onClick={onStop}
         className="text-white/25 hover:text-red-500 transition-colors"
