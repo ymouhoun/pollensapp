@@ -1,131 +1,102 @@
-import { liquidMetalFragmentShader, ShaderMount } from "@paper-design/shaders";
-import { useEffect, useRef, useState, useCallback } from "react";
-
-const SHADER_PARAMS = {
-  u_repetition: 6,
-  u_softness: 0.4,
-  u_shiftRed: 0.2,
-  u_shiftBlue: 0.2,
-  u_distortion: 0,
-  u_contour: 0,
-  u_angle: 30,
-  u_scale: 12,
-  u_shape: 1,
-  u_offsetX: 0.05,
-  u_offsetY: -0.05,
-};
+import { useEffect } from "react";
 
 export default function LiquidMetalSurface({ children, className = "", style = {}, borderRadius = "16px" }) {
-  const containerRef = useRef(null);
-  const shaderRef = useRef(null);
-  const mountRef = useRef(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  const cleanupMount = useCallback(() => {
-    try {
-      mountRef.current?.destroy?.();
-    } catch {}
-    try {
-      mountRef.current?.dispose?.();
-    } catch {}
-    mountRef.current = null;
-    shaderRef.current?.replaceChildren();
-  }, []);
-
   useEffect(() => {
     const styleId = "liquid-metal-surface-style";
     if (!document.getElementById(styleId)) {
       const el = document.createElement("style");
       el.id = styleId;
       el.textContent = `
-        .lm-surface-shader canvas {
-          position: absolute !important;
-          inset: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          display: block !important;
+        @keyframes lmSurfaceShiftA {
+          0% { transform: translate3d(-8%, -6%, 0) scale(1); }
+          50% { transform: translate3d(6%, 4%, 0) scale(1.08); }
+          100% { transform: translate3d(-8%, -6%, 0) scale(1); }
+        }
+
+        @keyframes lmSurfaceShiftB {
+          0% { transform: translate3d(10%, 8%, 0) scale(1.04); }
+          50% { transform: translate3d(-7%, -5%, 0) scale(1.12); }
+          100% { transform: translate3d(10%, 8%, 0) scale(1.04); }
+        }
+
+        @keyframes lmSurfaceSheen {
+          0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+          20% { opacity: 0.22; }
+          50% { opacity: 0.08; }
+          100% { transform: translateX(140%) skewX(-18deg); opacity: 0; }
         }
       `;
       document.head.appendChild(el);
     }
   }, []);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const updateSize = () => {
-      const rect = containerRef.current.getBoundingClientRect();
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-      if (width > 0 && height > 0) {
-        setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
-      }
-    };
-
-    updateSize();
-
-    const observer = new ResizeObserver(() => {
-      updateSize();
-    });
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!shaderRef.current || !size.width || !size.height) return;
-
-    let cancelled = false;
-    let frame1 = 0;
-    let frame2 = 0;
-
-    frame1 = requestAnimationFrame(() => {
-      frame2 = requestAnimationFrame(() => {
-        if (cancelled || !shaderRef.current) return;
-
-        cleanupMount();
-
-        mountRef.current = new ShaderMount(
-          shaderRef.current,
-          liquidMetalFragmentShader,
-          SHADER_PARAMS,
-          undefined,
-          0.4,
-        );
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame1);
-      cancelAnimationFrame(frame2);
-      cleanupMount();
-    };
-  }, [size.width, size.height, cleanupMount]);
-
   return (
     <div
-      ref={containerRef}
       className={className}
-      style={{ position: "relative", overflow: "hidden", borderRadius, ...style }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius,
+        background: "linear-gradient(180deg, rgba(120,120,135,0.28) 0%, rgba(48,48,58,0.18) 100%)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(255,255,255,0.04)",
+        ...style,
+      }}
     >
       <div
-        ref={shaderRef}
-        className="lm-surface-shader"
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius,
+          background:
+            "radial-gradient(120% 140% at 12% 18%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 24%, rgba(255,255,255,0) 52%), radial-gradient(90% 120% at 88% 22%, rgba(168,156,198,0.24) 0%, rgba(168,156,198,0.08) 34%, rgba(168,156,198,0) 60%), linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 28%, rgba(0,0,0,0.16) 100%)",
+          mixBlendMode: "screen",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: "-18%",
+          borderRadius: "inherit",
+          background:
+            "radial-gradient(42% 58% at 24% 28%, rgba(255,255,255,0.22) 0%, rgba(180,180,200,0.12) 38%, rgba(255,255,255,0) 72%), radial-gradient(38% 54% at 76% 72%, rgba(164,152,190,0.18) 0%, rgba(120,120,150,0.08) 42%, rgba(255,255,255,0) 76%), radial-gradient(36% 52% at 56% 42%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 42%, rgba(255,255,255,0) 72%)",
+          filter: "blur(24px)",
+          animation: "lmSurfaceShiftA 12s ease-in-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: "-22%",
+          borderRadius: "inherit",
+          background:
+            "radial-gradient(40% 62% at 76% 30%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 38%, rgba(255,255,255,0) 72%), radial-gradient(34% 48% at 28% 78%, rgba(146,134,170,0.2) 0%, rgba(146,134,170,0.08) 40%, rgba(255,255,255,0) 78%)",
+          filter: "blur(28px)",
+          animation: "lmSurfaceShiftB 16s ease-in-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        aria-hidden="true"
         style={{
           position: "absolute",
           top: 0,
-          left: 0,
-          width: `${size.width}px`,
-          height: `${size.height}px`,
-          borderRadius,
-          overflow: "hidden",
-          zIndex: 0,
+          bottom: 0,
+          width: "34%",
+          background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%)",
+          filter: "blur(10px)",
+          animation: "lmSurfaceSheen 8s linear infinite",
+          pointerEvents: "none",
         }}
       />
+
       <div
         style={{
           position: "absolute",
@@ -135,6 +106,7 @@ export default function LiquidMetalSurface({ children, className = "", style = {
           zIndex: 1,
         }}
       />
+
       <div style={{ position: "relative", zIndex: 2 }}>
         {children}
       </div>
