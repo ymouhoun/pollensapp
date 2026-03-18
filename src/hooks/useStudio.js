@@ -296,14 +296,14 @@ export default function useStudio() {
           if (data.type === 'executed' && data.data?.node === '15') {
             const filename = data.data.output?.images?.[0]?.filename;
             if (filename) {
-              const proxyResult = (await base44.functions.invoke('comfyuiProxyImage', { baseUrl, filename })).data;
-              setGeneratedImageUrl(proxyResult.imageDataUrl);
+              const imageRes = await base44.functions.invoke('comfyuiProxyImage', { baseUrl, filename });
+              const blob = imageRes.data instanceof Blob ? imageRes.data : new Blob([imageRes.data], { type: 'image/png' });
+              const blobUrl = URL.createObjectURL(blob);
+              setGeneratedImageUrl(blobUrl);
 
               // Persist image to GeneratedImage entity
               try {
-                const res = await fetch(proxyResult.imageDataUrl);
-                const blob = await res.blob();
-                const file = new File([blob], `gen-${Date.now()}.png`, { type: blob.type });
+                const file = new File([blob], `gen-${Date.now()}.png`, { type: 'image/png' });
                 const { file_url } = await base44.integrations.Core.UploadFile({ file });
                 await base44.entities.GeneratedImage.create({
                   file_url,
