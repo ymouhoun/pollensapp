@@ -157,9 +157,13 @@ export default function useStudio() {
         return;
       }
       await new Promise(r => setTimeout(r, POLL_INSTANCE_INTERVAL));
-      const pollResult = (await base44.functions.invoke('vastaiPoll', { instanceId: createResult.instanceId })).data;
-      if (pollResult.baseUrl) {
-        baseUrl = pollResult.baseUrl;
+      try {
+        const pollResult = (await base44.functions.invoke('vastaiPoll', { instanceId: createResult.instanceId })).data;
+        if (pollResult.baseUrl) {
+          baseUrl = pollResult.baseUrl;
+        }
+      } catch (e) {
+        console.warn('Poll instance error, retrying...', e);
       }
     }
 
