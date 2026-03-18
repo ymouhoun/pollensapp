@@ -1,7 +1,7 @@
 import { liquidMetalFragmentShader, ShaderMount } from "@paper-design/shaders";
 import { useEffect, useRef } from "react";
 
-export default function LiquidMetalSurface({ children, className = "", style = {}, borderRadius = "16px" }) {
+export default function LiquidMetalSurface({ children, className = "", style = {}, borderRadius = "16px", isDark = true }) {
   const shaderRef = useRef(null);
   const mountRef = useRef(null);
 
@@ -75,7 +75,9 @@ export default function LiquidMetalSurface({ children, className = "", style = {
           position: "absolute",
           inset: "1.5px",
           borderRadius: `calc(${borderRadius} - 1.5px)`,
-          background: "linear-gradient(180deg, rgba(15,15,20,0.92) 0%, rgba(0,0,0,0.95) 100%)",
+          background: isDark
+            ? "linear-gradient(180deg, rgba(15,15,20,0.92) 0%, rgba(0,0,0,0.95) 100%)"
+            : "linear-gradient(180deg, rgba(245,245,250,0.92) 0%, rgba(255,255,255,0.95) 100%)",
           zIndex: 1,
           overflow: "hidden",
         }}
