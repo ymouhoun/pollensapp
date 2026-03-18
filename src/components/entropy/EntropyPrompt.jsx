@@ -17,7 +17,7 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, selectedModel, onModelChange }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.0);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [shift, setShift] = useState(1.0);
@@ -143,8 +143,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
             <button
-              onClick={generating ? undefined : handleGenerate}
-              disabled={disabled}
+              onClick={generating ? onCancelGeneration : handleGenerate}
+              disabled={!generating && disabled}
               className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-white/15 transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed"
             >
               {generating

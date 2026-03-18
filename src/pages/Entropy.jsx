@@ -90,6 +90,7 @@ export default function Entropy() {
         studioStatus={studio.status}
         gpuName={studio.gpuName}
         onStopStudio={studio.stopStudio}
+        onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
       />
