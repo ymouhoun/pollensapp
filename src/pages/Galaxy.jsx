@@ -149,6 +149,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     const s = stateRef.current;
     if (!s.scene || !media.length) return;
     destroyAllChunks(s);
+    s.pendingChunks = [];
     syncChunks(s);
   }, [media]);
 
