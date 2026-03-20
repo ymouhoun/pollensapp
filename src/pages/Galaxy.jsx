@@ -389,6 +389,9 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     const animate = () => {
       s.rafId = requestAnimationFrame(animate);
 
+      // Spawn pending chunks progressively
+      drainPendingChunks(s);
+
       // Inertia
       if (!drag.active && (Math.abs(drag.vx) > 0.001 || Math.abs(drag.vy) > 0.001)) {
         s.basePos.x += drag.vx;
@@ -408,7 +411,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
         syncChunks(s);
       }
 
-      // Per-mesh fade — iterate activeMeshes (our own list, not scene.children)
+      // Per-mesh fade — faster lerp factor for smoother initial appearance
       const camZ = s.basePos.z;
       const meshes = s.activeMeshes || [];
       for (let i = 0; i < meshes.length; i++) {
@@ -431,10 +434,9 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
         const target = m.material.map ? gridFade * depthFade : 0;
 
-        // Skip lerp if already settled
         const diff = target - m.material.opacity;
         if (Math.abs(diff) > OPACITY_THRESHOLD) {
-          m.material.opacity += diff * 0.06;
+          m.material.opacity += diff * 0.15; // faster fade-in (was 0.06)
         } else if (m.material.opacity !== target) {
           m.material.opacity = target;
         }
