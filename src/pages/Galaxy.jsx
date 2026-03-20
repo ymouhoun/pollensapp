@@ -16,13 +16,17 @@ const DEPTH_FADE_START = 180;
 const DEPTH_FADE_END = 320;
 const CHUNK_FADE_MARGIN = 1.5;
 const RENDER_DISTANCE = RENDER_RADIUS;
-const OPACITY_THRESHOLD = 0.005; // skip lerp when close enough
+const OPACITY_THRESHOLD = 0.005;
 
+// Pre-sort offsets by distance so close chunks spawn first
 const CHUNK_OFFSETS = [];
 for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
   for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++)
     for (let dz = -RENDER_DEPTH; dz <= RENDER_DEPTH; dz++)
       CHUNK_OFFSETS.push({ dx, dy, dz });
+CHUNK_OFFSETS.sort((a, b) => (a.dx*a.dx + a.dy*a.dy + a.dz*a.dz) - (b.dx*b.dx + b.dy*b.dy + b.dz*b.dz));
+
+const CHUNKS_PER_FRAME = 4; // max chunks to spawn per frame
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
