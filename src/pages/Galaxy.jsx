@@ -78,28 +78,39 @@ function generateChunkPlanes(cx, cy, cz) {
   return planes;
 }
 
-// ─── Texture loader & LRU cache ───────────────────────────────────
+// ─── Texture loader & LRU cache with concurrency limit ───────────
 const MAX_TEX_CACHE = 150;
 const texLoader = new THREE.TextureLoader();
 const texCache = new Map();
+const MAX_CONCURRENT_LOADS = 6;
+let activeLoads = 0;
+const loadQueue = [];
+
+function processLoadQueue() {
+  while (activeLoads < MAX_CONCURRENT_LOADS && loadQueue.length > 0) {
+    const { url, cb } = loadQueue.shift();
+    activeLoads++;
+    texLoader.load(url, (tex) => {
+      activeLoads--;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      texCache.set(url, tex);
+      while (texCache.size > MAX_TEX_CACHE) {
+        const first = texCache.keys().next().value;
+        texCache.get(first).dispose();
+        texCache.delete(first);
+      }
+      cb(tex);
+      processLoadQueue();
+    }, undefined, () => { activeLoads--; processLoadQueue(); });
+  }
+}
 
 function loadTexture(url, cb) {
-  if (texCache.has(url)) {
-    cb(texCache.get(url)); return;
-  }
-  texLoader.load(url, (tex) => {
-    tex.colorSpace = THREE.SRGBColorSpace;
-    // Reduce memory: use smaller mipmaps
-    tex.generateMipmaps = true;
-    tex.minFilter = THREE.LinearMipmapLinearFilter;
-    texCache.set(url, tex);
-    while (texCache.size > MAX_TEX_CACHE) {
-      const first = texCache.keys().next().value;
-      texCache.get(first).dispose();
-      texCache.delete(first);
-    }
-    cb(tex);
-  });
+  if (texCache.has(url)) { cb(texCache.get(url)); return; }
+  loadQueue.push({ url, cb });
+  processLoadQueue();
 }
 
 // Reusable raycaster (avoid allocating on every click)
