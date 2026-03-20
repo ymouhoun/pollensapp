@@ -224,15 +224,29 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     const camCz = Math.floor(s.basePos.z / CHUNK_SIZE);
 
     const needed = new Set();
+    // Build pending queue of chunks that need spawning (already sorted by distance)
+    s.pendingChunks = [];
     CHUNK_OFFSETS.forEach(({ dx, dy, dz }) => {
-      const key = `${camCx + dx},${camCy + dy},${camCz + dz}`;
+      const cx = camCx + dx, cy = camCy + dy, cz = camCz + dz;
+      const key = `${cx},${cy},${cz}`;
       needed.add(key);
-      if (!s.chunks.has(key)) spawnChunk(s, camCx + dx, camCy + dy, camCz + dz);
+      if (!s.chunks.has(key)) s.pendingChunks.push({ cx, cy, cz });
     });
 
     s.chunks.forEach((_, key) => {
       if (!needed.has(key)) destroyChunk(s, key);
     });
+  }
+
+  // Drain pending chunks a few per frame
+  function drainPendingChunks(s) {
+    if (!s.pendingChunks || s.pendingChunks.length === 0) return;
+    let count = 0;
+    while (count < CHUNKS_PER_FRAME && s.pendingChunks.length > 0) {
+      const { cx, cy, cz } = s.pendingChunks.shift();
+      const key = `${cx},${cy},${cz}`;
+      if (!s.chunks.has(key)) { spawnChunk(s, cx, cy, cz); count++; }
+    }
   }
 
   // ── Three.js setup ────────────────────────────────────────────
