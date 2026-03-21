@@ -21,7 +21,7 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
         whileHover={{ rotate: [0, -8, 8, -8, 8, 0] }}
         transition={{ duration: 0.4 }}
       >
-        <OctagonX className="w-2.5 h-2.5" strokeWidth={1.5} />
+        <CircleX className="w-2.5 h-2.5" strokeWidth={1.5} />
       </motion.button>
     </div>
   );
