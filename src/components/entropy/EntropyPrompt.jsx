@@ -142,12 +142,18 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
-            <div className="ml-1" style={{ opacity: (!generating && disabled) ? 0.2 : 1, pointerEvents: (!generating && disabled) ? 'none' : 'auto', transform: 'scale(0.52)', transformOrigin: 'center', marginTop: '-8px', marginBottom: '-8px', marginRight: '-10px' }}>
-              <LiquidMetalButton
-                viewMode="icon"
-                onClick={generating ? onCancelGeneration : handleGenerate}
-              />
-            </div>
+            <button
+              onClick={generating ? onCancelGeneration : handleGenerate}
+              disabled={!generating && disabled}
+              className="ml-1.5 w-6 h-6 flex items-center justify-center rounded-full transition-all disabled:opacity-20"
+              style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
+            >
+              {generating ? (
+                <CircleX className="w-3.5 h-3.5 text-white/60" strokeWidth={1.5} />
+              ) : (
+                <ArrowUp className="w-3.5 h-3.5 text-white/70" strokeWidth={2} />
+              )}
+            </button>
           </div>
         </div>
       </div>
