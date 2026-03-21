@@ -277,17 +277,17 @@ export default function Memory() {
                 <span className="text-[15px] text-foreground/70 tracking-normal">Uploading...</span>
               </>
             ) : (
-              <div
-                className="flex items-center gap-3 bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: 'linear-gradient(110deg, rgba(255,255,255,0.15), 35%, #fff, 50%, rgba(255,255,255,0.15), 75%, rgba(255,255,255,0.15))',
-                  backgroundSize: '200% 100%',
-                  animation: 'shine 6s linear infinite',
-                  WebkitBackgroundClip: 'text',
-                }}
-              >
-                <FileUp className="w-5 h-5" strokeWidth={1.5} style={{ color: 'currentColor' }} />
-                <span className="text-[15px] tracking-normal">Upload to memory</span>
+              <div className="flex items-center gap-3" style={{ animation: 'shine 6s linear infinite' }}>
+                <FileUp className="w-5 h-5 text-white/50" strokeWidth={1.5} />
+                <span
+                  className="text-[15px] tracking-normal bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: 'linear-gradient(110deg, rgba(255,255,255,0.15), 35%, #fff, 50%, rgba(255,255,255,0.15), 75%, rgba(255,255,255,0.15))',
+                    backgroundSize: '200% 100%',
+                    animation: 'shine 6s linear infinite',
+                    WebkitBackgroundClip: 'text',
+                  }}
+                >Upload to memory</span>
               </div>
             )}
           </div>
