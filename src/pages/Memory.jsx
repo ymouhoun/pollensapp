@@ -279,7 +279,7 @@ export default function Memory() {
             ) : (
               <>
                 <FileUp className="w-5 h-5 text-foreground/60" strokeWidth={1.5} />
-                <span className="text-[15px] text-foreground/70 tracking-wide">Upload to memory</span>
+                <span className="text-[15px] text-foreground/70">Upload to memory</span>
               </>
             )}
           </div>
