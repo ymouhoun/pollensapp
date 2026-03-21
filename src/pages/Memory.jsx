@@ -274,13 +274,21 @@ export default function Memory() {
             {uploadingDrop ? (
               <>
                 <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
-                <span className="text-[15px] text-foreground/70 tracking-wide">Uploading...</span>
+                <span className="text-[15px] text-foreground/70 tracking-normal">Uploading...</span>
               </>
             ) : (
-              <>
-                <FileUp className="w-5 h-5 text-foreground/60" strokeWidth={1.5} />
-                <span className="text-[15px] text-foreground/70 tracking-wide">Upload to memory</span>
-              </>
+              <div
+                className="flex items-center gap-3 bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: 'linear-gradient(110deg, rgba(255,255,255,0.15), 35%, #fff, 50%, rgba(255,255,255,0.15), 75%, rgba(255,255,255,0.15))',
+                  backgroundSize: '200% 100%',
+                  animation: 'shine 6s linear infinite',
+                  WebkitBackgroundClip: 'text',
+                }}
+              >
+                <FileUp className="w-5 h-5" strokeWidth={1.5} style={{ color: 'currentColor' }} />
+                <span className="text-[15px] tracking-normal">Upload to memory</span>
+              </div>
             )}
           </div>
         </div>
