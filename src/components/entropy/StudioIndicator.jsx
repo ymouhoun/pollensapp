@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { OctagonX } from 'lucide-react';
+import { CircleX } from 'lucide-react';
 
 export default function StudioIndicator({ status, gpuName, onStop }) {
   if (status !== 'READY') return null;
