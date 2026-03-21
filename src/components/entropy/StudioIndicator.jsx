@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CircleX } from 'lucide-react';
+import { OctagonX } from 'lucide-react';
 
 export default function StudioIndicator({ status, gpuName, onStop }) {
   if (status !== 'READY') return null;
@@ -21,7 +21,7 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
         whileHover={{ rotate: [0, -8, 8, -8, 8, 0] }}
         transition={{ duration: 0.4 }}
       >
-        <CircleX className="w-2.5 h-2.5" strokeWidth={1.5} />
+        <OctagonX className="w-2.5 h-2.5" strokeWidth={1.5} />
       </motion.button>
     </div>
   );
