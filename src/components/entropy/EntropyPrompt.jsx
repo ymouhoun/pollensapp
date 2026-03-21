@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Play, Square } from 'lucide-react';
+import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/lib/useStudio';
-import { LiquidMetalButton } from '@/components/ui/liquid-metal-button';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
