@@ -5,7 +5,7 @@ import React from 'react';
  * Each layer has increasing blur and decreasing coverage toward the content edge,
  * creating a smooth "depth-of-field" fade identical to the WebGL approach.
  */
-const LAYERS = 5;
+const LAYERS = 8;
 
 export default function ProgressiveBlur({ side = 'top', height = 160 }) {
   return (
@@ -19,7 +19,7 @@ export default function ProgressiveBlur({ side = 'top', height = 160 }) {
       }}
     >
       {Array.from({ length: LAYERS }, (_, i) => {
-        const blur = 5 * Math.pow(2, i); // strength=5, exponential
+        const blur = Math.pow(2, i); // 1, 2, 4, 8, 16, 32, 64, 128 px (exponential)
         const coverage = ((LAYERS - i) / LAYERS) * 100; // 100%, 87.5%, 75% …
 
         const gradient =
