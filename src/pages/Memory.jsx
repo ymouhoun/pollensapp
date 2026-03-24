@@ -267,8 +267,8 @@ export default function Memory() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <GradualBlur position="top" height="8rem" strength={3} divCount={6} curve="ease-out" target="page" zIndex={50} />
-      <GradualBlur position="bottom" height="8rem" strength={3} divCount={6} curve="ease-out" target="page" zIndex={50} />
+      <GradualBlur position="top" height="5rem" strength={3} divCount={6} exponential curve="ease-out" target="page" zIndex={50} />
+      <GradualBlur position="bottom" height="5rem" strength={3} divCount={6} exponential curve="ease-out" target="page" zIndex={50} />
 
       {/* File drop overlay */}
       {(isDraggingFiles || uploadingDrop) && (
