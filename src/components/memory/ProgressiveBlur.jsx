@@ -19,7 +19,7 @@ export default function ProgressiveBlur({ side = 'top', height = 160 }) {
       }}
     >
       {Array.from({ length: LAYERS }, (_, i) => {
-        const blur = Math.pow(2, i - 1); // 0.5, 1, 2, 4, 8, 16, 32, 64 px
+        const blur = Math.pow(2, i); // 1, 2, 4, 8, 16, 32, 64, 128 px (exponential)
         const coverage = ((LAYERS - i) / LAYERS) * 100; // 100%, 87.5%, 75% …
 
         const gradient =
