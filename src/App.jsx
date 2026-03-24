@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -6,7 +5,6 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import LogoRevealLoader from '@/components/LogoRevealLoader';
 
 import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
@@ -47,17 +45,9 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        {isLoading && (
-          <LogoRevealLoader
-            brandName="SOLWEIG"
-            iconSrc="https://i.postimg.cc/fRsZkHHD/mini.png"
-            onComplete={() => setIsLoading(false)}
-          />
-        )}
         <Router>
           <AuthenticatedApp />
         </Router>
