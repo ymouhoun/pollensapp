@@ -11,6 +11,7 @@ import MediaOverlay from '@/components/memory/MediaOverlay';
 
 import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
+import GradualBlur from '@/components/GradualBlur';
 import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
 import Galaxy from '@/pages/Galaxy';
@@ -266,6 +267,9 @@ export default function Memory() {
 
   return (
     <div className="min-h-screen bg-background relative">
+      <GradualBlur position="top" height="8rem" strength={3} divCount={6} curve="ease-out" target="page" zIndex={50} />
+      <GradualBlur position="bottom" height="8rem" strength={3} divCount={6} curve="ease-out" target="page" zIndex={50} />
+
       {/* File drop overlay */}
       {(isDraggingFiles || uploadingDrop) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
