@@ -8,7 +8,7 @@ import TextCard from '@/components/memory/TextCard';
 import AddNoteCard from '@/components/memory/AddNoteCard';
 import UploadModal from '@/components/memory/UploadModal';
 import MediaOverlay from '@/components/memory/MediaOverlay';
-import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
+
 import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
 import LoadingBeam from '@/components/memory/LoadingBeam';
@@ -286,8 +286,7 @@ export default function Memory() {
         </div>
       )}
 
-      <ProgressiveBlur side="top" height={160} />
-      <ProgressiveBlur side="bottom" height={160} />
+
 
       {/* Centered logo */}
       {appLogo && (
