@@ -90,71 +90,63 @@ export default function Memory() {
 
   const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  const [semanticMatches, setSemanticMatches] = useState([]);
+  const [searchResults, setSearchResults] = useState(null); // null = no search, [] = no results
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    if (!search || search.length < 3) {
-      setSemanticMatches([]);
+    if (!search || search.length < 2) {
+      setSearchResults(null);
       return;
     }
 
-    const isSemanticQuery = /\b(mood|light|style|vibe|atmosphere|feeling|aesthetic|composition)\b/i.test(search);
-    if (!isSemanticQuery) {
-      setSemanticMatches([]);
-      return;
-    }
-
-    const runSemanticSearch = async () => {
+    const runSearch = async () => {
       setIsSearching(true);
       try {
-        const response = await base44.functions.invoke('semanticSearch', {
-          query: search,
-          itemIds: items.filter(i => !i.is_forgotten && i.text_content).map(i => i.id),
-        });
-        setSemanticMatches(response.data.matches?.map(m => m.id) || []);
+        const response = await base44.functions.invoke('searchMedia', { query: search });
+        const resultIds = (response.data.results || []).map(r => r.id);
+        setSearchResults(resultIds);
       } catch (error) {
-        console.error('Semantic search error:', error);
+        console.error('Search error:', error);
+        setSearchResults(null);
       }
       setIsSearching(false);
     };
 
-    const debounce = setTimeout(runSemanticSearch, 500);
+    const debounce = setTimeout(runSearch, 400);
     return () => clearTimeout(debounce);
-  }, [search, items]);
+  }, [search]);
 
-  const filtered = useMemo(() => items.filter(item => {
-    if (item.is_forgotten) return false;
-    if (activeTag && !item.tags?.includes(activeTag)) return false;
-    if (dateFilter !== 'all') {
-      const created = new Date(item.created_date);
-      const now = new Date();
-      if (dateFilter === 'today') {
-        if (created.toDateString() !== now.toDateString()) return false;
-      } else if (dateFilter === 'week') {
-        const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
-        if (created < weekAgo) return false;
-      } else if (dateFilter === 'month') {
-        const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1);
-        if (created < monthAgo) return false;
+  const filtered = useMemo(() => {
+    let result = items.filter(item => {
+      if (item.is_forgotten) return false;
+      if (activeTag && !item.tags?.includes(activeTag)) return false;
+      if (dateFilter !== 'all') {
+        const created = new Date(item.created_date);
+        const now = new Date();
+        if (dateFilter === 'today') {
+          if (created.toDateString() !== now.toDateString()) return false;
+        } else if (dateFilter === 'week') {
+          const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+          if (created < weekAgo) return false;
+        } else if (dateFilter === 'month') {
+          const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1);
+          if (created < monthAgo) return false;
+        }
       }
+      if (colorFilter && item.color_palette !== colorFilter) return false;
+      return true;
+    });
+
+    // If searching, use backend search results for ordering and filtering
+    if (search && search.length >= 2 && searchResults !== null) {
+      const resultSet = new Set(searchResults);
+      result = result.filter(item => resultSet.has(item.id));
+      // Preserve relevance order from search
+      result.sort((a, b) => searchResults.indexOf(a.id) - searchResults.indexOf(b.id));
     }
-    if (colorFilter && item.color_palette !== colorFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      const lexicalMatch = item.title?.toLowerCase().includes(s) ||
-                          item.text_content?.toLowerCase().includes(s) ||
-                          item.tags?.some(t => t.toLowerCase().includes(s));
-      
-      const isSemanticQuery = /\b(mood|light|style|vibe|atmosphere|feeling|aesthetic|composition)\b/i.test(search);
-      if (isSemanticQuery && semanticMatches.length > 0) {
-        return semanticMatches.includes(item.id);
-      }
-      
-      return lexicalMatch;
-    }
-    return true;
-  }), [items, activeTag, dateFilter, colorFilter, search, semanticMatches]);
+
+    return result;
+  }, [items, activeTag, dateFilter, colorFilter, search, searchResults]);
 
   useEffect(() => {
     const onResize = () => {
