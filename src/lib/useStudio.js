@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 
 export const MODELS = [
   { label: 'Editorial', checkpoint: 'editorial.safetensors' },
@@ -33,17 +34,6 @@ export default function useStudio() {
   // Keep ref in sync
   useEffect(() => { instanceIdRef.current = instanceId; }, [instanceId]);
 
-  const appParams = useRef({ appBaseUrl: '', token: '' });
-
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="base44-app-url"]');
-    appParams.current.appBaseUrl = meta?.content || '';
-    try {
-      const stored = localStorage.getItem('base44_token');
-      if (stored) appParams.current.token = stored;
-    } catch {}
-  }, []);
-
   const stopStudioInternal = useCallback(async () => {
     const id = instanceIdRef.current;
     setStatus('STOPPING');
@@ -55,9 +45,7 @@ export default function useStudio() {
 
     if (id) {
       try {
-        console.log('Destroying instance:', id);
         await base44.functions.invoke('vastDestroyInstance', { instanceId: id });
-        console.log('Instance destroyed successfully');
       } catch (e) {
         console.error('Failed to destroy instance:', e);
       }
@@ -89,7 +77,159 @@ export default function useStudio() {
     stopStudioInternal();
   }, [stopStudioInternal]);
 
+  // --- Polling helpers (used by both startStudio and reconnect) ---
+
+  const pollForComfy = useCallback((url) => {
+    let attempts = 0;
+    const poll = async () => {
+      if (attempts >= 60) {
+        setErrorMessage('ComfyUI took too long to start');
+        setStatus('ERROR');
+        return;
+      }
+      attempts++;
+      try {
+        const healthRes = await base44.functions.invoke('comfyuiHealth', { baseUrl: url });
+        if (healthRes.data.ready) {
+          setBootProgress(100);
+          setStatusMessage('Ready');
+          setStatus('READY');
+          return;
+        }
+      } catch (e) {
+        console.warn('Health check error:', e);
+      }
+      setBootProgress(Math.min(95, 60 + attempts));
+      setStatusMessage('Starting ComfyUI...');
+      pollTimer.current = setTimeout(poll, 5000);
+    };
+    poll();
+  }, []);
+
+  const pollForReady = useCallback((instId) => {
+    let attempts = 0;
+    const poll = async () => {
+      if (attempts >= 120) {
+        setErrorMessage('Instance took too long to start');
+        setStatus('ERROR');
+        return;
+      }
+      attempts++;
+      try {
+        const pollRes = await base44.functions.invoke('vastPollInstance', { instanceId: instId });
+        const pollData = pollRes.data;
+
+        if (pollData.status === 'ports_ready' && pollData.baseUrl) {
+          setBootProgress(60);
+          setStatusMessage('Ports ready, waiting for ComfyUI...');
+          setBaseUrl(pollData.baseUrl);
+          pollForComfy(pollData.baseUrl);
+          return;
+        }
+        if (pollData.status === 'not_found') {
+          setErrorMessage('Instance not found');
+          setStatus('ERROR');
+          return;
+        }
+        setBootProgress(Math.min(55, 20 + attempts * 0.5));
+        setStatusMessage(`Waiting for instance... (${pollData.actualStatus || 'loading'})`);
+      } catch (e) {
+        console.warn('Poll error:', e);
+      }
+      pollTimer.current = setTimeout(poll, 5000);
+    };
+    poll();
+  }, [pollForComfy]);
+
+  // --- Reconnect on mount ---
+
+  useEffect(() => {
+    const reconnect = async () => {
+      try {
+        const result = (await base44.functions.invoke('vastaiListInstances', {})).data;
+        if (!result.instances || result.instances.length === 0) return;
+
+        // Pick the first instance with a baseUrl, or fall back to first instance
+        const readyInstance = result.instances.find(i => i.baseUrl) || result.instances[0];
+
+        setInstanceId(readyInstance.instanceId);
+        instanceIdRef.current = readyInstance.instanceId;
+        setGpuName(readyInstance.gpuName || '');
+        setCostPerHour(readyInstance.costPerHour || 0);
+
+        if (readyInstance.baseUrl) {
+          setBaseUrl(readyInstance.baseUrl);
+          setStatus('STARTING');
+          setBootProgress(70);
+          setStatusMessage('Reconnecting...');
+          // Check ComfyUI health directly
+          try {
+            const healthRes = (await base44.functions.invoke('comfyuiHealth', { baseUrl: readyInstance.baseUrl })).data;
+            if (healthRes.ready) {
+              setBootProgress(100);
+              setStatus('READY');
+              setStatusMessage('');
+              return;
+            }
+          } catch (e) {
+            console.warn('Health check failed on reconnect:', e);
+          }
+          // Not ready yet — poll for ComfyUI
+          pollForComfy(readyInstance.baseUrl);
+        } else {
+          // No baseUrl yet — poll for ports
+          setStatus('STARTING');
+          setBootProgress(20);
+          setStatusMessage('Reconnecting to instance...');
+          pollForReady(readyInstance.instanceId);
+        }
+      } catch (e) {
+        console.warn('Failed to check existing instances:', e);
+      }
+    };
+    reconnect();
+  }, [pollForComfy, pollForReady]);
+
+  // --- Start inactivity timer when READY ---
+
+  useEffect(() => {
+    if (status === 'READY') resetInactivity();
+    return () => {
+      clearTimeout(inactivityTimer.current);
+      clearTimeout(warningTimer.current);
+    };
+  }, [status, resetInactivity]);
+
+  // --- Start studio ---
+
   const startStudio = useCallback(async (checkpoint) => {
+    // Check for existing running instances first to avoid duplicates
+    try {
+      const listRes = (await base44.functions.invoke('vastaiListInstances', {})).data;
+      if (listRes.instances && listRes.instances.length > 0) {
+        const existing = listRes.instances.find(i => i.baseUrl) || listRes.instances[0];
+        setInstanceId(existing.instanceId);
+        instanceIdRef.current = existing.instanceId;
+        setGpuName(existing.gpuName || '');
+        setCostPerHour(existing.costPerHour || 0);
+        setStatus('STARTING');
+
+        if (existing.baseUrl) {
+          setBaseUrl(existing.baseUrl);
+          setBootProgress(70);
+          setStatusMessage('Found existing instance, checking health...');
+          pollForComfy(existing.baseUrl);
+        } else {
+          setBootProgress(20);
+          setStatusMessage('Found existing instance, waiting for ports...');
+          pollForReady(existing.instanceId);
+        }
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to check existing instances:', e);
+    }
+
     setStatus('STARTING');
     setBootProgress(0);
     setErrorMessage('');
@@ -132,83 +272,12 @@ export default function useStudio() {
       instanceIdRef.current = create.instanceId;
       setBootProgress(20);
       setStatusMessage('Instance created, waiting for ports...');
-
-      const pollForReady = (instId) => {
-        let attempts = 0;
-        const poll = async () => {
-          if (attempts >= 120) {
-            setErrorMessage('Instance took too long to start');
-            setStatus('ERROR');
-            return;
-          }
-          attempts++;
-          try {
-            const pollRes = await base44.functions.invoke('vastPollInstance', { instanceId: instId });
-            const pollData = pollRes.data;
-
-            if (pollData.status === 'ports_ready' && pollData.baseUrl) {
-              setBootProgress(60);
-              setStatusMessage('Ports ready, waiting for ComfyUI...');
-              setBaseUrl(pollData.baseUrl);
-              pollForComfy(pollData.baseUrl);
-              return;
-            }
-            if (pollData.status === 'not_found') {
-              setErrorMessage('Instance not found');
-              setStatus('ERROR');
-              return;
-            }
-            setBootProgress(Math.min(55, 20 + attempts * 0.5));
-            setStatusMessage(`Waiting for instance... (${pollData.actualStatus || 'loading'})`);
-          } catch (e) {
-            console.warn('Poll error:', e);
-          }
-          pollTimer.current = setTimeout(poll, 5000);
-        };
-        poll();
-      };
-
-      const pollForComfy = (url) => {
-        let attempts = 0;
-        const poll = async () => {
-          if (attempts >= 60) {
-            setErrorMessage('ComfyUI took too long to start');
-            setStatus('ERROR');
-            return;
-          }
-          attempts++;
-          try {
-            const healthRes = await base44.functions.invoke('comfyuiHealth', { baseUrl: url });
-            if (healthRes.data.ready) {
-              setBootProgress(100);
-              setStatusMessage('Ready');
-              setStatus('READY');
-              return;
-            }
-          } catch (e) {
-            console.warn('Health check error:', e);
-          }
-          setBootProgress(Math.min(95, 60 + attempts));
-          setStatusMessage('Starting ComfyUI...');
-          pollTimer.current = setTimeout(poll, 5000);
-        };
-        poll();
-      };
-
       pollForReady(create.instanceId);
     } catch (e) {
       setErrorMessage(e.message || 'Failed to start studio');
       setStatus('ERROR');
     }
-  }, []);
-
-  useEffect(() => {
-    if (status === 'READY') resetInactivity();
-    return () => {
-      clearTimeout(inactivityTimer.current);
-      clearTimeout(warningTimer.current);
-    };
-  }, [status, resetInactivity]);
+  }, [pollForReady, pollForComfy]);
 
   const keepAlive = useCallback(() => {
     resetInactivity();
@@ -245,8 +314,8 @@ export default function useStudio() {
       const abort = new AbortController();
       sseAbort.current = abort;
 
-      const fnBase = appParams.current.appBaseUrl || '';
-      const token = appParams.current.token || '';
+      const fnBase = appParams.appBaseUrl || '';
+      const token = appParams.token || '';
 
       const sseRes = await fetch(`${fnBase}/functions/comfyuiWsProxy`, {
         method: 'POST',
