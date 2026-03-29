@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export default function StudioLoading({ gpuName, costPerHour, statusMessage, bootProgress }) {
-  const percent = Math.round(bootProgress * 100);
+  const percent = Math.min(100, Math.round(bootProgress > 1 ? bootProgress : bootProgress * 100));
 
   return (
     <motion.div
