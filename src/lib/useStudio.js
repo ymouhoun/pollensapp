@@ -327,6 +327,7 @@ export default function useStudio() {
       const fnBase = appParams.appBaseUrl || '';
       const token = appParams.token || '';
 
+      console.log('[generate] opening SSE to comfyuiWsProxy...');
       const sseRes = await fetch(`${fnBase}/functions/comfyuiWsProxy`, {
         method: 'POST',
         headers: {
@@ -336,6 +337,14 @@ export default function useStudio() {
         body: JSON.stringify({ baseUrl, clientId }),
         signal: abort.signal,
       });
+      console.log('[generate] SSE response status:', sseRes.status, 'ok:', sseRes.ok);
+      if (!sseRes.ok) {
+        const errText = await sseRes.text();
+        console.error('[generate] SSE response error body:', errText);
+        setGeneratingPromptId(null);
+        generatingRef.current = false;
+        return;
+      }
 
       const reader = sseRes.body.getReader();
       const decoder = new TextDecoder();
@@ -353,6 +362,7 @@ export default function useStudio() {
             if (!line.startsWith('data: ')) continue;
             let data;
             try { data = JSON.parse(line.slice(6)); } catch { continue; }
+            console.log('[generate] SSE event:', data.type, data.data?.node || '');
 
             if (data.type === 'progress') {
               setGenProgress({ step: data.data?.value || 0, total: data.data?.max || params.steps || 40 });
