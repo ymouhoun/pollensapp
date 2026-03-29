@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 
 export const MODELS = [
   { label: 'Editorial', checkpoint: 'editorial.safetensors' },
@@ -324,16 +323,10 @@ export default function useStudio() {
       const abort = new AbortController();
       sseAbort.current = abort;
 
-      const fnBase = appParams.appBaseUrl || '';
-      const token = appParams.token || '';
-
       console.log('[generate] opening SSE to comfyuiWsProxy...');
-      const sseRes = await fetch(`${fnBase}/functions/comfyuiWsProxy`, {
+      const sseRes = await base44.functions.fetch('comfyuiWsProxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseUrl, clientId }),
         signal: abort.signal,
       });
@@ -374,12 +367,9 @@ export default function useStudio() {
               const filename = data.data.output?.images?.[0]?.filename;
               if (filename) {
                 try {
-                  const blobRes = await fetch(`${fnBase}/functions/comfyuiProxyImage`, {
+                  const blobRes = await base44.functions.fetch('comfyuiProxyImage', {
                     method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ baseUrl, filename }),
                   });
                   const blob = await blobRes.blob();
