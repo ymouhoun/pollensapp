@@ -144,10 +144,13 @@ export default function useStudio() {
   // --- Reconnect on mount ---
 
   useEffect(() => {
+    console.log('[useStudio] mount effect running');
     const reconnect = async () => {
       try {
+        console.log('[useStudio] calling vastaiListInstances...');
         const result = (await base44.functions.invoke('vastaiListInstances', {})).data;
-        if (!result.instances || result.instances.length === 0) return;
+        console.log('[useStudio] instances:', JSON.stringify(result));
+        if (!result.instances || result.instances.length === 0) { console.log('[useStudio] no instances found'); return; }
 
         // Pick the first instance with a baseUrl, or fall back to first instance
         const readyInstance = result.instances.find(i => i.baseUrl) || result.instances[0];
@@ -166,6 +169,7 @@ export default function useStudio() {
           try {
             const healthRes = (await base44.functions.invoke('comfyuiHealth', { baseUrl: readyInstance.baseUrl })).data;
             if (healthRes.ready) {
+              console.log('[useStudio] READY! baseUrl=', readyInstance.baseUrl);
               setBootProgress(100);
               setStatus('READY');
               setStatusMessage('');
@@ -284,7 +288,8 @@ export default function useStudio() {
   }, [resetInactivity]);
 
   const generate = useCallback(async (params) => {
-    if (!baseUrl || generatingPromptId) return;
+    console.log('[generate] called. baseUrl=', baseUrl, 'generatingPromptId=', generatingPromptId);
+    if (!baseUrl || generatingPromptId) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
     resetInactivity();
     setGeneratedImageUrl(null);
     setPreviewImageUrl(null);
