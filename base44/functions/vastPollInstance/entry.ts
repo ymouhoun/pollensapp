@@ -19,8 +19,16 @@ Deno.serve(async (req) => {
   }
 
   const data = await res.json();
-  const instances = data.instances || [data];
-  const instance = instances.find(i => String(i.id) === String(instanceId)) || instances[0];
+  
+  // The API may return the instance directly, or wrapped in an object
+  let instance = null;
+  if (data.id) {
+    instance = data;
+  } else if (Array.isArray(data.instances)) {
+    instance = data.instances.find(i => String(i.id) === String(instanceId)) || data.instances[0];
+  } else if (data.instances && typeof data.instances === 'object') {
+    instance = data.instances;
+  }
 
   if (!instance) {
     return Response.json({ status: "not_found" });
