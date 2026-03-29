@@ -30,6 +30,7 @@ export default function useStudio() {
   const sseAbort = useRef(null);
   const pollTimer = useRef(null);
   const instanceIdRef = useRef(null);
+  const generatingRef = useRef(false);
 
   // Keep ref in sync
   useEffect(() => { instanceIdRef.current = instanceId; }, [instanceId]);
@@ -57,6 +58,7 @@ export default function useStudio() {
     setGpuName(null);
     setCostPerHour(null);
     setGeneratingPromptId(null);
+    generatingRef.current = false;
     setGeneratedImageUrl(null);
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: 0 });
@@ -288,8 +290,9 @@ export default function useStudio() {
   }, [resetInactivity]);
 
   const generate = useCallback(async (params) => {
-    console.log('[generate] called. baseUrl=', baseUrl, 'generatingPromptId=', generatingPromptId);
-    if (!baseUrl || generatingPromptId) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
+    console.log('[generate] called. baseUrl=', baseUrl, 'generatingRef=', generatingRef.current);
+    if (!baseUrl || generatingRef.current) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
+    generatingRef.current = true;
     resetInactivity();
     setGeneratedImageUrl(null);
     setPreviewImageUrl(null);
@@ -298,6 +301,7 @@ export default function useStudio() {
     const clientId = `client-${Date.now()}`;
 
     try {
+      console.log('[generate] submitting to comfyuiGenerate with params:', JSON.stringify({ baseUrl, positivePrompt: params.positivePrompt?.slice(0,30), seed: params.seed, steps: params.steps, cfg: params.cfg, aspectRatio: params.aspectRatio, sampler: params.sampler, scheduler: params.scheduler }));
       const submitRes = await base44.functions.invoke('comfyuiGenerate', {
         baseUrl,
         positivePrompt: params.positivePrompt,
@@ -310,6 +314,7 @@ export default function useStudio() {
         scheduler: params.scheduler,
         clientId,
       });
+      console.log('[generate] comfyuiGenerate response:', JSON.stringify(submitRes.data));
 
       const { promptId } = submitRes.data;
       if (!promptId) { console.error('No promptId returned'); return; }
@@ -382,6 +387,7 @@ export default function useStudio() {
                 } catch (e) { console.error('Failed to fetch generated image:', e); }
               }
               setGeneratingPromptId(null);
+              generatingRef.current = false;
               abort.abort();
               resetInactivity();
               return;
@@ -389,27 +395,31 @@ export default function useStudio() {
             if (data.type === 'execution_error') {
               console.error('Generation error:', data);
               setGeneratingPromptId(null);
+              generatingRef.current = false;
               abort.abort();
               return;
             }
           }
         }
-        if (!abort.signal.aborted) setGeneratingPromptId(null);
+        if (!abort.signal.aborted) { setGeneratingPromptId(null); generatingRef.current = false; }
       };
 
       processEvents().catch(e => {
         if (e.name !== 'AbortError') console.error('SSE processing error:', e);
         setGeneratingPromptId(null);
+        generatingRef.current = false;
       });
     } catch (e) {
-      console.error('Generate error:', e);
+      console.error('[generate] ERROR:', e?.message || e, e?.response?.data || '');
       setGeneratingPromptId(null);
+      generatingRef.current = false;
     }
-  }, [baseUrl, generatingPromptId, resetInactivity]);
+  }, [baseUrl, resetInactivity]);
 
   const cancelGeneration = useCallback(() => {
     if (sseAbort.current) { sseAbort.current.abort(); sseAbort.current = null; }
     setGeneratingPromptId(null);
+    generatingRef.current = false;
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: 0 });
   }, []);
