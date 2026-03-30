@@ -41,11 +41,14 @@ Deno.serve(async (req) => {
     return Response.json({ error: "No compatible GPU available right now." }, { status: 404 });
   }
 
+  const MAX_COST_PER_HOUR = 6.5;
+
   // Filter and sort by GPU priority
   for (const gpuName of GPU_PRIORITY) {
     const matching = offers.filter(o => {
       const name = o.gpu_name || "";
-      return name.toLowerCase().includes(gpuName.toLowerCase());
+      const cost = o.dph_total || o.min_bid || 999;
+      return name.toLowerCase().includes(gpuName.toLowerCase()) && cost <= MAX_COST_PER_HOUR;
     });
     if (matching.length > 0) {
       matching.sort((a, b) => (a.dph_total || a.min_bid || 999) - (b.dph_total || b.min_bid || 999));
