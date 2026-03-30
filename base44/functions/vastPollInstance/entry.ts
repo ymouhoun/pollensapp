@@ -34,11 +34,12 @@ Deno.serve(async (req) => {
     return Response.json({ status: "not_found" });
   }
 
-  // Check for port 3000 mapping
+  // Try to find the public URL for port 3000
   const ports = instance.ports || {};
   const port3000 = ports["3000/tcp"];
 
-  if (port3000 && port3000.length > 0) {
+  // Method 1: Docker-style port mapping (array of host:port entries)
+  if (port3000 && Array.isArray(port3000) && port3000.length > 0) {
     const entry = port3000[0];
     const host = entry.HostIp || entry.hostIp || entry.host;
     const port = entry.HostPort || entry.hostPort || entry.port;
@@ -49,6 +50,18 @@ Deno.serve(async (req) => {
         actualStatus: instance.actual_status || instance.status,
       });
     }
+  }
+
+  // Method 2: Vast direct port mapping (public_ipaddr + port offset)
+  if (instance.public_ipaddr && instance.direct_port_start > 0 && instance.direct_port_end > 0) {
+    // In direct mode, container port 3000 maps to direct_port_start + offset
+    // The offset is typically 0 for the first (and only) exposed port
+    const mappedPort = instance.direct_port_start;
+    return Response.json({
+      status: "ports_ready",
+      baseUrl: `http://${instance.public_ipaddr}:${mappedPort}`,
+      actualStatus: instance.actual_status || instance.status,
+    });
   }
 
   return Response.json({
