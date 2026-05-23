@@ -59,20 +59,18 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
     onUploaded?.();
   };
 
-  if (uploading) {
-    return (
-      <GlowBorder>
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-6 h-6 animate-spin text-white/70" />
-          <p className="text-white/60 text-sm font-light tracking-wide">Uploading to memory…</p>
-        </div>
-      </GlowBorder>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border/50 max-w-md bg-background/95 backdrop-blur-xl">
+    <>
+      {uploading && (
+        <GlowBorder>
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-6 h-6 animate-spin text-white/70" />
+            <p className="text-white/60 text-sm font-light tracking-wide">Uploading to memory…</p>
+          </div>
+        </GlowBorder>
+      )}
+      <Dialog open={open && !uploading} onOpenChange={onOpenChange}>
+        <DialogContent className="border-border/50 max-w-md bg-background/95 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="font-display text-lg font-normal">Add to Memory</DialogTitle>
         </DialogHeader>
@@ -145,6 +143,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
           </TabsContent>
         </Tabs>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }
