@@ -11,6 +11,7 @@ import MediaOverlay from '@/components/memory/MediaOverlay';
 import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
 import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
+import GlowBorder from '@/components/ui/GlowBorder';
 import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
 import Galaxy from '@/pages/Galaxy';
@@ -260,22 +261,21 @@ export default function Memory() {
     <div className="min-h-screen bg-background relative">
       {/* File drop overlay */}
       {(isDraggingFiles || uploadingDrop) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-          <div className="absolute inset-0 backdrop-blur-[20px] bg-background/30" />
-          <div className="relative flex items-center gap-3" style={{ fontFamily: 'ModeratRegular, var(--font-sans)' }}>
+        <GlowBorder>
+          <div className="flex items-center gap-3" style={{ fontFamily: 'ModeratRegular, var(--font-sans)' }}>
             {uploadingDrop ? (
               <>
-                <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
-                <span className="text-[15px] text-foreground/70 tracking-wide">Uploading...</span>
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <span className="text-[15px] text-white/70 tracking-wide">Uploading...</span>
               </>
             ) : (
               <>
-                <FileUp className="w-5 h-5 text-foreground/60" strokeWidth={1.5} />
-                <span className="text-[15px] text-foreground/70">Upload to memory</span>
+                <FileUp className="w-5 h-5 text-white/60" strokeWidth={1.5} />
+                <span className="text-[15px] text-white/70">Upload to memory</span>
               </>
             )}
           </div>
-        </div>
+        </GlowBorder>
       )}
 
       <ProgressiveBlur side="top" height={160} />
