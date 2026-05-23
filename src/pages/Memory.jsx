@@ -261,7 +261,7 @@ export default function Memory() {
     <div className="min-h-screen bg-background relative">
       {/* File drop overlay */}
       {(isDraggingFiles || uploadingDrop) && (
-        <GlowBorder>
+        <GlowBorder fullScreen>
           <div className="flex items-center gap-3" style={{ fontFamily: 'ModeratRegular, var(--font-sans)' }}>
             {uploadingDrop ? (
               <>

@@ -41,7 +41,7 @@ function buildConicGradient(stops, angleDeg) {
   return `conic-gradient(from ${angleDeg.toFixed(2)}deg, ${parts})`;
 }
 
-export default function GlowBorder({ children }) {
+export default function GlowBorder({ children, fullScreen = false }) {
   const containerRef = useRef(null);
   const layerRefs = useRef([]);
   const canvasRef = useRef(null);
@@ -152,14 +152,16 @@ export default function GlowBorder({ children }) {
               inset: 0,
             }}
           />
-          <div
-            style={{
-              position: 'absolute',
-              inset: `${layer.stroke}px`,
-              background: '#000',
-              borderRadius: '0px',
-            }}
-          />
+          {!fullScreen && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: `${layer.stroke}px`,
+                background: '#000',
+                borderRadius: '0px',
+              }}
+            />
+          )}
         </div>
       ))}
 
