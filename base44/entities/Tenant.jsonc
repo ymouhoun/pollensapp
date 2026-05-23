@@ -1,0 +1,50 @@
+{
+  "name": "Tenant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Tenant / brand name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe identifier"
+    },
+    "style_taxonomy": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "reference_image_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "description": "Brand-specific style taxonomy with labels, descriptions, and reference images"
+    },
+    "vlm_style_prompt": {
+      "type": "string",
+      "description": "Template prompt used to apply the brand taxonomy via VLM"
+    },
+    "pinecone_index": {
+      "type": "string",
+      "description": "Pinecone index name for this tenant's vectors"
+    }
+  },
+  "required": [
+    "name",
+    "slug"
+  ]
+}

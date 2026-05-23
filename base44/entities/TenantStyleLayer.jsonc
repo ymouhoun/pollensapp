@@ -1,0 +1,33 @@
+{
+  "name": "TenantStyleLayer",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Reference to the tenant"
+    },
+    "image_id": {
+      "type": "string",
+      "description": "Reference to the MediaItem"
+    },
+    "style_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Style tags from the tenant's taxonomy"
+    },
+    "tenant_caption": {
+      "type": "string",
+      "description": "Caption rewritten with the tenant's vocabulary"
+    },
+    "custom_metadata": {
+      "type": "object",
+      "description": "Any additional tenant-specific metadata"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "image_id"
+  ]
+}

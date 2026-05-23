@@ -10,6 +10,7 @@ import AppLayout from '@/components/AppLayout';
 import Memory from '@/pages/Memory';
 import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
+import TenantDetail from '@/pages/admin/TenantDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,6 +39,7 @@ const AuthenticatedApp = () => {
         <Route path="/Memory" element={<Memory />} />
         <Route path="/Entropy" element={<Entropy />} />
         <Route path="/Settings" element={<Settings />} />
+        <Route path="/admin/tenant" element={<TenantDetail />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

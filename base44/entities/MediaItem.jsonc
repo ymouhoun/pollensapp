@@ -1,0 +1,201 @@
+{
+  "name": "MediaItem",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title or caption of the media"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video",
+        "text"
+      ],
+      "default": "image",
+      "description": "Type of content"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded file (for image/video)"
+    },
+    "text_content": {
+      "type": "string",
+      "description": "Text content for quotes and notes"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for categorization"
+    },
+    "caption": {
+      "type": "string",
+      "description": "AI-generated rich visual description of the image"
+    },
+    "caption_universal": {
+      "type": "string",
+      "description": "VLM-generated universal caption: rich prose covering subject, action, setting, lighting, mood, era, composition, garments, materials"
+    },
+    "palette": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "hex": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Array of 5 dominant colors with hex and name"
+    },
+    "structural_signals": {
+      "type": "object",
+      "description": "Structural analysis: has_face, face_count, aspect_ratio, grain_level, has_text, dominant_subject"
+    },
+    "vector_id": {
+      "type": "string",
+      "description": "Reference ID in the vector store (Pinecone)"
+    },
+    "enrichment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "done",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Status of the enrichment pipeline"
+    },
+    "enriched_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When enrichment was completed"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant this image belongs to"
+    },
+    "meta_format": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Format tags: movie still, editorial, still life, portrait, etc."
+    },
+    "meta_film_stock": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Film stock tags: 35mm, 16mm, 8mm, digital, etc."
+    },
+    "meta_color_type": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Color type tags: color, black and white, sepia, etc."
+    },
+    "meta_lighting": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lighting tags: natural light, studio, backlit, etc."
+    },
+    "meta_composition": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Composition tags: close-up, wide shot, symmetrical, etc."
+    },
+    "meta_mood": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mood tags with synonyms: melancholic, nostalgic, tense, etc."
+    },
+    "meta_color_palette": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Color palette tags: warm tones, cool tones, earth tones, etc."
+    },
+    "meta_texture": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Texture tags: heavy grain, fine grain, smooth, etc."
+    },
+    "meta_subject": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Subject tags: person, object, architecture, etc."
+    },
+    "meta_era": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Era/feel tags: 1970s, contemporary, timeless, etc."
+    },
+    "meta_directors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Reference directors/photographers whose style this resembles"
+    },
+    "meta_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional keywords and synonyms for discoverability"
+    },
+    "color_palette": {
+      "type": "string",
+      "enum": [
+        "warm",
+        "cool",
+        "neutral",
+        "dark",
+        "light",
+        "monochrome"
+      ],
+      "description": "Auto-detected dominant color palette of the image"
+    },
+    "tint": {
+      "type": "number",
+      "description": "Hue value 0-360 degrees for tint-based sorting"
+    },
+    "is_kept": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_forgotten": {
+      "type": "boolean",
+      "default": false
+    },
+    "collection": {
+      "type": "string",
+      "description": "Collection this belongs to"
+    }
+  },
+  "required": [
+    "content_type"
+  ]
+}

@@ -1,7 +1,51 @@
 import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Upload, Trash2, Loader2, Type, Image, Zap } from 'lucide-react';
+import { Upload, Trash2, Loader2, Type, Image, Zap, Plus, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+function TenantsSection() {
+  const { data: tenants = [], isLoading } = useQuery({
+    queryKey: ['tenants'],
+    queryFn: () => base44.entities.Tenant.list('-created_date'),
+  });
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-[11px] tracking-widest uppercase text-muted-foreground mb-4">Tenants</h2>
+      <div className="border border-border/40 rounded-lg p-5 space-y-3">
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
+          </div>
+        ) : tenants.length === 0 ? (
+          <p className="text-sm text-muted-foreground/40 text-center py-2">No tenants yet.</p>
+        ) : (
+          tenants.map(t => (
+            <Link
+              key={t.id}
+              to={`/admin/tenant?id=${t.id}`}
+              className="flex items-center justify-between py-2 px-1 hover:bg-muted/30 rounded transition-colors group"
+            >
+              <div>
+                <span className="text-sm text-foreground">{t.name}</span>
+                <span className="text-[10px] text-muted-foreground/40 ml-2 tracking-wider uppercase">{t.slug}</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/20 group-hover:text-muted-foreground/50 transition-colors" strokeWidth={1.5} />
+            </Link>
+          ))
+        )}
+        <Link
+          to="/admin/tenant"
+          className="flex items-center gap-2 text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors pt-1"
+        >
+          <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+          New tenant
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export default function Settings() {
   const [uploading, setUploading] = useState(false);
@@ -100,7 +144,7 @@ export default function Settings() {
   ).join('\n');
 
   return (
-    <div className="min-h-screen bg-background px-8 py-12 max-w-xl mx-auto">
+    <div className="min-h-screen bg-background px-8 py-12 max-w-xl mx-auto" style={{ fontFamily: 'var(--font-sans)' }}>
       <style>{fontFaceStyle}</style>
 
       <h1 className="text-2xl font-light tracking-widest uppercase text-foreground mb-8">Settings</h1>
@@ -160,6 +204,9 @@ export default function Settings() {
           </button>
         </div>
       </section>
+
+      {/* Tenants section */}
+      <TenantsSection />
 
       {/* Generated Images section */}
       <section className="mb-10">
