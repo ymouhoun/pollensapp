@@ -24,7 +24,9 @@ Deno.serve(async (req) => {
 
 Return a JSON object with ALL of the following:
 
-1. "caption_universal": 3-5 sentences of rich prose covering subject, action, setting, lighting quality, mood, era/feeling, composition, garments (if any), materials, and textures. Write as if describing the image to a blind cinephile. Be evocative and specific.
+1. "suggested_title": A short, evocative title for this image (2-5 words). Think like an art director naming a shot for a lookbook or exhibition. Lowercase, poetic but descriptive. Examples: "amber light on linen", "solitude in concrete", "hands through tall grass", "the red chair".
+
+2. "caption_universal": 3-5 sentences of rich prose covering subject, action, setting, lighting quality, mood, era/feeling, composition, garments (if any), materials, and textures. Write as if describing the image to a blind cinephile. Be evocative and specific.
 
 2. "palette": array of exactly 5 dominant colors, each an object with "hex" (e.g. "#2B3A42") and "name" (e.g. "slate blue"). Order from most to least dominant.
 
@@ -38,7 +40,7 @@ Return a JSON object with ALL of the following:
 
 4. "caption": 2-4 sentence description (shorter, for display)
 
-5. Structured tags for each category (arrays of strings, include synonyms):
+6. Structured tags for each category (arrays of strings, include synonyms):
    - "format": (movie still, editorial, still life, portrait, landscape, street, fashion, documentary, abstract, etc.)
    - "film_stock": (35mm, 16mm, digital, large format, medium format, etc.)
    - "color_type": (color, black and white, sepia, desaturated, etc.)
@@ -63,6 +65,7 @@ Return JSON only.`;
       response_json_schema: {
         type: 'object',
         properties: {
+          suggested_title: { type: 'string' },
           caption_universal: { type: 'string' },
           palette: { type: 'array', items: { type: 'object', properties: { hex: { type: 'string' }, name: { type: 'string' } } } },
           structural_signals: {
@@ -108,6 +111,7 @@ Return JSON only.`;
     const validPalettes = ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'];
 
     const update = {
+      title: result.suggested_title || item.title || '',
       caption_universal: result.caption_universal || '',
       palette: Array.isArray(result.palette) ? result.palette.slice(0, 5) : [],
       structural_signals: result.structural_signals || {},
