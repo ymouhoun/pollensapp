@@ -129,20 +129,39 @@ export default function Entropy() {
             entropy
           </p>
         )}
-        {studio.status === 'READY' && studio.generatingPromptId && (
-          <GenerationPreview
-            progress={studio.genProgress}
-            onStop={studio.interruptGeneration}
-            showFinalImage={!!studio.generatedImageUrl}
-            finalImageUrl={studio.generatedImageUrl}
-          />
-        )}
-        {studio.status === 'READY' && !studio.generatingPromptId && deck.length > 0 && (
-          <ImageDeck
-            images={deck}
-            onBringToFront={handleBringToFront}
-            onContextMenu={handleImageContextMenu}
-          />
+        {studio.status === 'READY' && (studio.generatingPromptId || deck.length > 0) && (
+          <div className="relative flex items-center justify-center">
+            {/* Deck behind — shifted left when generating to make room */}
+            {deck.length > 0 && (
+              <div
+                className="absolute"
+                style={{
+                  transform: studio.generatingPromptId ? 'translateX(-320px) scale(0.82)' : 'translateX(0)',
+                  filter: studio.generatingPromptId ? 'blur(6px)' : 'none',
+                  opacity: studio.generatingPromptId ? 0.7 : 1,
+                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                  zIndex: 1,
+                }}
+              >
+                <ImageDeck
+                  images={deck}
+                  onBringToFront={studio.generatingPromptId ? undefined : handleBringToFront}
+                  onContextMenu={studio.generatingPromptId ? undefined : handleImageContextMenu}
+                />
+              </div>
+            )}
+            {/* Generation preview in center */}
+            {studio.generatingPromptId && (
+              <div style={{ zIndex: 2 }}>
+                <GenerationPreview
+                  progress={studio.genProgress}
+                  onStop={studio.interruptGeneration}
+                  showFinalImage={false}
+                  finalImageUrl={null}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 
