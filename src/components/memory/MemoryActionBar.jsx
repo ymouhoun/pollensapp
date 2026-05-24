@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shuffle, Moon, Sun, Blend, MousePointerClick } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { GlassButton } from '@/components/ui/apple-tahoe-liquid-glass-button';
+import { GlassMenuBar } from '@/components/ui/glass-menu-bar';
 
 export default function MemoryActionBar({ onToggleGalaxy }) {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
@@ -14,41 +14,39 @@ export default function MemoryActionBar({ onToggleGalaxy }) {
   };
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
-      <GlassButton
-        size="icon"
-        onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
-        title="Randomize"
-      >
-        <Shuffle className="w-4 h-4" strokeWidth={1.5} />
-      </GlassButton>
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
+      <GlassMenuBar>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('randomize-memory'))}
+          title="Randomize"
+        >
+          <Shuffle className="w-4 h-4" strokeWidth={1.5} />
+        </button>
 
-      <GlassButton
-        size="icon"
-        onClick={() => onToggleGalaxy?.()}
-        title="Galaxy View"
-      >
-        <Blend className="w-4 h-4" strokeWidth={1.5} />
-      </GlassButton>
+        <button
+          onClick={() => onToggleGalaxy?.()}
+          title="Galaxy View"
+        >
+          <Blend className="w-4 h-4" strokeWidth={1.5} />
+        </button>
 
-      <GlassButton
-        size="icon"
-        title="Entropy Studio"
-        onClick={() => navigate('/Entropy')}
-      >
-        <MousePointerClick className="w-4 h-4" strokeWidth={1.5} />
-      </GlassButton>
+        <button
+          title="Entropy Studio"
+          onClick={() => navigate('/Entropy')}
+        >
+          <MousePointerClick className="w-4 h-4" strokeWidth={1.5} />
+        </button>
 
-      <GlassButton
-        size="icon"
-        onClick={toggleDark}
-        title={dark ? 'Day mode' : 'Night mode'}
-      >
-        {dark
-          ? <Sun className="w-4 h-4" strokeWidth={1.5} />
-          : <Moon className="w-4 h-4" strokeWidth={1.5} />
-        }
-      </GlassButton>
+        <button
+          onClick={toggleDark}
+          title={dark ? 'Day mode' : 'Night mode'}
+        >
+          {dark
+            ? <Sun className="w-4 h-4" strokeWidth={1.5} />
+            : <Moon className="w-4 h-4" strokeWidth={1.5} />
+          }
+        </button>
+      </GlassMenuBar>
     </div>
   );
 }
