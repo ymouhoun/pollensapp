@@ -26,20 +26,15 @@ Deno.serve(async (req) => {
     .filter(i => i.actual_status === 'running')
     .map(i => {
       let baseUrl = null;
+      const ip = i.public_ipaddr;
       const ports = i.ports;
-      if (ports && typeof ports === 'object') {
-        // Try common port keys
-        const portKeys = Object.keys(ports);
-        for (const key of portKeys) {
-          const mapping = ports[key];
-          if (mapping && Array.isArray(mapping) && mapping.length > 0) {
-            const host = i.public_ipaddr || mapping[0].HostIp;
-            const port = mapping[0].HostPort;
-            if (host && port) {
-              baseUrl = `http://${host}:${port}`;
-              break;
-            }
-          }
+
+      // Always use public_ipaddr (direct IP) — never HostIp (0.0.0.0) or Vast proxy
+      if (ip && ports && typeof ports === 'object') {
+        const mapping = ports["3000/tcp"];
+        if (mapping && Array.isArray(mapping) && mapping.length > 0) {
+          const port = mapping[0].HostPort;
+          if (port) baseUrl = `http://${ip}:${port}`;
         }
       }
 

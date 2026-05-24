@@ -34,32 +34,27 @@ Deno.serve(async (req) => {
     return Response.json({ status: "not_found" });
   }
 
-  // Try to find the public URL for port 3000
+  // Always use public_ipaddr (direct IP) — never HostIp or Vast SSH proxy
+  const ip = instance.public_ipaddr;
   const ports = instance.ports || {};
   const port3000 = ports["3000/tcp"];
 
-  // Method 1: Docker-style port mapping (array of host:port entries)
-  if (port3000 && Array.isArray(port3000) && port3000.length > 0) {
-    const entry = port3000[0];
-    const host = entry.HostIp || entry.hostIp || entry.host;
-    const port = entry.HostPort || entry.hostPort || entry.port;
-    if (host && port) {
+  if (ip && port3000 && Array.isArray(port3000) && port3000.length > 0) {
+    const mappedPort = port3000[0].HostPort || port3000[0].hostPort || port3000[0].port;
+    if (mappedPort) {
       return Response.json({
         status: "ports_ready",
-        baseUrl: `http://${host}:${port}`,
+        baseUrl: `http://${ip}:${mappedPort}`,
         actualStatus: instance.actual_status || instance.status,
       });
     }
   }
 
-  // Method 2: Vast direct port mapping (public_ipaddr + port offset)
-  if (instance.public_ipaddr && instance.direct_port_start > 0 && instance.direct_port_end > 0) {
-    // In direct mode, container port 3000 maps to direct_port_start + offset
-    // The offset is typically 0 for the first (and only) exposed port
-    const mappedPort = instance.direct_port_start;
+  // Fallback: direct port mode
+  if (ip && instance.direct_port_start > 0) {
     return Response.json({
       status: "ports_ready",
-      baseUrl: `http://${instance.public_ipaddr}:${mappedPort}`,
+      baseUrl: `http://${ip}:${instance.direct_port_start}`,
       actualStatus: instance.actual_status || instance.status,
     });
   }
