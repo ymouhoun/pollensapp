@@ -22,7 +22,7 @@
   :root {
     --font-sans: 'ModeratRegular', sans-serif;
     --font-display: 'Playfair Display', serif;
-    --font-gerstner: 'Gerstner', monospace;
+    --font-gerstner: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-banana: 'BananaGrotesk', sans-serif;
 
     --background: 230 25% 95%;
