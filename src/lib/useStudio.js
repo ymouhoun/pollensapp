@@ -410,11 +410,26 @@ export default function useStudio() {
 
   const cancelGeneration = useCallback(() => {
     if (sseAbort.current) { sseAbort.current.abort(); sseAbort.current = null; }
+    clearTimeout(pollTimer.current);
     setGeneratingPromptId(null);
     generatingRef.current = false;
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: 0 });
   }, []);
+
+  const interruptGeneration = useCallback(async () => {
+    if (!baseUrl) return;
+    clearTimeout(pollTimer.current);
+    try {
+      await base44.functions.invoke('comfyuiInterrupt', { baseUrl });
+    } catch (e) {
+      console.warn('Interrupt failed:', e);
+    }
+    setGeneratingPromptId(null);
+    generatingRef.current = false;
+    setPreviewImageUrl(null);
+    setGenProgress({ step: 0, total: 0 });
+  }, [baseUrl]);
 
   const clearGeneratedImage = useCallback(() => {
     if (generatedImageUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedImageUrl);
@@ -434,6 +449,6 @@ export default function useStudio() {
     status, instanceId, baseUrl, gpuName, costPerHour, statusMessage,
     bootProgress, errorMessage, generatingPromptId, generatedImageUrl,
     previewImageUrl, genProgress, showInactivityWarning,
-    startStudio, stopStudio, generate, cancelGeneration, clearGeneratedImage, keepAlive,
+    startStudio, stopStudio, generate, cancelGeneration, interruptGeneration, clearGeneratedImage, keepAlive,
   };
 }

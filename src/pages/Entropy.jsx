@@ -98,18 +98,14 @@ export default function Entropy() {
             entropy
           </p>
         )}
-        {studio.status === 'READY' && studio.generatingPromptId && !studio.generatedImageUrl && (
-          <GenerationPreview
-            previewUrl={studio.previewImageUrl}
-            progress={studio.genProgress}
-          />
-        )}
-        {studio.status === 'READY' && studio.generatedImageUrl && (
-          <div
-            className="max-w-lg max-h-[70vh] rounded-sm overflow-hidden shadow-2xl"
-            onContextMenu={handleImageContextMenu}
-          >
-            <img src={studio.generatedImageUrl} alt="" className="w-full h-full object-contain" />
+        {studio.status === 'READY' && (studio.generatingPromptId || studio.generatedImageUrl) && (
+          <div onContextMenu={studio.generatedImageUrl ? handleImageContextMenu : undefined}>
+            <GenerationPreview
+              progress={studio.genProgress}
+              onStop={studio.interruptGeneration}
+              showFinalImage={!!studio.generatedImageUrl}
+              finalImageUrl={studio.generatedImageUrl}
+            />
           </div>
         )}
       </div>
