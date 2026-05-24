@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import ItemContextMenu from '@/components/memory/ItemContextMenu';
+import { GlassButton } from '@/components/ui/apple-tahoe-liquid-glass-button';
 
 // ─── Constants ────────────────────────────────────────────────────
 let GLOBAL_SEED_OFFSET = 0;
@@ -490,12 +491,13 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
 
   return (
     <div className="fixed inset-0 bg-background">
-      <button
+      <GlassButton
+        size="icon"
         onClick={() => window.history.back()}
-        className="fixed top-6 right-6 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors border border-white/15"
+        className="fixed top-6 right-6 z-30"
       >
-        <X className="w-4 h-4 text-white/70" strokeWidth={1.5} />
-      </button>
+        <X className="w-4 h-4" strokeWidth={1.5} />
+      </GlassButton>
 
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-10 text-[10px] tracking-widest uppercase text-white/20 pointer-events-none select-none">
         drag · scroll to explore depth
