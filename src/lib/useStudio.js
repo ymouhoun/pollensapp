@@ -300,7 +300,7 @@ export default function useStudio() {
     const clientId = `client-${Date.now()}`;
 
     try {
-      console.log('[generate] submitting to comfyuiGenerate with params:', JSON.stringify({ baseUrl, positivePrompt: params.positivePrompt?.slice(0,30), seed: params.seed, steps: params.steps, cfg: params.cfg, aspectRatio: params.aspectRatio, sampler: params.sampler, scheduler: params.scheduler }));
+      console.log('[generate] submitting to comfyuiGenerate...');
       const submitRes = await base44.functions.invoke('comfyuiGenerate', {
         baseUrl,
         positivePrompt: params.positivePrompt,
@@ -316,100 +316,91 @@ export default function useStudio() {
       console.log('[generate] comfyuiGenerate response:', JSON.stringify(submitRes.data));
 
       const { promptId } = submitRes.data;
-      if (!promptId) { console.error('No promptId returned'); return; }
+      if (!promptId) { console.error('No promptId returned'); generatingRef.current = false; return; }
 
       setGeneratingPromptId(promptId);
 
-      const abort = new AbortController();
-      sseAbort.current = abort;
+      // Poll for completion instead of SSE
+      let attempts = 0;
+      const maxAttempts = 300; // 5 min at 1s intervals
+      const totalSteps = params.steps || 40;
 
-      console.log('[generate] opening SSE to comfyuiWsProxy...');
-      const sseRes = await base44.functions.fetch('comfyuiWsProxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseUrl, clientId }),
-        signal: abort.signal,
-      });
-      console.log('[generate] SSE response status:', sseRes.status, 'ok:', sseRes.ok);
-      if (!sseRes.ok) {
-        const errText = await sseRes.text();
-        console.error('[generate] SSE response error body:', errText);
-        setGeneratingPromptId(null);
-        generatingRef.current = false;
-        return;
-      }
-
-      const reader = sseRes.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      const processEvents = async () => {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            let data;
-            try { data = JSON.parse(line.slice(6)); } catch { continue; }
-            console.log('[generate] SSE event:', data.type, data.data?.node || '');
-
-            if (data.type === 'progress') {
-              setGenProgress({ step: data.data?.value || 0, total: data.data?.max || params.steps || 40 });
-            }
-            if (data.type === 'preview' && data.image) {
-              const mime = data.format || 'image/jpeg';
-              setPreviewImageUrl(`data:${mime};base64,${data.image}`);
-            }
-            if (data.type === 'executed' && data.data?.node === '15') {
-              const filename = data.data.output?.images?.[0]?.filename;
-              if (filename) {
-                try {
-                  const blobRes = await base44.functions.fetch('comfyuiProxyImage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ baseUrl, filename }),
-                  });
-                  const blob = await blobRes.blob();
-                  const blobUrl = URL.createObjectURL(blob);
-                  setGeneratedImageUrl(blobUrl);
-                  try {
-                    const file = new File([blob], `gen-${Date.now()}.png`, { type: 'image/png' });
-                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                    await base44.entities.GeneratedImage.create({
-                      file_url,
-                      prompt: params.positivePrompt || '',
-                      params: { steps: params.steps, cfg: params.cfg, shift: params.shift, aspectRatio: params.aspectRatio, sampler: params.sampler, scheduler: params.scheduler, seed: params.seed },
-                    });
-                  } catch (e) { console.warn('Failed to persist generated image:', e); }
-                } catch (e) { console.error('Failed to fetch generated image:', e); }
-              }
-              setGeneratingPromptId(null);
-              generatingRef.current = false;
-              abort.abort();
-              resetInactivity();
-              return;
-            }
-            if (data.type === 'execution_error') {
-              console.error('Generation error:', data);
-              setGeneratingPromptId(null);
-              generatingRef.current = false;
-              abort.abort();
-              return;
-            }
-          }
+      const poll = async () => {
+        if (!generatingRef.current) return; // cancelled
+        if (attempts >= maxAttempts) {
+          console.error('[generate] Polling timed out');
+          setGeneratingPromptId(null);
+          generatingRef.current = false;
+          return;
         }
-        if (!abort.signal.aborted) { setGeneratingPromptId(null); generatingRef.current = false; }
+        attempts++;
+
+        try {
+          const pollRes = await base44.functions.invoke('comfyuiPollProgress', { baseUrl, promptId });
+          const pollData = pollRes.data;
+          console.log('[generate] poll:', pollData.status, 'attempt:', attempts);
+
+          if (pollData.status === 'completed' && pollData.filename) {
+            // Simulate progress complete
+            setGenProgress({ step: totalSteps, total: totalSteps });
+
+            // Fetch the final image via proxy
+            try {
+              const imgRes = await base44.functions.invoke('comfyuiProxyImage', {
+                baseUrl,
+                filename: pollData.filename,
+                subfolder: pollData.subfolder || '',
+              });
+              
+              // The proxy returns base64 image data
+              if (imgRes.data?.image) {
+                const blobUrl = `data:image/png;base64,${imgRes.data.image}`;
+                setGeneratedImageUrl(blobUrl);
+
+                // Persist to storage
+                try {
+                  const byteString = atob(imgRes.data.image);
+                  const bytes = new Uint8Array(byteString.length);
+                  for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
+                  const file = new File([bytes], `gen-${Date.now()}.png`, { type: 'image/png' });
+                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                  await base44.entities.GeneratedImage.create({
+                    file_url,
+                    prompt: params.positivePrompt || '',
+                    params: { steps: params.steps, cfg: params.cfg, shift: params.shift, aspectRatio: params.aspectRatio, sampler: params.sampler, scheduler: params.scheduler, seed: params.seed },
+                  });
+                } catch (e) { console.warn('Failed to persist generated image:', e); }
+              }
+            } catch (e) { console.error('Failed to fetch generated image:', e); }
+
+            setGeneratingPromptId(null);
+            generatingRef.current = false;
+            resetInactivity();
+            return;
+          }
+
+          if (pollData.status === 'error') {
+            console.error('Generation error:', pollData.error);
+            setGeneratingPromptId(null);
+            generatingRef.current = false;
+            return;
+          }
+
+          // Update progress estimate based on elapsed time
+          if (pollData.status === 'running') {
+            const estimatedStep = Math.min(totalSteps - 1, Math.floor(attempts * totalSteps / (totalSteps * 2)));
+            setGenProgress({ step: estimatedStep, total: totalSteps });
+          }
+
+          // Continue polling
+          pollTimer.current = setTimeout(poll, 1000);
+        } catch (e) {
+          console.warn('[generate] poll error:', e);
+          pollTimer.current = setTimeout(poll, 2000);
+        }
       };
 
-      processEvents().catch(e => {
-        if (e.name !== 'AbortError') console.error('SSE processing error:', e);
-        setGeneratingPromptId(null);
-        generatingRef.current = false;
-      });
+      poll();
     } catch (e) {
       console.error('[generate] ERROR:', e?.message || e, e?.response?.data || '');
       setGeneratingPromptId(null);
