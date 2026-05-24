@@ -361,7 +361,8 @@ export default function useStudio() {
               setGenProgress({ step: data.data?.value || 0, total: data.data?.max || params.steps || 40 });
             }
             if (data.type === 'preview' && data.image) {
-              setPreviewImageUrl(`data:image/jpeg;base64,${data.image}`);
+              const mime = data.format || 'image/jpeg';
+              setPreviewImageUrl(`data:${mime};base64,${data.image}`);
             }
             if (data.type === 'executed' && data.data?.node === '15') {
               const filename = data.data.output?.images?.[0]?.filename;

@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
     "13": { inputs: { text: positivePrompt, clip: ["6", 0] }, class_type: "CLIPTextEncode" },
     "14": { inputs: { width: ["7", 0], height: ["7", 1], batch_size: 1 }, class_type: "EmptySD3LatentImage" },
     "15": { inputs: { filename_prefix: "solweig", images: ["1", 0] }, class_type: "SaveImage" },
+    "17": { inputs: { images: ["1", 0] }, class_type: "PreviewImage" },
     "16": { inputs: { seed: seed, steps: steps || 40, cfg: cfg || 3.0, sampler_name: sampler || "res_2s", scheduler: scheduler || "kl_optimal", denoise: 1, model: ["9", 0], positive: ["13", 0], negative: ["8", 0], latent_image: ["14", 0] }, class_type: "KSampler" },
   };
 

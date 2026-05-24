@@ -35,10 +35,13 @@ Deno.serve(async (req) => {
         if (event.data instanceof Blob) {
           const arrayBuffer = await event.data.arrayBuffer();
           const bytes = new Uint8Array(arrayBuffer);
-          if (bytes.length > 8 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 1) {
+          // ComfyUI binary preview: first byte = event type (1=preview, 2=preview), 
+          // second byte = format (1=JPEG, 2=PNG). Image data starts at offset 8.
+          if (bytes.length > 8) {
             const imageData = bytes.slice(8);
+            const format = bytes[1] === 2 ? 'image/png' : 'image/jpeg';
             const b64 = base64Encode(imageData);
-            send({ type: 'preview', image: b64 });
+            send({ type: 'preview', image: b64, format });
           }
         } else if (typeof event.data === 'string') {
           try {
