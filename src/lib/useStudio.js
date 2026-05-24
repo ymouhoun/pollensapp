@@ -293,7 +293,6 @@ export default function useStudio() {
     if (!baseUrl || generatingRef.current) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
     generatingRef.current = true;
     resetInactivity();
-    setGeneratedImageUrl(null);
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: params.steps || 40 });
 

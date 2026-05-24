@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import EntropyPrompt from '@/components/entropy/EntropyPrompt';
 import EntropyContextMenu from '@/components/entropy/EntropyContextMenu';
@@ -7,6 +7,7 @@ import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
+import ImageDeck from '@/components/entropy/ImageDeck';
 import useStudio from '@/lib/useStudio';
 import { base44 } from '@/api/base44Client';
 
@@ -15,40 +16,60 @@ export default function Entropy() {
     const params = new URLSearchParams(window.location.search);
     return params.get('prompt') || '';
   });
-  const [images, setImages] = useState([]);
+  const [deck, setDeck] = useState([]); // [{id, url}] — newest first
   const [selectedModel, setSelectedModel] = useState('editorial.safetensors');
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
+  const lastSeenUrl = useRef(null);
 
   const studio = useStudio();
+
+  // When a new generated image appears, push it to front of deck
+  useEffect(() => {
+    const url = studio.generatedImageUrl;
+    if (url && url !== lastSeenUrl.current) {
+      lastSeenUrl.current = url;
+      setDeck(prev => [{ id: Date.now(), url }, ...prev].slice(0, 5));
+    }
+  }, [studio.generatedImageUrl]);
+
+  const handleBringToFront = useCallback((id) => {
+    setDeck(prev => {
+      const idx = prev.findIndex(img => img.id === id);
+      if (idx <= 0) return prev;
+      const item = prev[idx];
+      const rest = prev.filter((_, i) => i !== idx);
+      return [item, ...rest];
+    });
+  }, []);
 
   const handleImageContextMenu = useCallback((e) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, []);
 
+  const frontImageUrl = deck.length > 0 ? deck[0].url : null;
+
   const handleSaveToMemory = useCallback(async () => {
-    const url = studio.generatedImageUrl;
-    if (!url) return;
-    const res = await fetch(url);
+    if (!frontImageUrl) return;
+    const res = await fetch(frontImageUrl);
     const blob = await res.blob();
     const file = new File([blob], `entropy-${Date.now()}.png`, { type: blob.type });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     await base44.entities.MediaItem.create({ content_type: 'image', file_url, title: prompt.slice(0, 80) || 'Entropy generation' });
-  }, [studio.generatedImageUrl, prompt]);
+  }, [frontImageUrl, prompt]);
 
   const handleDownload = useCallback(() => {
-    const url = studio.generatedImageUrl;
-    if (!url) return;
+    if (!frontImageUrl) return;
     const a = document.createElement('a');
-    a.href = url;
+    a.href = frontImageUrl;
     a.download = `entropy-${Date.now()}.png`;
     a.click();
-  }, [studio.generatedImageUrl]);
+  }, [frontImageUrl]);
 
   const handleDeleteGenerated = useCallback(() => {
-    studio.clearGeneratedImage();
-  }, [studio]);
+    setDeck(prev => prev.slice(1));
+  }, []);
 
   const handleGenerate = async (params) => {
     if (!prompt.trim() || studio.generatingPromptId) return;
@@ -93,24 +114,29 @@ export default function Entropy() {
             Session ended
           </p>
         )}
-        {studio.status === 'READY' && !studio.generatedImageUrl && !studio.generatingPromptId && images.length === 0 && (
+        {studio.status === 'READY' && !studio.generatingPromptId && deck.length === 0 && (
           <p className="text-white/10 text-xs tracking-widest uppercase select-none" style={{ fontFamily: 'var(--font-sans)' }}>
             entropy
           </p>
         )}
-        {studio.status === 'READY' && (studio.generatingPromptId || studio.generatedImageUrl) && (
-          <div onContextMenu={studio.generatedImageUrl ? handleImageContextMenu : undefined}>
-            <GenerationPreview
-              progress={studio.genProgress}
-              onStop={studio.interruptGeneration}
-              showFinalImage={!!studio.generatedImageUrl}
-              finalImageUrl={studio.generatedImageUrl}
-            />
-          </div>
+        {studio.status === 'READY' && studio.generatingPromptId && (
+          <GenerationPreview
+            progress={studio.genProgress}
+            onStop={studio.interruptGeneration}
+            showFinalImage={!!studio.generatedImageUrl}
+            finalImageUrl={studio.generatedImageUrl}
+          />
+        )}
+        {studio.status === 'READY' && !studio.generatingPromptId && deck.length > 0 && (
+          <ImageDeck
+            images={deck}
+            onBringToFront={handleBringToFront}
+            onContextMenu={handleImageContextMenu}
+          />
         )}
       </div>
 
-      {contextMenu && studio.generatedImageUrl && (
+      {contextMenu && frontImageUrl && (
         <EntropyContextMenu
           position={contextMenu}
           onClose={() => setContextMenu(null)}
