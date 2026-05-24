@@ -120,12 +120,12 @@ export default function Entropy() {
           <StudioError message={studio.errorMessage} onRetry={handleRetry} />
         )}
         {studio.status === 'STOPPING' && (
-          <p className="text-xs text-white/30 tracking-widest uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
+          <p className="text-xs text-white/30 tracking-widest uppercase">
             Session ended
           </p>
         )}
         {studio.status === 'READY' && !studio.generatingPromptId && deck.length === 0 && (
-          <p className="text-white/10 text-xs tracking-widest uppercase select-none" style={{ fontFamily: 'var(--font-sans)' }}>
+          <p className="text-white/10 text-xs tracking-widest uppercase select-none">
             entropy
           </p>
         )}

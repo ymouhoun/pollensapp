@@ -29,7 +29,7 @@
   :root {
     --font-sans: 'SF Pro Display Regular', sans-serif;
     --font-display: 'Playfair Display', serif;
-    --font-gerstner: 'Gerstner', monospace;
+    --font-gerstner: 'SF Pro Display Regular', monospace;
     --font-banana: 'BananaGrotesk', sans-serif;
 
     --background: 230 25% 95%;

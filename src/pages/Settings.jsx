@@ -144,7 +144,7 @@ export default function Settings() {
   ).join('\n');
 
   return (
-    <div className="min-h-screen bg-background px-8 py-12 max-w-xl mx-auto" style={{ fontFamily: 'var(--font-sans)' }}>
+    <div className="min-h-screen bg-background px-8 py-12 max-w-xl mx-auto">
       <style>{fontFaceStyle}</style>
 
       <h1 className="text-2xl font-light tracking-widest uppercase text-foreground mb-8">Settings</h1>
