@@ -16,7 +16,17 @@ export default function Entropy() {
     const params = new URLSearchParams(window.location.search);
     return params.get('prompt') || '';
   });
-  const [deck, setDeck] = useState([]); // [{id, url}] — newest first
+  const [deck, setDeck] = useState(() => {
+    try {
+      const saved = localStorage.getItem('entropy_deck');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  // Persist deck to localStorage
+  useEffect(() => {
+    try { localStorage.setItem('entropy_deck', JSON.stringify(deck.slice(0, 5))); } catch {}
+  }, [deck]);
   const [selectedModel, setSelectedModel] = useState('editorial.safetensors');
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
