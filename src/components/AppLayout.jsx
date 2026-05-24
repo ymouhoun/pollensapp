@@ -22,10 +22,10 @@ export default function AppLayout() {
     }
     el.textContent = fontFaceStyle;
 
-    // Apply first font as body font if GerstnerProgrammRegular is present
-    const gerstner = fonts.find(f => f.name.toLowerCase().includes('gerstner'));
-    if (gerstner) {
-      document.documentElement.style.setProperty('--font-sans', `'${gerstner.name}', sans-serif`);
+    // Apply SF Pro Display Regular as body font
+    const sfPro = fonts.find(f => f.name === 'SF Pro Display Regular');
+    if (sfPro) {
+      document.documentElement.style.setProperty('--font-sans', `'${sfPro.name}', sans-serif`);
     }
   }, [fonts]);
 
