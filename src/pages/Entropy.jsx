@@ -52,6 +52,7 @@ export default function Entropy() {
 
   const handleGenerate = async (params) => {
     if (!prompt.trim() || studio.generatingPromptId) return;
+    studio.clearInterrupted();
     studio.generate({
       positivePrompt: prompt,
       steps: params.steps,
@@ -93,15 +94,17 @@ export default function Entropy() {
             Session ended
           </p>
         )}
-        {studio.status === 'READY' && !studio.generatedImageUrl && !studio.generatingPromptId && images.length === 0 && (
+        {studio.status === 'READY' && !studio.generatedImageUrl && !studio.generatingPromptId && !studio.interrupted && images.length === 0 && (
           <p className="text-white/10 text-xs tracking-widest uppercase select-none" style={{ fontFamily: 'var(--font-sans)' }}>
             entropy
           </p>
         )}
-        {studio.status === 'READY' && studio.generatingPromptId && !studio.generatedImageUrl && (
+        {studio.status === 'READY' && (studio.generatingPromptId || studio.interrupted) && !studio.generatedImageUrl && (
           <GenerationPreview
             previewUrl={studio.previewImageUrl}
             progress={studio.genProgress}
+            onInterrupt={studio.generatingPromptId ? studio.interruptGeneration : null}
+            interrupted={studio.interrupted}
           />
         )}
         {studio.status === 'READY' && studio.generatedImageUrl && (
@@ -135,6 +138,7 @@ export default function Entropy() {
         gpuName={studio.gpuName}
         onStopStudio={studio.stopStudio}
         onCancelGeneration={studio.cancelGeneration}
+        onInterrupt={studio.interruptGeneration}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
       />

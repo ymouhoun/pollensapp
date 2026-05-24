@@ -22,17 +22,21 @@ export default function useStudio() {
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   const [genProgress, setGenProgress] = useState({ step: 0, total: 0 });
+  const [interrupted, setInterrupted] = useState(false);
 
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const inactivityTimer = useRef(null);
   const warningTimer = useRef(null);
   const sseAbort = useRef(null);
   const pollTimer = useRef(null);
+  const previewPollTimer = useRef(null);
   const instanceIdRef = useRef(null);
   const generatingRef = useRef(false);
+  const baseUrlRef = useRef(null);
 
-  // Keep ref in sync
+  // Keep refs in sync
   useEffect(() => { instanceIdRef.current = instanceId; }, [instanceId]);
+  useEffect(() => { baseUrlRef.current = baseUrl; }, [baseUrl]);
 
   const stopStudioInternal = useCallback(async () => {
     const id = instanceIdRef.current;
@@ -288,6 +292,62 @@ export default function useStudio() {
     resetInactivity();
   }, [resetInactivity]);
 
+  // --- Live preview polling ---
+  const startPreviewPolling = useCallback((url) => {
+    clearTimeout(previewPollTimer.current);
+    const poll = async () => {
+      if (!generatingRef.current) return;
+      try {
+        const res = await base44.functions.invoke('comfyuiPreviewProxy', { baseUrl: url });
+        if (res.data?.available && res.data.image) {
+          const ct = res.data.contentType || 'image/png';
+          setPreviewImageUrl(`data:${ct};base64,${res.data.image}`);
+        }
+      } catch { /* ignore */ }
+
+      // Also poll queue for step progress
+      try {
+        const qRes = await base44.functions.invoke('comfyuiPollProgress', { baseUrl: url, promptId: '__queue_only__' });
+        // We just need the queue data — handled in the main poll below
+      } catch { /* ignore */ }
+
+      if (generatingRef.current) {
+        previewPollTimer.current = setTimeout(poll, 2000);
+      }
+    };
+    previewPollTimer.current = setTimeout(poll, 3000); // first preview after 3s
+  }, []);
+
+  const stopPreviewPolling = useCallback(() => {
+    clearTimeout(previewPollTimer.current);
+  }, []);
+
+  // --- Interrupt generation ---
+  const interruptGeneration = useCallback(async () => {
+    const url = baseUrlRef.current;
+    if (!url || !generatingRef.current) return;
+
+    try {
+      await base44.functions.invoke('comfyuiInterrupt', { baseUrl: url });
+    } catch (e) {
+      console.warn('Interrupt failed:', e);
+    }
+
+    // Stop everything
+    stopPreviewPolling();
+    clearTimeout(pollTimer.current);
+    generatingRef.current = false;
+    setGeneratingPromptId(null);
+    setInterrupted(true);
+    setGenProgress({ step: 0, total: 0 });
+    resetInactivity();
+  }, [stopPreviewPolling, resetInactivity]);
+
+  const clearInterrupted = useCallback(() => {
+    setInterrupted(false);
+    setPreviewImageUrl(null);
+  }, []);
+
   const generate = useCallback(async (params) => {
     console.log('[generate] called. baseUrl=', baseUrl, 'generatingRef=', generatingRef.current);
     if (!baseUrl || generatingRef.current) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
@@ -295,6 +355,7 @@ export default function useStudio() {
     resetInactivity();
     setGeneratedImageUrl(null);
     setPreviewImageUrl(null);
+    setInterrupted(false);
     setGenProgress({ step: 0, total: params.steps || 40 });
 
     const clientId = `client-${Date.now()}`;
@@ -320,15 +381,19 @@ export default function useStudio() {
 
       setGeneratingPromptId(promptId);
 
-      // Poll for completion instead of SSE
+      // Start live preview polling
+      startPreviewPolling(baseUrl);
+
+      // Poll for completion
       let attempts = 0;
-      const maxAttempts = 300; // 5 min at 1s intervals
+      const maxAttempts = 300;
       const totalSteps = params.steps || 40;
 
       const poll = async () => {
-        if (!generatingRef.current) return; // cancelled
+        if (!generatingRef.current) return; // cancelled or interrupted
         if (attempts >= maxAttempts) {
           console.error('[generate] Polling timed out');
+          stopPreviewPolling();
           setGeneratingPromptId(null);
           generatingRef.current = false;
           return;
@@ -338,13 +403,11 @@ export default function useStudio() {
         try {
           const pollRes = await base44.functions.invoke('comfyuiPollProgress', { baseUrl, promptId });
           const pollData = pollRes.data;
-          console.log('[generate] poll:', pollData.status, 'attempt:', attempts);
 
           if (pollData.status === 'completed' && pollData.filename) {
-            // Simulate progress complete
+            stopPreviewPolling();
             setGenProgress({ step: totalSteps, total: totalSteps });
 
-            // Fetch the final image via proxy
             try {
               const imgRes = await base44.functions.invoke('comfyuiProxyImage', {
                 baseUrl,
@@ -352,12 +415,10 @@ export default function useStudio() {
                 subfolder: pollData.subfolder || '',
               });
               
-              // The proxy returns base64 image data
               if (imgRes.data?.image) {
                 const blobUrl = `data:image/png;base64,${imgRes.data.image}`;
                 setGeneratedImageUrl(blobUrl);
 
-                // Persist to storage
                 try {
                   const byteString = atob(imgRes.data.image);
                   const bytes = new Uint8Array(byteString.length);
@@ -373,6 +434,7 @@ export default function useStudio() {
               }
             } catch (e) { console.error('Failed to fetch generated image:', e); }
 
+            setPreviewImageUrl(null);
             setGeneratingPromptId(null);
             generatingRef.current = false;
             resetInactivity();
@@ -381,18 +443,17 @@ export default function useStudio() {
 
           if (pollData.status === 'error') {
             console.error('Generation error:', pollData.error);
+            stopPreviewPolling();
             setGeneratingPromptId(null);
             generatingRef.current = false;
             return;
           }
 
-          // Update progress estimate based on elapsed time
           if (pollData.status === 'running') {
             const estimatedStep = Math.min(totalSteps - 1, Math.floor(attempts * totalSteps / (totalSteps * 2)));
             setGenProgress({ step: estimatedStep, total: totalSteps });
           }
 
-          // Continue polling
           pollTimer.current = setTimeout(poll, 1000);
         } catch (e) {
           console.warn('[generate] poll error:', e);
@@ -403,18 +464,22 @@ export default function useStudio() {
       poll();
     } catch (e) {
       console.error('[generate] ERROR:', e?.message || e, e?.response?.data || '');
+      stopPreviewPolling();
       setGeneratingPromptId(null);
       generatingRef.current = false;
     }
-  }, [baseUrl, resetInactivity]);
+  }, [baseUrl, resetInactivity, startPreviewPolling, stopPreviewPolling]);
 
   const cancelGeneration = useCallback(() => {
     if (sseAbort.current) { sseAbort.current.abort(); sseAbort.current = null; }
+    stopPreviewPolling();
+    clearTimeout(pollTimer.current);
     setGeneratingPromptId(null);
     generatingRef.current = false;
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: 0 });
-  }, []);
+    setInterrupted(false);
+  }, [stopPreviewPolling]);
 
   const clearGeneratedImage = useCallback(() => {
     if (generatedImageUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedImageUrl);
@@ -424,6 +489,7 @@ export default function useStudio() {
   useEffect(() => {
     return () => {
       clearTimeout(pollTimer.current);
+      clearTimeout(previewPollTimer.current);
       clearTimeout(inactivityTimer.current);
       clearTimeout(warningTimer.current);
       if (sseAbort.current) sseAbort.current.abort();
@@ -433,7 +499,8 @@ export default function useStudio() {
   return {
     status, instanceId, baseUrl, gpuName, costPerHour, statusMessage,
     bootProgress, errorMessage, generatingPromptId, generatedImageUrl,
-    previewImageUrl, genProgress, showInactivityWarning,
-    startStudio, stopStudio, generate, cancelGeneration, clearGeneratedImage, keepAlive,
+    previewImageUrl, genProgress, showInactivityWarning, interrupted,
+    startStudio, stopStudio, generate, cancelGeneration, interruptGeneration,
+    clearGeneratedImage, clearInterrupted, keepAlive,
   };
 }
