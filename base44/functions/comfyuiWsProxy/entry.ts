@@ -34,14 +34,18 @@ Deno.serve(async (req) => {
       ws.onmessage = async (event) => {
         if (event.data instanceof Blob) {
           const arrayBuffer = await event.data.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          // ComfyUI binary preview: first byte = event type (1=preview, 2=preview), 
-          // second byte = format (1=JPEG, 2=PNG). Image data starts at offset 8.
-          if (bytes.length > 8) {
-            const imageData = bytes.slice(8);
-            const format = bytes[1] === 2 ? 'image/png' : 'image/jpeg';
-            const b64 = base64Encode(imageData);
-            send({ type: 'preview', image: b64, format });
+          // ComfyUI binary: first 4 bytes (Uint32) = message type (1=image preview),
+          // next 4 bytes (Uint32) = format (1=JPEG, 2=PNG). Image data starts at offset 8.
+          if (arrayBuffer.byteLength > 8) {
+            const view = new DataView(arrayBuffer);
+            const messageType = view.getUint32(0);
+            if (messageType === 1) {
+              const formatType = view.getUint32(4);
+              const format = formatType === 2 ? 'image/png' : 'image/jpeg';
+              const imageData = new Uint8Array(arrayBuffer, 8);
+              const b64 = base64Encode(imageData);
+              send({ type: 'preview', image: b64, format });
+            }
           }
         } else if (typeof event.data === 'string') {
           try {
