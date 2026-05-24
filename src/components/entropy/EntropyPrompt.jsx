@@ -50,16 +50,14 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
             <button
               key={m.checkpoint}
               onClick={() => onModelChange(m.checkpoint)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-full transition-all"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
               style={{
                 background: selectedModel === m.checkpoint
-                  ? 'oklch(from var(--foreground) l c h / 8%)'
-                  : 'oklch(from var(--foreground) l c h / 3%)',
-                backdropFilter: 'blur(8px) saturate(150%)',
-                WebkitBackdropFilter: 'blur(8px) saturate(150%)',
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
                 boxShadow: selectedModel === m.checkpoint
-                  ? 'inset 0 0 0 1px color-mix(in srgb, white 15%, transparent), 0 2px 8px rgba(0,0,0,0.3)'
-                  : 'inset 0 0 0 1px color-mix(in srgb, white 6%, transparent)',
+                  ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  : 'none',
                 fontFamily: 'var(--font-sans)',
               }}
             >
@@ -80,23 +78,10 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       </div>
 
       <div
-        className="entropy-glass-bar rounded-2xl overflow-hidden"
+        className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
         style={{
-          backgroundColor: 'oklch(from var(--foreground) l c h / 5%)',
-          backdropFilter: 'blur(8px) saturate(150%)',
-          WebkitBackdropFilter: 'blur(8px) saturate(150%)',
-          boxShadow: `
-            inset 0 0 0 1px color-mix(in srgb, white 10%, transparent),
-            inset 1.8px 3px 0px -2px color-mix(in srgb, white 90%, transparent),
-            inset -2px -2px 0px -2px color-mix(in srgb, white 80%, transparent),
-            inset -3px -8px 1px -6px color-mix(in srgb, white 60%, transparent),
-            inset -0.3px -1px 4px 0px color-mix(in srgb, black 12%, transparent),
-            inset -1.5px 2.5px 0px -2px color-mix(in srgb, black 20%, transparent),
-            inset 0px 3px 4px -2px color-mix(in srgb, black 20%, transparent),
-            inset 2px -6.5px 1px -4px color-mix(in srgb, black 10%, transparent),
-            0px 1px 5px 0px color-mix(in srgb, black 10%, transparent),
-            0px 6px 16px 0px color-mix(in srgb, black 8%, transparent)
-          `,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(200,180,220,0.05) 50%, rgba(180,160,210,0.08) 100%)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)',
         }}
       >
         {/* Text input */}
@@ -128,12 +113,9 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           />
         </div>
 
-        {/* Divider line */}
-        <div className="mx-4 h-px" style={{ background: 'color-mix(in srgb, white 8%, transparent)' }} />
-
         {/* Metadata bar */}
         <div
-          className="flex items-center justify-between px-4 py-2 text-[10px] tracking-wide"
+          className="flex items-center justify-between px-4 py-1.5 text-[10px] tracking-wide"
           style={{ fontFamily: 'var(--font-banana)' }}
         >
           {/* Left group */}
@@ -164,10 +146,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               onClick={generating ? onCancelGeneration : handleGenerate}
               disabled={!generating && disabled}
               className="ml-1.5 w-6 h-6 flex items-center justify-center rounded-full transition-all disabled:opacity-20"
-              style={{
-                background: generating ? 'oklch(from var(--foreground) l c h / 8%)' : 'oklch(from var(--foreground) l c h / 12%)',
-                boxShadow: 'inset 0 0 0 1px color-mix(in srgb, white 10%, transparent)',
-              }}
+              style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
             >
               {generating ? (
                 <CircleX className="w-3.5 h-3.5 text-white/60" strokeWidth={1.5} />
