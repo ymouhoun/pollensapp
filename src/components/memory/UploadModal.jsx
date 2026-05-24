@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Upload, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import GlowBorder from '@/components/ui/GlowBorder';
 
 export default function UploadModal({ open, onOpenChange, onUploaded }) {
   const [files, setFiles] = useState([]);
@@ -60,17 +59,8 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
   };
 
   return (
-    <>
-      {uploading && (
-        <GlowBorder>
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-6 h-6 animate-spin text-white/70" />
-            <p className="text-white/60 text-sm font-light tracking-wide">Uploading to memory…</p>
-          </div>
-        </GlowBorder>
-      )}
-      <Dialog open={open && !uploading} onOpenChange={onOpenChange}>
-        <DialogContent className="border-border/50 max-w-md bg-background/95 backdrop-blur-xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="border-border/50 max-w-md bg-background/95 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="font-display text-lg font-normal">Add to Memory</DialogTitle>
         </DialogHeader>
@@ -143,7 +133,6 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
           </TabsContent>
         </Tabs>
       </DialogContent>
-      </Dialog>
-    </>
+    </Dialog>
   );
 }
