@@ -20,7 +20,7 @@
 
 @layer base {
   :root {
-    --font-sans: 'ModeratRegular', sans-serif;
+    --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-display: 'Playfair Display', serif;
     --font-gerstner: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-banana: 'BananaGrotesk', sans-serif;
