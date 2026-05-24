@@ -61,7 +61,7 @@ const GlassButton = React.forwardRef(
           }
           .btn-liquid-lens-${filterId} {
             background-color: ${glassColor || "oklch(from var(--foreground) l c h / 5%)"};
-            backdrop-filter: blur(8px) url(#liquid-glass-${filterId}) saturate(150%);
+            backdrop-filter: blur(8px) saturate(150%);
             -webkit-backdrop-filter: blur(8px) saturate(150%);
             box-shadow: 
               inset 0 0 0 1px color-mix(in srgb, white calc(var(--glass-reflex-light) * 10%), transparent),
