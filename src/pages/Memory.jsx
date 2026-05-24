@@ -51,25 +51,7 @@ export default function Memory() {
   const sentinelRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: logos = [] } = useQuery({
-    queryKey: ['app-logo'],
-    queryFn: () => base44.entities.AppLogo.list('-created_date', 1),
-  });
-  const appLogo = logos[0] || null;
-  const [logoSize, setLogoSize] = useState(() => parseInt(localStorage.getItem('logo-size') || '64'));
-  const [introGlow, setIntroGlow] = useState(true);
-  const [hoverGlow, setHoverGlow] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIntroGlow(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e) => setLogoSize(e.detail);
-    window.addEventListener('logo-size-change', handler);
-    return () => window.removeEventListener('logo-size-change', handler);
-  }, []);
 
   const PAGE_SIZE = 40;
 
@@ -281,42 +263,7 @@ export default function Memory() {
       <ProgressiveBlur side="top" height={160} />
       <ProgressiveBlur side="bottom" height={160} />
 
-      {/* Centered logo */}
-      {appLogo && (
-        <div className="fixed top-[70px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center justify-center pointer-events-none">
-          <div className="relative flex items-center justify-center pointer-events-auto" onMouseEnter={() => setHoverGlow(true)} onMouseLeave={() => setHoverGlow(false)}>
-            {(introGlow || hoverGlow) && (
-              <div
-                className="absolute rounded-full"
-                style={{
-                  width: logoSize * 2.5,
-                  height: logoSize * 2.5,
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%)',
-                  animation: 'logo-glow 1.8s ease-in-out infinite',
-                }}
-              />
-            )}
-            <style>{`
-              @keyframes logo-glow {
-                0%, 100% { opacity: 0.3; transform: scale(0.85); }
-                50% { opacity: 1; transform: scale(1.1); }
-              }
-            `}</style>
-            <img
-              src={appLogo.file_url}
-              alt="Logo"
-              style={{
-                maxHeight: logoSize,
-                maxWidth: '80vw',
-                filter: (introGlow || hoverGlow) ? 'drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 0 30px rgba(255,255,255,0.35))' : 'none',
-                animation: (introGlow || hoverGlow) ? 'logo-glow 1.8s ease-in-out infinite' : 'none',
-                transition: 'filter 0.6s ease',
-              }}
-              className="object-contain opacity-90 relative"
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Fixed search overlay */}
       <div className="fixed top-0 left-0 right-0 z-30 py-6 pointer-events-none">
