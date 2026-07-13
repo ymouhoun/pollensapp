@@ -42,28 +42,9 @@ Deno.serve(async (req) => {
     if (ip && port3000 && Array.isArray(port3000) && port3000.length > 0) {
       const mappedPort = port3000[0].HostPort || port3000[0].hostPort || port3000[0].port;
       if (mappedPort) {
-        // Build direct IP URL and Vast proxy URL
-        const directUrl = `http://${ip}:${mappedPort}`;
-        const proxyUrl = `https://${instanceId}-3000.proxy.vast.ai`;
-
-        // Test direct IP first — if Cloudflare blocks it (403), use proxy
-        let baseUrl = directUrl;
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000);
-          const testRes = await fetch(`${directUrl}/system_stats`, { signal: controller.signal });
-          clearTimeout(timeout);
-          if (testRes.status === 403) {
-            baseUrl = proxyUrl;
-          }
-        } catch (e) {
-          // Network error on direct — try proxy
-          baseUrl = proxyUrl;
-        }
-
         return Response.json({
           status: "ports_ready",
-          baseUrl,
+          baseUrl: `http://${ip}:${mappedPort}`,
           actualStatus,
         });
       }
