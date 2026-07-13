@@ -7,7 +7,7 @@ export const MODELS = [
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
 const INACTIVITY_WARNING = 8 * 60 * 1000;
-const BLOCKED_HOSTS = ['213.5.130.43'];
+const BLOCKED_HOSTS = ['213.5.130.43', '84.8.117.11'];
 
 export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
