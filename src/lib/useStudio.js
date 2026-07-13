@@ -84,7 +84,7 @@ export default function useStudio() {
   const pollForComfy = useCallback((url) => {
     let attempts = 0;
     const poll = async () => {
-      if (attempts >= 120) {
+      if (attempts >= 240) {
         setErrorMessage('ComfyUI took too long to start. Try stopping and restarting.');
         setStatus('ERROR');
         return;

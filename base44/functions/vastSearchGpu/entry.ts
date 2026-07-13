@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
     const MAX_COST_PER_HOUR = 6.5;
 
-    // Filter and sort by GPU priority, excluding blocked hosts
+    // Filter by GPU priority, excluding blocked hosts, then sort by download speed (fastest first)
     for (const gpuName of GPU_PRIORITY) {
       const matching = offers.filter(o => {
         const name = o.gpu_name || "";
@@ -56,13 +56,20 @@ Deno.serve(async (req) => {
           && !blockedHosts.includes(hostIp);
       });
       if (matching.length > 0) {
-        matching.sort((a, b) => (a.dph_total || a.min_bid || 999) - (b.dph_total || b.min_bid || 999));
+        // Sort by download speed descending (fastest first), then cost ascending as tiebreaker
+        matching.sort((a, b) => {
+          const dlA = a.inet_down || 0;
+          const dlB = b.inet_down || 0;
+          if (dlB !== dlA) return dlB - dlA; // fastest download first
+          return (a.dph_total || a.min_bid || 999) - (b.dph_total || b.min_bid || 999);
+        });
         const best = matching[0];
         return Response.json({
           offerId: best.id,
           gpuName: best.gpu_name,
           costPerHour: best.dph_total || best.min_bid,
           vram: best.gpu_ram,
+          inetDown: best.inet_down,
           region: globalFallback ? "global" : "europe",
           hostIp: best.public_ipaddr,
         });
