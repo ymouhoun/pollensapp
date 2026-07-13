@@ -7,6 +7,7 @@ export const MODELS = [
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
 const INACTIVITY_WARNING = 8 * 60 * 1000;
+const BLOCKED_HOSTS = ['213.5.130.43'];
 
 export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
@@ -245,11 +246,11 @@ export default function useStudio() {
 
     try {
       let search;
-      const searchRes = await base44.functions.invoke('vastSearchGpu', { europeOnly: false });
+      const searchRes = await base44.functions.invoke('vastSearchGpu', { europeOnly: false, excludeHosts: BLOCKED_HOSTS });
       search = searchRes.data;
 
       if (!search.offerId && search.noEuResults) {
-        const globalRes = await base44.functions.invoke('vastSearchGpu', { globalFallback: true });
+        const globalRes = await base44.functions.invoke('vastSearchGpu', { globalFallback: true, excludeHosts: BLOCKED_HOSTS });
         search = globalRes.data;
       }
 
