@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       const host = instance.public_ipaddr || mapping[0].HostIp;
       const port = mapping[0].HostPort;
       if (host && port) {
-        baseUrl = `http://${host}:${port}`;
+        baseUrl = `http://${host}.nip.io:${port}`;
       }
     }
   }

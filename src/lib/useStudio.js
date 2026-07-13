@@ -94,6 +94,7 @@ export default function useStudio() {
         const healthRes = await base44.functions.invoke('comfyuiHealth', { baseUrl: url });
         console.log('[pollForComfy] attempt', attempts, 'result:', JSON.stringify(healthRes.data));
         if (healthRes.data.ready) {
+          setBaseUrl(healthRes.data.baseUrl || url);
           setBootProgress(100);
           setStatusMessage('Ready');
           setStatus('READY');
@@ -174,7 +175,9 @@ export default function useStudio() {
           try {
             const healthRes = (await base44.functions.invoke('comfyuiHealth', { baseUrl: readyInstance.baseUrl })).data;
             if (healthRes.ready) {
-              console.log('[useStudio] READY! baseUrl=', readyInstance.baseUrl);
+              const healthyBaseUrl = healthRes.baseUrl || readyInstance.baseUrl;
+              console.log('[useStudio] READY! baseUrl=', healthyBaseUrl);
+              setBaseUrl(healthyBaseUrl);
               setBootProgress(100);
               setStatus('READY');
               setStatusMessage('');

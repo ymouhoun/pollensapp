@@ -8,7 +8,8 @@ const GPU_PRIORITY = [
   "RTX Pro 6000 Blackwell",
 ];
 
-const MAX_COST_PER_HOUR = 6.0;
+const MAX_COST_PER_HOUR = 6.5;
+const BLOCKED_HOSTS = ["213.5.130.43", "84.8.117.11"];
 
 const EU_COUNTRIES = ["FR", "DE", "NL", "GB", "SE", "NO", "FI", "CH", "BE", "AT", "DK", "PL"];
 
@@ -60,7 +61,9 @@ Deno.serve(async (req) => {
     }
     const offers = data.offers || [];
 
-    const affordable = offers.filter(o => o.dph_total <= MAX_COST_PER_HOUR);
+    const affordable = offers
+      .filter(o => o.dph_total <= MAX_COST_PER_HOUR && !BLOCKED_HOSTS.includes(o.public_ipaddr))
+      .sort((a, b) => (b.inet_down || 0) - (a.inet_down || 0));
 
     if (affordable.length > 0) {
       const best = affordable[0];

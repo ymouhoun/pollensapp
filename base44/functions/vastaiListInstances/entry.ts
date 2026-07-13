@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
         if (mapping && Array.isArray(mapping) && mapping.length > 0) {
           const port = mapping[0].HostPort;
           if (port) {
-            baseUrl = `http://${ip}:${port}`;
+            baseUrl = `http://${ip}.nip.io:${port}`;
           }
         }
       }

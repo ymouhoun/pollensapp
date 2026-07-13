@@ -17,6 +17,7 @@ Deno.serve(async (req) => {
     client_id: "me",
     image: Deno.env.get("DOCKER_IMAGE") || "ymouhoun/comfyui-studio:latest",
     disk: 100,
+    runtype: "ssh_direct",
     onstart: "bash /workspace/boot.sh",
     env: {
       R2_ENDPOINT,
@@ -26,8 +27,8 @@ Deno.serve(async (req) => {
       SELECTED_CHECKPOINT: checkpoint || "editorial.safetensors",
       SELECTED_VAE: vae || "qwen_image_vae.safetensors",
       SELECTED_TEXT_ENCODER: textEncoder || "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "-p 3000:3000": "1",
     },
-    ports: "3000/tcp",
   };
 
   const res = await fetch(

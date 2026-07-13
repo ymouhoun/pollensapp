@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       if (mappedPort) {
         return Response.json({
           status: "ports_ready",
-          baseUrl: `http://${ip}:${mappedPort}`,
+          baseUrl: `http://${ip}.nip.io:${mappedPort}`,
           actualStatus,
         });
       }
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (ip && instance.direct_port_start > 0) {
       return Response.json({
         status: "ports_ready",
-        baseUrl: `http://${ip}:${instance.direct_port_start}`,
+        baseUrl: `http://${ip}.nip.io:${instance.direct_port_start}`,
         actualStatus,
       });
     }
