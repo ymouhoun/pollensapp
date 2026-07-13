@@ -5,6 +5,7 @@ const R2_ENDPOINT = Deno.env.get("R2_ENDPOINT");
 const R2_ACCESS_KEY = Deno.env.get("R2_ACCESS_KEY");
 const R2_SECRET_KEY = Deno.env.get("R2_SECRET_KEY");
 const R2_BUCKET = Deno.env.get("R2_BUCKET");
+const DOCKER_IMAGE = Deno.env.get("DOCKER_IMAGE");
 
 Deno.serve(async (req) => {
   try {
@@ -19,8 +20,9 @@ Deno.serve(async (req) => {
     // Vast.ai: env vars AND port mappings go together in the "env" object
     const body = {
       client_id: "me",
-      image: "ymouhoun/comfyui-studio:latest",
+      image: DOCKER_IMAGE || "ymouhoun/comfyui-studio:latest",
       disk: 100,
+      runtype: "ssh_direct",
       onstart: "bash /workspace/boot.sh",
       env: {
         R2_ENDPOINT,
