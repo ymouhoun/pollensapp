@@ -3,9 +3,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 const VAST_API_KEY = Deno.env.get("VAST_API_KEY");
 
 const GPU_PRIORITY = [
-  "B200",
   "H200",
-  "RTX Pro 6000 Blackwell",
+  "H100 SXM",
 ];
 
 const MAX_COST_PER_HOUR = 6.5;

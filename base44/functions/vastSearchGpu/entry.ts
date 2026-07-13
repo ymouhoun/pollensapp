@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const VAST_API_KEY = Deno.env.get("VAST_API_KEY");
-const GPU_PRIORITY = ["B200", "H200", "RTX Pro 6000 Blackwell server", "RTX Pro 6000 Blackwell workstation"];
+const GPU_PRIORITY = ["H200", "H100 SXM"];
 const EU_GEOLOCATIONS = ["FR","DE","NL","GB","SE","NO","FI","CH","BE","AT","DK","PL"];
 
 Deno.serve(async (req) => {
