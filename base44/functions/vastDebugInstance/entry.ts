@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     const pick = {};
     for (const k of keys) {
       const val = data[k];
-      if (k.includes('env') || k.includes('extra') || k === 'onstart' || k === 'image' || k === 'ports' || k === 'actual_status' || k === 'status_msg' || k === 'gpu_name' || k === 'inet_down' || k === 'start_date' || k === 'docker_flags' || k === 'image_args' || k === 'image_runtype') {
+      if (k === 'onstart' || k === 'image' || k === 'ports' || k === 'actual_status' || k === 'status_msg' || k === 'gpu_name' || k === 'inet_down' || k === 'start_date' || k === 'docker_flags' || k === 'image_args' || k === 'image_runtype') {
         pick[k] = typeof val === 'object' ? JSON.stringify(val).slice(0, 500) : String(val).slice(0, 500);
       }
     }
