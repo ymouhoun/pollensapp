@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
   // Return running instances with their connection info
   const running = instances
-    .filter(i => i.actual_status === 'running')
+    .filter(i => i.actual_status === 'running' || i.actual_status === 'loading' || i.actual_status === 'creating' || i.actual_status === 'pulling')
     .map(i => {
       let baseUrl = null;
       const ip = i.public_ipaddr;
