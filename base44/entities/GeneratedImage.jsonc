@@ -1,0 +1,21 @@
+{
+  "name": "GeneratedImage",
+  "type": "object",
+  "properties": {
+    "file_url": {
+      "type": "string",
+      "description": "Permanent URL of the generated image"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The prompt used to generate the image"
+    },
+    "params": {
+      "type": "object",
+      "description": "Generation parameters (steps, cfg, seed, etc.)"
+    }
+  },
+  "required": [
+    "file_url"
+  ]
+}

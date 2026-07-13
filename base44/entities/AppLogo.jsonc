@@ -1,0 +1,13 @@
+{
+  "name": "AppLogo",
+  "type": "object",
+  "properties": {
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded SVG logo"
+    }
+  },
+  "required": [
+    "file_url"
+  ]
+}

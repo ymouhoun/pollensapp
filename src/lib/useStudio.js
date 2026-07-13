@@ -91,17 +91,20 @@ export default function useStudio() {
       attempts++;
       try {
         const healthRes = await base44.functions.invoke('comfyuiHealth', { baseUrl: url });
+        console.log('[pollForComfy] attempt', attempts, 'result:', JSON.stringify(healthRes.data));
         if (healthRes.data.ready) {
           setBootProgress(100);
           setStatusMessage('Ready');
           setStatus('READY');
           return;
         }
+        setStatusMessage(healthRes.data.detail ? `Waiting for ComfyUI... (${healthRes.data.detail})` : 'Starting ComfyUI...');
       } catch (e) {
         console.warn('Health check error:', e);
+        setStatusMessage('Checking ComfyUI...');
       }
-      setBootProgress(Math.min(95, 60 + attempts));
-      setStatusMessage('Starting ComfyUI...');
+      // Smooth progress from 60 to 98 over 120 attempts
+      setBootProgress(Math.min(98, 60 + Math.floor(attempts * 38 / 120)));
       pollTimer.current = setTimeout(poll, 5000);
     };
     poll();
