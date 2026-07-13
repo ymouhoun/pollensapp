@@ -8,7 +8,6 @@ Deno.serve(async (req) => {
 
     const { baseUrl } = await req.json();
 
-    // Try endpoints in order — fall through on non-OK OR network error
     const endpoints = ['/system_stats', '/queue', '/prompt'];
     
     for (const endpoint of endpoints) {
@@ -20,9 +19,8 @@ Deno.serve(async (req) => {
         if (res.ok) {
           return Response.json({ ready: true, endpoint });
         }
-        // Non-OK (403, 500, etc) — continue to next endpoint
       } catch (e) {
-        // Network error / timeout — continue to next endpoint
+        // Network error / timeout — continue
       }
     }
 

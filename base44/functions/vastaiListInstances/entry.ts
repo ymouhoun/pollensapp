@@ -1,40 +1,55 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const VAST_API_KEY = Deno.env.get("VAST_API_KEY");
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { debug } = await req.json().catch(() => ({}));
+    const { debug } = await req.json().catch(() => ({}));
 
-  const res = await fetch(
-    `https://console.vast.ai/api/v0/instances/?api_key=${VAST_API_KEY}`
-  );
+    const res = await fetch(
+      `https://console.vast.ai/api/v0/instances/?api_key=${VAST_API_KEY}`
+    );
 
-  if (!res.ok) {
-    const text = await res.text();
-    return Response.json({ error: `List failed: ${res.status} ${text}` }, { status: 502 });
-  }
+    if (!res.ok) {
+      const text = await res.text();
+      return Response.json({ error: `List failed: ${res.status} ${text}` }, { status: 502 });
+    }
 
-  const data = await res.json();
-  const instances = data.instances || (Array.isArray(data) ? data : []);
+    const data = await res.json();
+    const instances = data.instances || (Array.isArray(data) ? data : []);
 
-  // Return running instances with their connection info
-  const running = instances
-    .filter(i => i.actual_status === 'running' || i.actual_status === 'loading' || i.actual_status === 'creating' || i.actual_status === 'pulling')
-    .map(i => {
+    const running = [];
+
+    for (const i of instances) {
+      if (!['running', 'loading', 'creating', 'pulling'].includes(i.actual_status)) continue;
+
       let baseUrl = null;
       const ip = i.public_ipaddr;
       const ports = i.ports;
 
-      // Always use public_ipaddr (direct IP) — never HostIp (0.0.0.0) or Vast proxy
       if (ip && ports && typeof ports === 'object') {
         const mapping = ports["3000/tcp"];
         if (mapping && Array.isArray(mapping) && mapping.length > 0) {
           const port = mapping[0].HostPort;
-          if (port) baseUrl = `http://${ip}:${port}`;
+          if (port) {
+            const directUrl = `http://${ip}:${port}`;
+            const proxyUrl = `https://${i.id}-3000.proxy.vast.ai`;
+
+            // Test direct IP — if blocked by Cloudflare, use proxy
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 5000);
+              const testRes = await fetch(`${directUrl}/system_stats`, { signal: controller.signal });
+              clearTimeout(timeout);
+              baseUrl = testRes.status === 403 ? proxyUrl : directUrl;
+            } catch (e) {
+              baseUrl = proxyUrl;
+            }
+          }
         }
       }
 
@@ -51,8 +66,11 @@ Deno.serve(async (req) => {
         result.public_ipaddr = i.public_ipaddr;
       }
 
-      return result;
-    });
+      running.push(result);
+    }
 
-  return Response.json({ instances: running });
+    return Response.json({ instances: running });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 });
