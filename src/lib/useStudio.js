@@ -137,6 +137,7 @@ export default function useStudio() {
           steps: params.steps,
           cfg: params.cfg,
           rescaleCfg: params.rescaleCfg,
+          rescaleEnabled: params.rescaleEnabled,
           megapixels: params.megapixels,
           batchSize: params.batchSize,
           shift: params.shift,

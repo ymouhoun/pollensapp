@@ -19,6 +19,7 @@ function buildWorkflow(input: Record<string, unknown>) {
   const steps = Math.max(1, Math.min(100, Math.floor(numberOrDefault(input.steps, 45))));
   const cfg = Math.max(0, Math.min(20, numberOrDefault(input.cfg, 3.5)));
   const rescaleCfg = Math.max(0, Math.min(1, numberOrDefault(input.rescaleCfg, 0.7)));
+  const rescaleEnabled = input.rescaleEnabled !== false;
   const megapixels = Math.max(0.1, Math.min(4, numberOrDefault(input.megapixels, 1.7)));
   const batchSize = Math.max(1, Math.min(4, Math.floor(numberOrDefault(input.batchSize, 1))));
   const shift = Math.max(0, Math.min(3, numberOrDefault(input.shift, 1.2)));
@@ -107,7 +108,7 @@ function buildWorkflow(input: Record<string, unknown>) {
         sampler_name: sampler,
         scheduler,
         denoise: 1,
-        model: ['822', 0],
+        model: rescaleEnabled ? ['822', 0] : ['814', 0],
         positive: ['810', 0],
         negative: ['811', 0],
         latent_image: ['820', 0],

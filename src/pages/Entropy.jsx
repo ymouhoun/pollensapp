@@ -92,6 +92,7 @@ export default function Entropy() {
       steps: params.steps,
       cfg: params.cfg,
       rescaleCfg: params.rescaleCfg,
+      rescaleEnabled: params.rescaleEnabled,
       megapixels: params.megapixels,
       batchSize: params.batchSize,
       shift: params.shift,

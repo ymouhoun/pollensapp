@@ -20,6 +20,7 @@ const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.5);
   const [rescaleCfg, setRescaleCfg] = useState(0.7);
+  const [rescaleEnabled, setRescaleEnabled] = useState(true);
   const [megapixels, setMegapixels] = useState(1.7);
   const [batchSize, setBatchSize] = useState(1);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
@@ -36,7 +37,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   const handleGenerate = () => {
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
-    onGenerate({ steps, cfg, rescaleCfg, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+    onGenerate({ steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
   };
 
   return (
@@ -125,9 +126,9 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           <div className="flex items-center gap-1">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.5} />
             <Divider />
-            <EditableParam label="RESCALE" value={rescaleCfg} onChange={setRescaleCfg} min={0} max={1} step={0.1} type="float" defaultValue={0.7} />
+            <EditableParam label="RESCALE" value={rescaleCfg} onChange={setRescaleCfg} min={0} max={1} step={0.1} type="float" defaultValue={0.7} enabled={rescaleEnabled} onToggle={() => setRescaleEnabled(enabled => !enabled)} />
             <Divider />
-            <EditableParam label="MP" value={megapixels} onChange={setMegapixels} min={0.1} max={4} step={0.1} type="float" defaultValue={1.7} />
+            <EditableParam label="PX" value={megapixels} onChange={setMegapixels} min={0.1} max={4} step={0.1} type="float" defaultValue={1.7} />
             <Divider />
             <EditableParam label="BATCH" value={batchSize} onChange={setBatchSize} min={1} max={4} step={1} defaultValue={1} />
             <Divider />
@@ -148,9 +149,9 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           <div className="flex items-center gap-1">
             <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
             <Divider />
-            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_3m" />
+            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_3m" />
             <Divider />
-            <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
+            <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
             <button
               onClick={generating ? onCancelGeneration : handleGenerate}
               disabled={!generating && disabled}
@@ -170,13 +171,14 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   );
 }
 
-function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue }) {
+function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue, enabled = true, onToggle }) {
   const displayValue = type === 'float' ? value.toFixed(1) : value;
   const startX = React.useRef(0);
   const startValue = React.useRef(value);
 
   const handlePointerDown = (e) => {
     e.preventDefault();
+    if (!enabled) return;
     startX.current = e.clientX;
     startValue.current = value;
     document.addEventListener('pointermove', handlePointerMove);
@@ -199,11 +201,17 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
   };
 
   return (
-    <span className="text-white/35 flex items-center gap-1 group">
-      {label}{' '}
+    <span className={`text-white/35 flex items-center gap-1 group transition-opacity ${enabled ? 'opacity-100' : 'opacity-30'}`}>
+      <span
+        onClick={onToggle}
+        className={onToggle ? 'cursor-pointer select-none' : ''}
+        title={onToggle ? (enabled ? `Disable ${label}` : `Enable ${label}`) : undefined}
+      >
+        {label}
+      </span>{' '}
       <span
         onPointerDown={handlePointerDown}
-        onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
+        onDoubleClick={() => enabled && defaultValue !== undefined && onChange(defaultValue)}
         className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-white/90 transition-colors"
       >
         {displayValue}
