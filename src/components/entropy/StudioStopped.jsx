@@ -16,7 +16,7 @@ export default function StudioStopped({ onStart }) {
           Start Studio
         </span>
         <p className="text-[10px] text-white/25 mt-1 tracking-widest" style={{ fontFamily: 'var(--font-sans)' }}>
-          ~6 MIN BOOT TIME
+          ON-DEMAND GPU
         </p>
       </button>
     </motion.div>

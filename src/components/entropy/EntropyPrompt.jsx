@@ -5,7 +5,7 @@ import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/lib/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
-const SAMPLERS = ['res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
+const SAMPLERS = ['res_3m', 'res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
 const SCHEDULERS = ['kl_optimal', 'beta57', 'ddim_uniform', 'simple', 'bong_tangent'];
 const MAX_SEED = 999999999999;
 
@@ -18,11 +18,11 @@ const sanitizeSeedValue = (value) => {
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
-  const [cfg, setCfg] = useState(3.0);
+  const [cfg, setCfg] = useState(3.5);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
-  const [shift, setShift] = useState(1.0);
-  const [steps, setSteps] = useState(40);
-  const [sampler, setSampler] = useState('res_2s');
+  const [shift, setShift] = useState(1.2);
+  const [steps, setSteps] = useState(45);
+  const [sampler, setSampler] = useState('res_3m');
   const [scheduler, setScheduler] = useState('kl_optimal');
   const [seedMode, setSeedMode] = useState('random');
   const [seedValue, setSeedValue] = useState(() => String(getRandomSeed()));
@@ -120,7 +120,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
         >
           {/* Left group */}
           <div className="flex items-center gap-1">
-            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.0} />
+            <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.5} />
             <Divider />
             <SelectParam
               label="RATIO"
@@ -130,16 +130,16 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
               defaultValue="3:4 (Golden Ratio)"
             />
             <Divider />
-            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={40} />
+            <EditableParam label="STEPS" value={steps} onChange={setSteps} min={1} max={100} step={1} defaultValue={45} />
             <Divider />
-            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.0} />
+            <EditableParam label="SHIFT" value={shift} onChange={setShift} min={0} max={3} step={0.1} type="float" defaultValue={1.2} />
           </div>
 
           {/* Right group */}
           <div className="flex items-center gap-1">
             <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
             <Divider />
-            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
+            <DragCycleParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_3m" />
             <Divider />
             <DragCycleParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
             <button

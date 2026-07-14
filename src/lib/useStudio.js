@@ -2,22 +2,37 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 export const MODELS = [
-  { label: 'Editorial', checkpoint: 'editorial.safetensors' },
+  { label: 'Editorial', checkpoint: 'editorial' },
 ];
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
 const INACTIVITY_WARNING = 8 * 60 * 1000;
-const BLOCKED_HOSTS = ['213.5.130.43', '84.8.117.11'];
+const STATUS_POLL_INTERVAL = 1000;
+const MAX_GENERATION_TIME = 15 * 60 * 1000;
+
+function errorMessage(error, fallback) {
+  return error?.response?.data?.error || error?.message || fallback;
+}
+
+function imageToDataUrl(image) {
+  if (!image?.data) return null;
+  if (image.type === 's3_url' || image.data.startsWith('http')) return image.data;
+  if (image.data.startsWith('data:')) return image.data;
+  return `data:image/png;base64,${image.data}`;
+}
+
+function previewToDataUrl(preview) {
+  if (!preview) return null;
+  if (preview.startsWith('data:') || preview.startsWith('http')) return preview;
+  return `data:image/jpeg;base64,${preview}`;
+}
 
 export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
-  const [instanceId, setInstanceId] = useState(null);
-  const [baseUrl, setBaseUrl] = useState(null);
   const [gpuName, setGpuName] = useState(null);
-  const [costPerHour, setCostPerHour] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [bootProgress, setBootProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessageState, setErrorMessage] = useState('');
 
   const [generatingPromptId, setGeneratingPromptId] = useState(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
@@ -27,45 +42,52 @@ export default function useStudio() {
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const inactivityTimer = useRef(null);
   const warningTimer = useRef(null);
-  const sseAbort = useRef(null);
   const pollTimer = useRef(null);
-  const instanceIdRef = useRef(null);
+  const jobIdRef = useRef(null);
+  const modelRef = useRef(MODELS[0].checkpoint);
+  const generationTokenRef = useRef(0);
   const generatingRef = useRef(false);
 
-  // Keep ref in sync
-  useEffect(() => { instanceIdRef.current = instanceId; }, [instanceId]);
-
-  const stopStudioInternal = useCallback(async () => {
-    const id = instanceIdRef.current;
-    setStatus('STOPPING');
+  const clearTimers = useCallback(() => {
     clearTimeout(pollTimer.current);
     clearTimeout(inactivityTimer.current);
     clearTimeout(warningTimer.current);
-    setShowInactivityWarning(false);
-    if (sseAbort.current) { sseAbort.current.abort(); sseAbort.current = null; }
+  }, []);
 
-    if (id) {
-      try {
-        await base44.functions.invoke('vastDestroyInstance', { instanceId: id });
-      } catch (e) {
-        console.error('Failed to destroy instance:', e);
-      }
-    }
-
-    setInstanceId(null);
-    instanceIdRef.current = null;
-    setBaseUrl(null);
-    setGpuName(null);
-    setCostPerHour(null);
-    setGeneratingPromptId(null);
+  const resetGenerationState = useCallback(() => {
+    clearTimeout(pollTimer.current);
+    jobIdRef.current = null;
     generatingRef.current = false;
-    setGeneratedImageUrl(null);
+    setGeneratingPromptId(null);
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: 0 });
+  }, []);
+
+  const cancelActiveJob = useCallback(async () => {
+    const jobId = jobIdRef.current;
+    if (!jobId) return;
+    try {
+      await base44.functions.invoke('runpodCancel', {
+        jobId,
+        model: modelRef.current,
+      });
+    } catch (error) {
+      console.warn('RunPod cancellation failed:', error);
+    }
+  }, []);
+
+  const stopStudioInternal = useCallback(async () => {
+    setStatus('STOPPING');
+    generationTokenRef.current += 1;
+    clearTimers();
+    setShowInactivityWarning(false);
+    await cancelActiveJob();
+    resetGenerationState();
+    setGpuName(null);
     setBootProgress(0);
     setStatusMessage('');
     setStatus('STOPPED');
-  }, []);
+  }, [cancelActiveJob, clearTimers, resetGenerationState]);
 
   const resetInactivity = useCallback(() => {
     setShowInactivityWarning(false);
@@ -75,386 +97,189 @@ export default function useStudio() {
     inactivityTimer.current = setTimeout(() => stopStudioInternal(), INACTIVITY_TIMEOUT);
   }, [stopStudioInternal]);
 
-  const stopStudio = useCallback(() => {
-    stopStudioInternal();
-  }, [stopStudioInternal]);
-
-  // --- Polling helpers (used by both startStudio and reconnect) ---
-
-  const pollForComfy = useCallback((url) => {
-    let attempts = 0;
-    const poll = async () => {
-      if (attempts >= 240) {
-        setErrorMessage('ComfyUI took too long to start. Try stopping and restarting.');
-        setStatus('ERROR');
-        return;
-      }
-      attempts++;
-      try {
-        const healthRes = await base44.functions.invoke('comfyuiHealth', { baseUrl: url });
-        console.log('[pollForComfy] attempt', attempts, 'result:', JSON.stringify(healthRes.data));
-        if (healthRes.data.ready) {
-          setBaseUrl(healthRes.data.baseUrl || url);
-          setBootProgress(100);
-          setStatusMessage('Ready');
-          setStatus('READY');
-          return;
-        }
-        setStatusMessage(healthRes.data.detail ? `Waiting for ComfyUI... (${healthRes.data.detail})` : 'Starting ComfyUI...');
-      } catch (e) {
-        console.warn('Health check error:', e);
-        setStatusMessage('Checking ComfyUI...');
-      }
-      // Smooth progress from 60 to 98 over 120 attempts
-      setBootProgress(Math.min(98, 60 + Math.floor(attempts * 38 / 120)));
-      pollTimer.current = setTimeout(poll, 5000);
-    };
-    poll();
-  }, []);
-
-  const pollForReady = useCallback((instId) => {
-    let attempts = 0;
-    const poll = async () => {
-      if (attempts >= 120) {
-        setErrorMessage('Instance took too long to start');
-        setStatus('ERROR');
-        return;
-      }
-      attempts++;
-      try {
-        const pollRes = await base44.functions.invoke('vastPollInstance', { instanceId: instId });
-        const pollData = pollRes.data;
-
-        if (pollData.status === 'ports_ready' && pollData.baseUrl) {
-          setBootProgress(60);
-          setStatusMessage('Ports ready, waiting for ComfyUI...');
-          setBaseUrl(pollData.baseUrl);
-          pollForComfy(pollData.baseUrl);
-          return;
-        }
-        if (pollData.status === 'not_found') {
-          setErrorMessage('Instance not found');
-          setStatus('ERROR');
-          return;
-        }
-        setBootProgress(Math.min(55, 20 + attempts * 0.5));
-        setStatusMessage(`Waiting for instance... (${pollData.actualStatus || 'loading'})`);
-      } catch (e) {
-        console.warn('Poll error:', e);
-      }
-      pollTimer.current = setTimeout(poll, 5000);
-    };
-    poll();
-  }, [pollForComfy]);
-
-  // --- Reconnect on mount ---
-
-  useEffect(() => {
-    console.log('[useStudio] mount effect running');
-    const reconnect = async () => {
-      try {
-        console.log('[useStudio] calling vastaiListInstances...');
-        const result = (await base44.functions.invoke('vastaiListInstances', {})).data;
-        console.log('[useStudio] instances:', JSON.stringify(result));
-        if (!result.instances || result.instances.length === 0) { console.log('[useStudio] no instances found'); return; }
-
-        // Pick the first instance with a baseUrl, or fall back to first instance
-        const readyInstance = result.instances.find(i => i.baseUrl) || result.instances[0];
-
-        setInstanceId(readyInstance.instanceId);
-        instanceIdRef.current = readyInstance.instanceId;
-        setGpuName(readyInstance.gpuName || '');
-        setCostPerHour(readyInstance.costPerHour || 0);
-
-        if (readyInstance.baseUrl) {
-          setBaseUrl(readyInstance.baseUrl);
-          setStatus('STARTING');
-          setBootProgress(70);
-          setStatusMessage('Reconnecting...');
-          // Check ComfyUI health directly
-          try {
-            const healthRes = (await base44.functions.invoke('comfyuiHealth', { baseUrl: readyInstance.baseUrl })).data;
-            if (healthRes.ready) {
-              const healthyBaseUrl = healthRes.baseUrl || readyInstance.baseUrl;
-              console.log('[useStudio] READY! baseUrl=', healthyBaseUrl);
-              setBaseUrl(healthyBaseUrl);
-              setBootProgress(100);
-              setStatus('READY');
-              setStatusMessage('');
-              return;
-            }
-          } catch (e) {
-            console.warn('Health check failed on reconnect:', e);
-          }
-          // Not ready yet — poll for ComfyUI
-          pollForComfy(readyInstance.baseUrl);
-        } else {
-          // No baseUrl yet — poll for ports
-          setStatus('STARTING');
-          setBootProgress(20);
-          setStatusMessage('Reconnecting to instance...');
-          pollForReady(readyInstance.instanceId);
-        }
-      } catch (e) {
-        console.warn('Failed to check existing instances:', e);
-      }
-    };
-    reconnect();
-  }, [pollForComfy, pollForReady]);
-
-  // --- Start inactivity timer when READY ---
-
-  useEffect(() => {
-    if (status === 'READY') resetInactivity();
-    return () => {
-      clearTimeout(inactivityTimer.current);
-      clearTimeout(warningTimer.current);
-    };
-  }, [status, resetInactivity]);
-
-  // --- Start studio ---
-
-  const startStudio = useCallback(async (checkpoint) => {
-    // Check for existing running instances first to avoid duplicates
-    try {
-      const listRes = (await base44.functions.invoke('vastaiListInstances', {})).data;
-      if (listRes.instances && listRes.instances.length > 0) {
-        const existing = listRes.instances.find(i => i.baseUrl) || listRes.instances[0];
-        setInstanceId(existing.instanceId);
-        instanceIdRef.current = existing.instanceId;
-        setGpuName(existing.gpuName || '');
-        setCostPerHour(existing.costPerHour || 0);
-        setStatus('STARTING');
-
-        if (existing.baseUrl) {
-          setBaseUrl(existing.baseUrl);
-          setBootProgress(70);
-          setStatusMessage('Found existing instance, checking health...');
-          pollForComfy(existing.baseUrl);
-        } else {
-          setBootProgress(20);
-          setStatusMessage('Found existing instance, waiting for ports...');
-          pollForReady(existing.instanceId);
-        }
-        return;
-      }
-    } catch (e) {
-      console.warn('Failed to check existing instances:', e);
-    }
-
+  const startStudio = useCallback(async (model = MODELS[0].checkpoint) => {
+    modelRef.current = model;
     setStatus('STARTING');
-    setBootProgress(0);
+    setBootProgress(20);
     setErrorMessage('');
-    setStatusMessage('Searching for GPU...');
+    setStatusMessage('Connecting to RunPod...');
 
     try {
-      let search;
-      const searchRes = await base44.functions.invoke('vastSearchGpu', { europeOnly: false, excludeHosts: BLOCKED_HOSTS });
-      search = searchRes.data;
-
-      if (!search.offerId && search.noEuResults) {
-        const globalRes = await base44.functions.invoke('vastSearchGpu', { globalFallback: true, excludeHosts: BLOCKED_HOSTS });
-        search = globalRes.data;
+      const response = await base44.functions.invoke('runpodHealth', { model });
+      if (!response.data?.ready) {
+        throw new Error(response.data?.error || 'The RunPod endpoint is unavailable');
       }
 
-      if (!search.offerId) {
-        setErrorMessage(search.error || 'No GPU available');
-        setStatus('ERROR');
-        return;
-      }
-
-      setGpuName(search.gpuName);
-      setCostPerHour(search.costPerHour);
-      setBootProgress(10);
-      setStatusMessage('Creating instance...');
-
-      const createRes = await base44.functions.invoke('vastCreateInstance', {
-        offerId: search.offerId,
-        checkpoint: checkpoint || 'editorial.safetensors',
-      });
-      const create = createRes.data;
-
-      if (!create.instanceId) {
-        setErrorMessage(create.error || 'Failed to create instance');
-        setStatus('ERROR');
-        return;
-      }
-
-      setInstanceId(create.instanceId);
-      instanceIdRef.current = create.instanceId;
-      setBootProgress(20);
-      setStatusMessage('Instance created, waiting for ports...');
-      pollForReady(create.instanceId);
-    } catch (e) {
-      setErrorMessage(e.message || 'Failed to start studio');
+      setGpuName(response.data.gpuName || 'RunPod Serverless');
+      setBootProgress(100);
+      setStatusMessage('Ready');
+      setStatus('READY');
+      resetInactivity();
+    } catch (error) {
+      setErrorMessage(errorMessage(error, 'Unable to connect to RunPod'));
       setStatus('ERROR');
     }
-  }, [pollForReady, pollForComfy]);
-
-  const keepAlive = useCallback(() => {
-    resetInactivity();
   }, [resetInactivity]);
 
-  const generate = useCallback(async (params) => {
-    console.log('[generate] called. baseUrl=', baseUrl, 'generatingRef=', generatingRef.current);
-    if (!baseUrl || generatingRef.current) { console.log('[generate] bailing: no baseUrl or already generating'); return; }
-    generatingRef.current = true;
-    resetInactivity();
-    setPreviewImageUrl(null);
-    setGenProgress({ step: 0, total: params.steps || 40 });
+  const stopStudio = useCallback(() => stopStudioInternal(), [stopStudioInternal]);
 
-    const clientId = `client-${Date.now()}`;
+  const persistGeneratedImage = useCallback(async (imageUrl, params) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `gen-${Date.now()}.png`, { type: blob.type || 'image/png' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.GeneratedImage.create({
+        file_url,
+        prompt: params.positivePrompt || '',
+        params: {
+          steps: params.steps,
+          cfg: params.cfg,
+          shift: params.shift,
+          aspectRatio: params.aspectRatio,
+          sampler: params.sampler,
+          scheduler: params.scheduler,
+          seed: params.seed,
+          model: modelRef.current,
+        },
+      });
+    } catch (error) {
+      console.warn('Failed to persist generated image:', error);
+    }
+  }, []);
+
+  const generate = useCallback(async (params) => {
+    if (status !== 'READY' || generatingRef.current) return;
+
+    generatingRef.current = true;
+    generationTokenRef.current += 1;
+    const generationToken = generationTokenRef.current;
+    const totalSteps = params.steps || 45;
+    const generationStartedAt = Date.now();
+    let runningPolls = 0;
+
+    resetInactivity();
+    setErrorMessage('');
+    setGeneratedImageUrl(null);
+    setPreviewImageUrl(null);
+    setGenProgress({ step: 0, total: totalSteps });
+    setGeneratingPromptId('submitting');
 
     try {
-      console.log('[generate] submitting to comfyuiGenerate...');
-      const submitRes = await base44.functions.invoke('comfyuiGenerate', {
-        baseUrl,
-        positivePrompt: params.positivePrompt,
-        seed: params.seed,
-        steps: params.steps,
-        cfg: params.cfg,
-        shift: params.shift,
-        aspectRatio: params.aspectRatio,
-        sampler: params.sampler,
-        scheduler: params.scheduler,
-        clientId,
+      const submitResponse = await base44.functions.invoke('runpodSubmit', {
+        ...params,
+        model: modelRef.current,
       });
-      console.log('[generate] comfyuiGenerate response:', JSON.stringify(submitRes.data));
+      const jobId = submitResponse.data?.jobId;
+      if (!jobId) throw new Error(submitResponse.data?.error || 'RunPod did not return a job ID');
 
-      const { promptId } = submitRes.data;
-      if (!promptId) { console.error('No promptId returned'); generatingRef.current = false; return; }
-
-      setGeneratingPromptId(promptId);
-
-      // Poll for completion instead of SSE
-      let attempts = 0;
-      const maxAttempts = 300; // 5 min at 1s intervals
-      const totalSteps = params.steps || 40;
+      if (generationToken !== generationTokenRef.current) return;
+      jobIdRef.current = jobId;
+      setGeneratingPromptId(jobId);
 
       const poll = async () => {
-        if (!generatingRef.current) return; // cancelled
-        if (attempts >= maxAttempts) {
-          console.error('[generate] Polling timed out');
-          setGeneratingPromptId(null);
-          generatingRef.current = false;
+        if (generationToken !== generationTokenRef.current || !generatingRef.current) return;
+        if (Date.now() - generationStartedAt > MAX_GENERATION_TIME) {
+          await cancelActiveJob();
+          resetGenerationState();
+          setErrorMessage('Generation timed out');
           return;
         }
-        attempts++;
 
         try {
-          const pollRes = await base44.functions.invoke('comfyuiPollProgress', { baseUrl, promptId });
-          const pollData = pollRes.data;
-          console.log('[generate] poll:', pollData.status, 'attempt:', attempts);
+          const statusResponse = await base44.functions.invoke('runpodStatus', {
+            jobId,
+            model: modelRef.current,
+          });
+          const job = statusResponse.data;
 
-          if (pollData.status === 'completed' && pollData.filename) {
-            // Simulate progress complete
-            setGenProgress({ step: totalSteps, total: totalSteps });
-
-            // Fetch the final image via proxy
-            try {
-              const imgRes = await base44.functions.invoke('comfyuiProxyImage', {
-                baseUrl,
-                filename: pollData.filename,
-                subfolder: pollData.subfolder || '',
-              });
-              
-              // The proxy returns base64 image data
-              if (imgRes.data?.image) {
-                const blobUrl = `data:image/png;base64,${imgRes.data.image}`;
-                setGeneratedImageUrl(blobUrl);
-
-                // Persist to storage
-                try {
-                  const byteString = atob(imgRes.data.image);
-                  const bytes = new Uint8Array(byteString.length);
-                  for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
-                  const file = new File([bytes], `gen-${Date.now()}.png`, { type: 'image/png' });
-                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                  await base44.entities.GeneratedImage.create({
-                    file_url,
-                    prompt: params.positivePrompt || '',
-                    params: { steps: params.steps, cfg: params.cfg, shift: params.shift, aspectRatio: params.aspectRatio, sampler: params.sampler, scheduler: params.scheduler, seed: params.seed },
-                  });
-                } catch (e) { console.warn('Failed to persist generated image:', e); }
-              }
-            } catch (e) { console.error('Failed to fetch generated image:', e); }
-
-            setGeneratingPromptId(null);
-            generatingRef.current = false;
-            resetInactivity();
-            return;
-          }
-
-          if (pollData.status === 'error') {
-            console.error('Generation error:', pollData.error);
-            setGeneratingPromptId(null);
-            generatingRef.current = false;
-            return;
-          }
-
-          // Update progress estimate based on elapsed time
-          if (pollData.status === 'running') {
-            const estimatedStep = Math.min(totalSteps - 1, Math.floor(attempts * totalSteps / (totalSteps * 2)));
+          if (job?.progress) {
+            const step = Math.max(0, Number(job.progress.step || 0));
+            const total = Math.max(0, Number(job.progress.total || totalSteps));
+            setGenProgress({ step, total });
+            const previewUrl = previewToDataUrl(job.progress.previewImage);
+            if (previewUrl) setPreviewImageUrl(previewUrl);
+          } else if (job?.status === 'running') {
+            runningPolls += 1;
+            const estimatedStep = Math.min(totalSteps - 1, Math.floor(runningPolls / 3));
             setGenProgress({ step: estimatedStep, total: totalSteps });
           }
 
-          // Continue polling
-          pollTimer.current = setTimeout(poll, 1000);
-        } catch (e) {
-          console.warn('[generate] poll error:', e);
-          pollTimer.current = setTimeout(poll, 2000);
+          if (job?.status === 'completed') {
+            const imageUrl = imageToDataUrl(job.image);
+            if (!imageUrl) throw new Error('RunPod completed the job without an image');
+
+            setGenProgress({ step: totalSteps, total: totalSteps });
+            setGeneratedImageUrl(imageUrl);
+            resetGenerationState();
+            resetInactivity();
+            void persistGeneratedImage(imageUrl, params);
+            return;
+          }
+
+          if (['failed', 'cancelled'].includes(job?.status)) {
+            throw new Error(typeof job.error === 'string' ? job.error : 'Generation failed');
+          }
+
+          pollTimer.current = setTimeout(poll, STATUS_POLL_INTERVAL);
+        } catch (error) {
+          console.error('RunPod generation failed:', error);
+          resetGenerationState();
+          setErrorMessage(errorMessage(error, 'Generation failed'));
         }
       };
 
       poll();
-    } catch (e) {
-      console.error('[generate] ERROR:', e?.message || e, e?.response?.data || '');
-      setGeneratingPromptId(null);
-      generatingRef.current = false;
+    } catch (error) {
+      console.error('RunPod submission failed:', error);
+      resetGenerationState();
+      setErrorMessage(errorMessage(error, 'Unable to start generation'));
     }
-  }, [baseUrl, resetInactivity]);
+  }, [cancelActiveJob, persistGeneratedImage, resetGenerationState, resetInactivity, status]);
 
-  const cancelGeneration = useCallback(() => {
-    if (sseAbort.current) { sseAbort.current.abort(); sseAbort.current = null; }
+  const cancelGeneration = useCallback(async () => {
+    generationTokenRef.current += 1;
     clearTimeout(pollTimer.current);
-    setGeneratingPromptId(null);
-    generatingRef.current = false;
-    setPreviewImageUrl(null);
-    setGenProgress({ step: 0, total: 0 });
-  }, []);
+    await cancelActiveJob();
+    resetGenerationState();
+  }, [cancelActiveJob, resetGenerationState]);
 
-  const interruptGeneration = useCallback(async () => {
-    if (!baseUrl) return;
-    clearTimeout(pollTimer.current);
-    try {
-      await base44.functions.invoke('comfyuiInterrupt', { baseUrl });
-    } catch (e) {
-      console.warn('Interrupt failed:', e);
-    }
-    setGeneratingPromptId(null);
-    generatingRef.current = false;
-    setPreviewImageUrl(null);
-    setGenProgress({ step: 0, total: 0 });
-  }, [baseUrl]);
+  const interruptGeneration = cancelGeneration;
 
   const clearGeneratedImage = useCallback(() => {
     if (generatedImageUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedImageUrl);
     setGeneratedImageUrl(null);
   }, [generatedImageUrl]);
 
+  const keepAlive = useCallback(() => resetInactivity(), [resetInactivity]);
+
   useEffect(() => {
     return () => {
-      clearTimeout(pollTimer.current);
-      clearTimeout(inactivityTimer.current);
-      clearTimeout(warningTimer.current);
-      if (sseAbort.current) sseAbort.current.abort();
+      generationTokenRef.current += 1;
+      clearTimers();
     };
-  }, []);
+  }, [clearTimers]);
 
   return {
-    status, instanceId, baseUrl, gpuName, costPerHour, statusMessage,
-    bootProgress, errorMessage, generatingPromptId, generatedImageUrl,
-    previewImageUrl, genProgress, showInactivityWarning,
-    startStudio, stopStudio, generate, cancelGeneration, interruptGeneration, clearGeneratedImage, keepAlive,
+    status,
+    instanceId: null,
+    baseUrl: null,
+    gpuName,
+    costPerHour: null,
+    statusMessage,
+    bootProgress,
+    errorMessage: errorMessageState,
+    generatingPromptId,
+    generatedImageUrl,
+    previewImageUrl,
+    genProgress,
+    showInactivityWarning,
+    startStudio,
+    stopStudio,
+    generate,
+    cancelGeneration,
+    interruptGeneration,
+    clearGeneratedImage,
+    keepAlive,
   };
 }

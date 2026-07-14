@@ -8,7 +8,7 @@ const STATUS_MESSAGES = [
   "Almost there...",
 ];
 
-export default function GenerationPreview({ progress, onStop, showFinalImage, finalImageUrl }) {
+export default function GenerationPreview({ progress, onStop, previewImageUrl, showFinalImage, finalImageUrl }) {
   const { step, total } = progress;
   const [messageIndex, setMessageIndex] = useState(0);
   const [messageFade, setMessageFade] = useState(true);
@@ -61,6 +61,20 @@ export default function GenerationPreview({ progress, onStop, showFinalImage, fi
     <div className="relative w-[420px] h-[560px] max-w-[90vw] max-h-[75vh] rounded-sm overflow-hidden select-none">
       {/* Dark background */}
       <div className="absolute inset-0 bg-[#0a0a0a]" />
+
+      {/* Progressive preview supplied by the RunPod worker */}
+      {!showFinalImage && previewImageUrl && (
+        <img
+          src={previewImageUrl}
+          alt="Generation preview"
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{
+            opacity: 0.82,
+            filter: 'saturate(0.9) contrast(0.96)',
+            transition: 'opacity 0.35s ease',
+          }}
+        />
+      )}
 
       {/* Film grain overlay */}
       <div

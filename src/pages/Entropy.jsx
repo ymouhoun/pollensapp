@@ -1,5 +1,4 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import EntropyPrompt from '@/components/entropy/EntropyPrompt';
 import EntropyContextMenu from '@/components/entropy/EntropyContextMenu';
 import StudioStopped from '@/components/entropy/StudioStopped';
@@ -8,7 +7,7 @@ import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
 import ImageDeck from '@/components/entropy/ImageDeck';
-import useStudio from '@/lib/useStudio';
+import useStudio, { MODELS } from '@/lib/useStudio';
 import { base44 } from '@/api/base44Client';
 
 export default function Entropy() {
@@ -27,7 +26,7 @@ export default function Entropy() {
   useEffect(() => {
     try { localStorage.setItem('entropy_deck', JSON.stringify(deck.slice(0, 5))); } catch {}
   }, [deck]);
-  const [selectedModel, setSelectedModel] = useState('editorial.safetensors');
+  const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
   const lastSeenUrl = useRef(null);
@@ -156,6 +155,7 @@ export default function Entropy() {
                 <GenerationPreview
                   progress={studio.genProgress}
                   onStop={studio.interruptGeneration}
+                  previewImageUrl={studio.previewImageUrl}
                   showFinalImage={false}
                   finalImageUrl={null}
                 />
