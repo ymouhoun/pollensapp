@@ -3,8 +3,7 @@
   "type": "object",
   "properties": {
     "title": {
-      "type": "string",
-      "description": "Title or caption of the media"
+      "type": "string"
     },
     "content_type": {
       "type": "string",
@@ -13,55 +12,43 @@
         "video",
         "text"
       ],
-      "default": "image",
-      "description": "Type of content"
+      "default": "image"
     },
     "file_url": {
-      "type": "string",
-      "description": "URL of the uploaded file (for image/video)"
+      "type": "string"
     },
     "text_content": {
-      "type": "string",
-      "description": "Text content for quotes and notes"
+      "type": "string"
     },
     "tags": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Manually editable tags"
+      }
     },
     "caption": {
-      "type": "string",
-      "description": "Legacy caption preserved for compatibility"
+      "type": "string"
     },
     "caption_universal": {
-      "type": "string",
-      "description": "Legacy universal caption preserved for compatibility"
+      "type": "string"
     },
     "caption_short_fr": {
-      "type": "string",
-      "description": "Automatic concise factual caption in French"
+      "type": "string"
     },
     "caption_detailed_fr": {
-      "type": "string",
-      "description": "Automatic detailed caption in French"
+      "type": "string"
     },
     "caption_en": {
-      "type": "string",
-      "description": "Automatic English caption"
+      "type": "string"
     },
     "manual_caption_short_fr": {
-      "type": "string",
-      "description": "Human-edited French short caption; never overwritten automatically"
+      "type": "string"
     },
     "manual_caption_detailed_fr": {
-      "type": "string",
-      "description": "Human-edited French detailed caption; never overwritten automatically"
+      "type": "string"
     },
     "manual_caption_en": {
-      "type": "string",
-      "description": "Human-edited English caption; never overwritten automatically"
+      "type": "string"
     },
     "objects": {
       "type": "array",
@@ -78,8 +65,7 @@
             "type": "number"
           }
         }
-      },
-      "description": "Visible objects with confidence"
+      }
     },
     "actions": {
       "type": "array",
@@ -218,8 +204,7 @@
       }
     },
     "searchable_text": {
-      "type": "string",
-      "description": "Deterministically assembled search corpus"
+      "type": "string"
     },
     "analysis_status": {
       "type": "string",
@@ -263,12 +248,10 @@
             "type": "string"
           }
         }
-      },
-      "description": "Legacy palette"
+      }
     },
     "structural_signals": {
-      "type": "object",
-      "description": "Legacy structural analysis"
+      "type": "object"
     },
     "vector_id": {
       "type": "string"
@@ -386,6 +369,36 @@
     },
     "collection": {
       "type": "string"
+    },
+    "local_embedding_q8": {
+      "type": "string",
+      "description": "Normalized visual embedding quantized to signed int8 and Base64 encoded"
+    },
+    "embedding_dimensions": {
+      "type": "number"
+    },
+    "embedding_model": {
+      "type": "string"
+    },
+    "embedding_version": {
+      "type": "string"
+    },
+    "embedding_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "embedding_error": {
+      "type": "string"
+    },
+    "embedded_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [

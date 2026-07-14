@@ -33,7 +33,6 @@ export default function AnalysisEditor({ item, onSaved }) {
       const edits = { manual_caption_short_fr: shortFr, manual_caption_detailed_fr: detailedFr, manual_caption_en: captionEn, tags: tags.split(',').map(t => t.trim()).filter(Boolean) };
       const update = { ...edits, searchable_text: buildSearchable(item, edits) };
       const saved = await base44.entities.MediaItem.update(item.id, update);
-      await base44.functions.invoke('embedMedia', { entity_id: item.id });
       onSaved?.({ ...item, ...saved, ...update });
     } catch (saveError) {
       setError(saveError.response?.data?.error || saveError.message);

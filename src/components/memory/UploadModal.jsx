@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Upload, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { embedMediaLocally } from '@/lib/localVision';
 
 export default function UploadModal({ open, onOpenChange, onUploaded }) {
   const [files, setFiles] = useState([]);
@@ -27,14 +28,15 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
     for (const file of files) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const isVideo = file.type.startsWith('video/');
-      await base44.entities.MediaItem.create({
+      const item = await base44.entities.MediaItem.create({
         title: title || file.name.split('.')[0],
         file_url,
         content_type: isVideo ? 'video' : 'image',
-        analysis_status: isVideo ? undefined : 'pending',
+        embedding_status: isVideo ? undefined : 'pending',
         tags: tagList,
         collection: collection || undefined,
       });
+      if (!isVideo) await embedMediaLocally(item.id, { file }).catch(() => {});
     }
     setUploading(false);
     reset();

@@ -15,7 +15,8 @@ import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
 import SearchMatchHint from '@/components/memory/SearchMatchHint';
 import Galaxy from '@/pages/Galaxy';
-import { useQuery } from '@tanstack/react-query';
+import useLocalMediaSearch from '@/hooks/useLocalMediaSearch';
+import { embedMediaLocally } from '@/lib/localVision';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 
@@ -73,51 +74,7 @@ export default function Memory() {
 
   const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  const [searchResults, setSearchResults] = useState(null);
-  const [searchItems, setSearchItems] = useState([]);
-  const [searchReasons, setSearchReasons] = useState({});
-  const [searchError, setSearchError] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    if (!search || search.trim().length < 2) {
-      setSearchResults(null);
-      setSearchItems([]);
-      setSearchReasons({});
-      setSearchError('');
-      return () => { active = false; };
-    }
-
-    const runSearch = async () => {
-      setIsSearching(true);
-      setSearchError('');
-      try {
-        const response = await base44.functions.invoke('searchMedia', { query: search.trim(), page: 1, page_size: 100 });
-        const matches = response.data.results || [];
-        const resultIds = matches.map(result => result.id);
-        const found = resultIds.length ? await base44.entities.MediaItem.filter({ id: { $in: resultIds } }) : [];
-        const byId = new Map(found.map(item => [item.id, item]));
-        if (active) {
-          setSearchResults(resultIds);
-          setSearchItems(resultIds.map(id => byId.get(id)).filter(Boolean));
-          setSearchReasons(Object.fromEntries(matches.map(result => [result.id, result.match_reason])));
-        }
-      } catch (error) {
-        if (active) {
-          setSearchResults([]);
-          setSearchItems([]);
-          setSearchReasons({});
-          setSearchError(error.response?.data?.error || 'La recherche est momentanément indisponible.');
-        }
-      } finally {
-        if (active) setIsSearching(false);
-      }
-    };
-
-    const debounce = setTimeout(runSearch, 450);
-    return () => { active = false; clearTimeout(debounce); };
-  }, [search]);
+  const { resultIds: searchResults, resultItems: searchItems, reasons: searchReasons, error: searchError, isSearching } = useLocalMediaSearch(search);
 
   const filtered = useMemo(() => {
     const sourceItems = search && search.trim().length >= 2 && searchResults !== null ? searchItems : items;
@@ -227,12 +184,13 @@ export default function Memory() {
       for (const file of files) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         const isVideo = file.type.startsWith('video/');
-        await base44.entities.MediaItem.create({
+        const item = await base44.entities.MediaItem.create({
           title: file.name.split('.')[0],
           file_url,
           content_type: isVideo ? 'video' : 'image',
-          analysis_status: isVideo ? undefined : 'pending',
+          embedding_status: isVideo ? undefined : 'pending',
         });
+        if (!isVideo) await embedMediaLocally(item.id, { file }).catch(() => {});
       }
       setUploadingDrop(false);
       queryClient.invalidateQueries({ queryKey: ['media-items'] });
