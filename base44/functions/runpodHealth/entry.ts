@@ -6,6 +6,14 @@ function resolveEndpointId() {
   return Deno.env.get('RUNPOD_ENDPOINT_ID');
 }
 
+function formatGpuName(value: unknown) {
+  const name = String(value || 'GPU');
+  if (/B200/i.test(name)) return 'B200';
+  if (/H200/i.test(name)) return 'H200';
+  if (/RTX.*6000|6000.*RTX/i.test(name)) return 'RTX 6000 PRO';
+  return name.replace(/^NVIDIA\s+/i, '');
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -22,20 +30,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: `No RunPod endpoint configured for model "${model}"` }, { status: 500 });
     }
 
-    const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/health`, {
-      headers: { Authorization: `Bearer ${RUNPOD_API_KEY}` },
-      signal: AbortSignal.timeout(15000),
-    });
+    const headers = { Authorization: `Bearer ${RUNPOD_API_KEY}` };
+    const [response, endpointResponse] = await Promise.all([
+      fetch(`https://api.runpod.ai/v2/${endpointId}/health`, {
+        headers,
+        signal: AbortSignal.timeout(15000),
+      }),
+      fetch(`https://rest.runpod.io/v1/endpoints/${endpointId}?includeWorkers=true`, {
+        headers,
+        signal: AbortSignal.timeout(15000),
+      }),
+    ]);
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       return Response.json({ error: data.error || `RunPod health check failed (${response.status})` }, { status: 502 });
     }
 
+    const endpoint = endpointResponse.ok
+      ? await endpointResponse.json().catch(() => ({}))
+      : {};
+    const activeWorkers = Array.isArray(endpoint.workers) ? endpoint.workers : [];
+    const activeWorker = activeWorkers.sort((a, b) =>
+      new Date(b.lastStartedAt || 0).getTime() - new Date(a.lastStartedAt || 0).getTime()
+    )[0];
+    const gpuName = formatGpuName(
+      activeWorker?.gpu?.displayName ||
+      activeWorker?.machine?.gpuDisplayName ||
+      activeWorker?.machine?.gpuType?.displayName ||
+      endpoint.gpuTypeIds?.[0]
+    );
+
     return Response.json({
       ready: true,
       model,
-      gpuName: 'RunPod Serverless',
+      gpuName,
       workers: data.workers || {},
       jobs: data.jobs || {},
     });
