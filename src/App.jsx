@@ -11,6 +11,7 @@ import Memory from '@/pages/Memory';
 import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
 import TenantDetail from '@/pages/admin/TenantDetail';
+import Backfill from '@/pages/admin/Backfill';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
         <Route path="/Entropy" element={<Entropy />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/admin/tenant" element={<TenantDetail />} />
+        <Route path="/admin/backfill" element={<Backfill />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
