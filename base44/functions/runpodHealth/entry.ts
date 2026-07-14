@@ -2,16 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 
-function resolveEndpointId(model: string) {
-  const configuredEndpoints = Deno.env.get('RUNPOD_ENDPOINTS_JSON');
-  if (configuredEndpoints) {
-    try {
-      const endpoints = JSON.parse(configuredEndpoints);
-      if (endpoints[model]) return endpoints[model];
-    } catch {
-      throw new Error('RUNPOD_ENDPOINTS_JSON is not valid JSON');
-    }
-  }
+function resolveEndpointId() {
   return Deno.env.get('RUNPOD_ENDPOINT_ID');
 }
 
