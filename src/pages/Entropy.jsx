@@ -18,13 +18,13 @@ export default function Entropy() {
   const [deck, setDeck] = useState(() => {
     try {
       const saved = localStorage.getItem('entropy_deck');
-      return saved ? JSON.parse(saved) : [];
+      return saved ? JSON.parse(saved).filter(image => !image.transient) : [];
     } catch { return []; }
   });
 
   // Persist deck to localStorage
   useEffect(() => {
-    try { localStorage.setItem('entropy_deck', JSON.stringify(deck.slice(0, 5))); } catch {}
+    try { localStorage.setItem('entropy_deck', JSON.stringify(deck.filter(image => !image.transient).slice(0, 5))); } catch {}
   }, [deck]);
 
   // Restore the latest permanently saved generations when reopening the studio
@@ -68,6 +68,14 @@ export default function Entropy() {
       const rest = prev.filter((_, i) => i !== idx);
       return [item, ...rest];
     });
+  }, []);
+
+  const handleImportedImage = useCallback((file) => {
+    const url = URL.createObjectURL(file);
+    setDeck(prev => [
+      { id: `imported-${Date.now()}`, url, transient: true },
+      ...prev,
+    ].slice(0, 5));
   }, []);
 
   const handleImageContextMenu = useCallback((e) => {
@@ -208,6 +216,8 @@ export default function Entropy() {
         prompt={prompt}
         setPrompt={setPrompt}
         onGenerate={handleGenerate}
+        onImageDrop={handleImportedImage}
+        dropImageUrl={frontImageUrl}
         generating={!!studio.generatingPromptId}
         inputRef={inputRef}
         studioStatus={studio.status}

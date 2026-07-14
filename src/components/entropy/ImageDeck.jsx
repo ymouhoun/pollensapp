@@ -66,7 +66,14 @@ export default function ImageDeck({ images, onBringToFront, onContextMenu }) {
                 src={img.url}
                 alt=""
                 className="w-full h-full object-contain bg-black"
-                draggable={false}
+                draggable={isFront}
+                onDragStart={isFront ? event => {
+                  event.dataTransfer.setData('application/x-entropy-image', 'front');
+                  if (!img.url.startsWith('data:')) {
+                    event.dataTransfer.setData('text/uri-list', img.url);
+                    event.dataTransfer.setData('text/plain', img.url);
+                  }
+                } : undefined}
               />
             </motion.div>
           );
