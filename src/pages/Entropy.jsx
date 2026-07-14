@@ -26,6 +26,19 @@ export default function Entropy() {
   useEffect(() => {
     try { localStorage.setItem('entropy_deck', JSON.stringify(deck.slice(0, 5))); } catch {}
   }, [deck]);
+
+  // Restore the latest permanently saved generations when reopening the studio
+  useEffect(() => {
+    let active = true;
+
+    base44.entities.GeneratedImage.list('-created_date', 5).then((images) => {
+      if (!active || !images.length) return;
+      setDeck(images.map((image) => ({ id: `saved-${image.id}`, url: image.file_url })));
+    });
+
+    return () => { active = false; };
+  }, []);
+
   const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
