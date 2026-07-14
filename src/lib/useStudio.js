@@ -36,6 +36,7 @@ export default function useStudio() {
 
   const [generatingPromptId, setGeneratingPromptId] = useState(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
+  const [generatedImageUrls, setGeneratedImageUrls] = useState([]);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   const [genProgress, setGenProgress] = useState({ step: 0, total: 0 });
 
@@ -135,6 +136,9 @@ export default function useStudio() {
         params: {
           steps: params.steps,
           cfg: params.cfg,
+          rescaleCfg: params.rescaleCfg,
+          megapixels: params.megapixels,
+          batchSize: params.batchSize,
           shift: params.shift,
           aspectRatio: params.aspectRatio,
           sampler: params.sampler,
@@ -161,6 +165,7 @@ export default function useStudio() {
     resetInactivity();
     setErrorMessage('');
     setGeneratedImageUrl(null);
+    setGeneratedImageUrls([]);
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: totalSteps });
     setGeneratingPromptId('submitting');
@@ -206,14 +211,16 @@ export default function useStudio() {
           }
 
           if (job?.status === 'completed') {
-            const imageUrl = imageToDataUrl(job.image);
-            if (!imageUrl) throw new Error('RunPod completed the job without an image');
+            const images = job.images?.length ? job.images : [job.image];
+            const imageUrls = images.map(imageToDataUrl).filter(Boolean);
+            if (!imageUrls.length) throw new Error('RunPod completed the job without an image');
 
             setGenProgress({ step: totalSteps, total: totalSteps });
-            setGeneratedImageUrl(imageUrl);
+            setGeneratedImageUrl(imageUrls[0]);
+            setGeneratedImageUrls(imageUrls);
             resetGenerationState();
             resetInactivity();
-            void persistGeneratedImage(imageUrl, params);
+            imageUrls.forEach(imageUrl => void persistGeneratedImage(imageUrl, params));
             return;
           }
 
@@ -249,6 +256,7 @@ export default function useStudio() {
   const clearGeneratedImage = useCallback(() => {
     if (generatedImageUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedImageUrl);
     setGeneratedImageUrl(null);
+    setGeneratedImageUrls([]);
   }, [generatedImageUrl]);
 
   const keepAlive = useCallback(() => resetInactivity(), [resetInactivity]);
@@ -271,6 +279,7 @@ export default function useStudio() {
     errorMessage: errorMessageState,
     generatingPromptId,
     generatedImageUrl,
+    generatedImageUrls,
     previewImageUrl,
     genProgress,
     showInactivityWarning,

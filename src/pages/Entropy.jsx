@@ -29,18 +29,23 @@ export default function Entropy() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
-  const lastSeenUrl = useRef(null);
+  const lastSeenBatch = useRef(null);
 
   const studio = useStudio();
 
-  // When a new generated image appears, push it to front of deck
+  // When a generated batch appears, push every image to the front of the deck
   useEffect(() => {
-    const url = studio.generatedImageUrl;
-    if (url && url !== lastSeenUrl.current) {
-      lastSeenUrl.current = url;
-      setDeck(prev => [{ id: Date.now(), url }, ...prev].slice(0, 5));
-    }
-  }, [studio.generatedImageUrl]);
+    const urls = studio.generatedImageUrls;
+    if (!urls?.length) return;
+    const batchKey = urls.join('|');
+    if (batchKey === lastSeenBatch.current) return;
+    lastSeenBatch.current = batchKey;
+    const generatedAt = Date.now();
+    setDeck(prev => [
+      ...urls.map((url, index) => ({ id: `${generatedAt}-${index}`, url })),
+      ...prev,
+    ].slice(0, 5));
+  }, [studio.generatedImageUrls]);
 
   const handleBringToFront = useCallback((id) => {
     setDeck(prev => {
@@ -86,6 +91,9 @@ export default function Entropy() {
       positivePrompt: prompt,
       steps: params.steps,
       cfg: params.cfg,
+      rescaleCfg: params.rescaleCfg,
+      megapixels: params.megapixels,
+      batchSize: params.batchSize,
       shift: params.shift,
       aspectRatio: params.aspectRatio,
       sampler: params.sampler,

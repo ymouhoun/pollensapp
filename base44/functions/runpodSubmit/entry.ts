@@ -18,6 +18,9 @@ function buildWorkflow(input: Record<string, unknown>) {
   const seed = Math.max(0, Math.floor(numberOrDefault(input.seed, Date.now())));
   const steps = Math.max(1, Math.min(100, Math.floor(numberOrDefault(input.steps, 45))));
   const cfg = Math.max(0, Math.min(20, numberOrDefault(input.cfg, 3.5)));
+  const rescaleCfg = Math.max(0, Math.min(1, numberOrDefault(input.rescaleCfg, 0.7)));
+  const megapixels = Math.max(0.1, Math.min(4, numberOrDefault(input.megapixels, 1.7)));
+  const batchSize = Math.max(1, Math.min(4, Math.floor(numberOrDefault(input.batchSize, 1))));
   const shift = Math.max(0, Math.min(3, numberOrDefault(input.shift, 1.2)));
   const aspectRatio = String(input.aspectRatio || '3:4 (Golden Ratio)');
   const sampler = String(input.sampler || 'res_3m');
@@ -77,7 +80,7 @@ function buildWorkflow(input: Record<string, unknown>) {
     },
     '819': {
       inputs: {
-        megapixel: '1.7',
+        megapixel: String(megapixels),
         aspect_ratio: aspectRatio,
         divisible_by: '64',
         custom_ratio: false,
@@ -87,12 +90,12 @@ function buildWorkflow(input: Record<string, unknown>) {
       _meta: { title: 'Flux Resolution Calc' },
     },
     '820': {
-      inputs: { width: ['819', 0], height: ['819', 1], batch_size: 1 },
+      inputs: { width: ['819', 0], height: ['819', 1], batch_size: batchSize },
       class_type: 'EmptySD3LatentImage',
       _meta: { title: 'EmptySD3LatentImage' },
     },
     '822': {
-      inputs: { multiplier: 0.7, model: ['814', 0] },
+      inputs: { multiplier: rescaleCfg, model: ['814', 0] },
       class_type: 'RescaleCFG',
       _meta: { title: 'RescaleCFG' },
     },

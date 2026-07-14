@@ -19,6 +19,9 @@ const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.5);
+  const [rescaleCfg, setRescaleCfg] = useState(0.7);
+  const [megapixels, setMegapixels] = useState(1.7);
+  const [batchSize, setBatchSize] = useState(1);
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [shift, setShift] = useState(1.2);
   const [steps, setSteps] = useState(45);
@@ -33,7 +36,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   const handleGenerate = () => {
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
-    onGenerate({ steps, cfg, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+    onGenerate({ steps, cfg, rescaleCfg, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
   };
 
   return (
@@ -41,7 +44,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[860px] max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[1080px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
       <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
@@ -115,12 +118,18 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
 
         {/* Metadata bar */}
         <div
-          className="flex items-center justify-between px-4 py-1.5 text-[10px] tracking-wide"
+          className="flex flex-wrap items-center justify-between gap-y-1 px-4 py-1.5 text-[10px] tracking-wide"
           style={{ fontFamily: 'var(--font-banana)' }}
         >
           {/* Left group */}
           <div className="flex items-center gap-1">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.5} />
+            <Divider />
+            <EditableParam label="RESCALE" value={rescaleCfg} onChange={setRescaleCfg} min={0} max={1} step={0.1} type="float" defaultValue={0.7} />
+            <Divider />
+            <EditableParam label="MP" value={megapixels} onChange={setMegapixels} min={0.1} max={4} step={0.1} type="float" defaultValue={1.7} />
+            <Divider />
+            <EditableParam label="BATCH" value={batchSize} onChange={setBatchSize} min={1} max={4} step={1} defaultValue={1} />
             <Divider />
             <SelectParam
               label="RATIO"

@@ -46,7 +46,12 @@ Deno.serve(async (req) => {
     const normalizedStatus = normalizeStatus(data.status);
     const output = data.output && typeof data.output === 'object' ? data.output : {};
     const images = Array.isArray(output.images) ? output.images : [];
-    const firstImage = images[0] || null;
+    const normalizedImages = images.map((image: Record<string, unknown>) => ({
+      filename: image.filename || 'generation.png',
+      type: image.type || 'base64',
+      data: image.data,
+    }));
+    const firstImage = normalizedImages[0] || null;
 
     // A customized worker can publish { step, total, previewImage } through
     // runpod.serverless.progress_update(). The stock worker simply leaves this empty.
@@ -67,11 +72,8 @@ Deno.serve(async (req) => {
       delayTime: data.delayTime || 0,
       executionTime: data.executionTime || 0,
       progress,
-      image: firstImage ? {
-        filename: firstImage.filename || 'generation.png',
-        type: firstImage.type || 'base64',
-        data: firstImage.data,
-      } : null,
+      image: firstImage,
+      images: normalizedImages,
       error: normalizedStatus === 'failed'
         ? (output.error || data.error || output.details || 'Generation failed')
         : null,
