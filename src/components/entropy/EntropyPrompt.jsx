@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
-import { GlassSurface } from '@/components/ui/glass-surface';
 import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/lib/useStudio';
 
@@ -122,10 +121,14 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
         </div>
       </div>
 
-      <GlassSurface
-        className="rounded-2xl overflow-hidden"
+      <div
+        className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
         onDragOver={event => event.preventDefault()}
         onDrop={handleImageDrop}
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(200,180,220,0.05) 50%, rgba(180,160,210,0.08) 100%)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)',
+        }}
       >
         {/* Text input */}
         <div className="px-5 pt-4 pb-2 relative">
@@ -206,7 +209,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             </button>
           </div>
         </div>
-      </GlassSurface>
+      </div>
     </motion.div>
   );
 }
