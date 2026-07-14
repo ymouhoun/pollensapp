@@ -17,6 +17,7 @@ export default function AnalysisEditor({ item, onSaved }) {
   const [captionEn, setCaptionEn] = useState('');
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setShortFr(item.manual_caption_short_fr ?? item.caption_short_fr ?? item.caption ?? '');
@@ -27,12 +28,18 @@ export default function AnalysisEditor({ item, onSaved }) {
 
   const save = async () => {
     setSaving(true);
-    const edits = { manual_caption_short_fr: shortFr, manual_caption_detailed_fr: detailedFr, manual_caption_en: captionEn, tags: tags.split(',').map(t => t.trim()).filter(Boolean) };
-    const update = { ...edits, searchable_text: buildSearchable(item, edits) };
-    const saved = await base44.entities.MediaItem.update(item.id, update);
-    base44.functions.invoke('embedMedia', { entity_id: item.id }).catch(() => {});
-    setSaving(false);
-    onSaved?.({ ...item, ...saved, ...update });
+    setError('');
+    try {
+      const edits = { manual_caption_short_fr: shortFr, manual_caption_detailed_fr: detailedFr, manual_caption_en: captionEn, tags: tags.split(',').map(t => t.trim()).filter(Boolean) };
+      const update = { ...edits, searchable_text: buildSearchable(item, edits) };
+      const saved = await base44.entities.MediaItem.update(item.id, update);
+      await base44.functions.invoke('embedMedia', { entity_id: item.id });
+      onSaved?.({ ...item, ...saved, ...update });
+    } catch (saveError) {
+      setError(saveError.response?.data?.error || saveError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const field = 'w-full rounded-md border border-border/40 bg-background/20 px-2 py-1.5 text-xs font-light outline-none focus:border-foreground/30 resize-none';
@@ -42,5 +49,6 @@ export default function AnalysisEditor({ item, onSaved }) {
     <label className="block text-[10px] uppercase tracking-wider text-foreground/45">Caption EN<textarea className={`${field} mt-1`} rows={2} value={captionEn} onChange={e => setCaptionEn(e.target.value)} /></label>
     <label className="block text-[10px] uppercase tracking-wider text-foreground/45">Tags<textarea className={`${field} mt-1`} rows={2} value={tags} onChange={e => setTags(e.target.value)} /></label>
     <button onClick={save} disabled={saving} className="text-xs text-foreground/70 hover:text-foreground disabled:opacity-50">{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+    {error && <p className="text-[10px] text-destructive">{error}</p>}
   </div>;
 }

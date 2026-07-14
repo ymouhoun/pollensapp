@@ -13,6 +13,7 @@ import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
 import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
+import SearchMatchHint from '@/components/memory/SearchMatchHint';
 import Galaxy from '@/pages/Galaxy';
 import { useQuery } from '@tanstack/react-query';
 
@@ -72,34 +73,55 @@ export default function Memory() {
 
   const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  const [searchResults, setSearchResults] = useState(null); // null = no search, [] = no results
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchItems, setSearchItems] = useState([]);
+  const [searchReasons, setSearchReasons] = useState({});
+  const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    if (!search || search.length < 2) {
+    let active = true;
+    if (!search || search.trim().length < 2) {
       setSearchResults(null);
-      return;
+      setSearchItems([]);
+      setSearchReasons({});
+      setSearchError('');
+      return () => { active = false; };
     }
 
     const runSearch = async () => {
       setIsSearching(true);
+      setSearchError('');
       try {
-        const response = await base44.functions.invoke('searchMedia', { query: search });
-        const resultIds = (response.data.results || []).map(r => r.id);
-        setSearchResults(resultIds);
+        const response = await base44.functions.invoke('searchMedia', { query: search.trim(), page: 1, page_size: 100 });
+        const matches = response.data.results || [];
+        const resultIds = matches.map(result => result.id);
+        const found = resultIds.length ? await base44.entities.MediaItem.filter({ id: { $in: resultIds } }) : [];
+        const byId = new Map(found.map(item => [item.id, item]));
+        if (active) {
+          setSearchResults(resultIds);
+          setSearchItems(resultIds.map(id => byId.get(id)).filter(Boolean));
+          setSearchReasons(Object.fromEntries(matches.map(result => [result.id, result.match_reason])));
+        }
       } catch (error) {
-        console.error('Search error:', error);
-        setSearchResults(null);
+        if (active) {
+          setSearchResults([]);
+          setSearchItems([]);
+          setSearchReasons({});
+          setSearchError(error.response?.data?.error || 'La recherche est momentanément indisponible.');
+        }
+      } finally {
+        if (active) setIsSearching(false);
       }
-      setIsSearching(false);
     };
 
-    const debounce = setTimeout(runSearch, 400);
-    return () => clearTimeout(debounce);
+    const debounce = setTimeout(runSearch, 450);
+    return () => { active = false; clearTimeout(debounce); };
   }, [search]);
 
   const filtered = useMemo(() => {
-    let result = items.filter(item => {
+    const sourceItems = search && search.trim().length >= 2 && searchResults !== null ? searchItems : items;
+    let result = sourceItems.filter(item => {
       if (item.is_forgotten) return false;
       if (activeTag && !item.tags?.includes(activeTag)) return false;
       if (dateFilter !== 'all') {
@@ -128,7 +150,7 @@ export default function Memory() {
     }
 
     return result;
-  }, [items, activeTag, dateFilter, colorFilter, search, searchResults]);
+  }, [items, searchItems, activeTag, dateFilter, colorFilter, search, searchResults]);
 
   useEffect(() => {
     const onResize = () => {
@@ -273,7 +295,8 @@ export default function Memory() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search memory..."
+            placeholder="Search memory naturally..."
+            aria-label="Recherche intelligente dans la mémoire"
             className="bg-transparent border-none outline-none text-2xl text-center tracking-wide bg-[linear-gradient(110deg,rgba(255,255,255,0.15),35%,#fff,50%,rgba(255,255,255,0.15),75%,rgba(255,255,255,0.15))] bg-[length:200%_100%] bg-clip-text text-transparent placeholder:text-white/40"
             style={{ 
               fontFamily: 'Dhampir, serif', 
@@ -282,6 +305,11 @@ export default function Memory() {
               animation: 'shine 6s linear infinite'
             }}
           />
+          {(isSearching || searchError || (searchResults && !searchResults.length)) && (
+            <p className={`mt-1 text-[10px] tracking-wide ${searchError ? 'text-destructive' : 'text-foreground/45'}`}>
+              {isSearching ? 'Understanding and searching…' : searchError || 'No matching images'}
+            </p>
+          )}
           <style>{`
             @keyframes shine {
               0% { background-position: 200% 0; }
@@ -335,6 +363,7 @@ export default function Memory() {
                               {item.content_type === 'text'
                               ? <TextCard item={item} index={index} />
                               : <MediaCard item={item} index={index} onClick={setSelectedItem} onSameVibe={setVibeItem} />}
+                              <SearchMatchHint reason={searchReasons[item.id]} />
                             </div>
                           )}
                         </Draggable>
@@ -367,6 +396,7 @@ export default function Memory() {
                                 {item.content_type === 'text'
                                 ? <TextCard item={item} index={index} />
                                 : <MediaCard item={item} index={index} onClick={setSelectedItem} onSameVibe={setVibeItem} />}
+                                <SearchMatchHint reason={searchReasons[item.id]} />
                                 </div>
                                 )}
                                 </Draggable>

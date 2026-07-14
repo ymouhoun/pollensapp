@@ -95,8 +95,20 @@ Deno.serve(async (req) => {
     }
     if (!data) throw lastError || new Error('Analyse impossible');
 
-    await base44.asServiceRole.entities.MediaItem.update(entityId, { ...data, searchable_text: searchable(item, data), analysis_status: 'completed', analysis_error: '', analysis_version: VERSION, analyzed_at: new Date().toISOString(), analysis_lock: '' });
-    try { await base44.asServiceRole.functions.invoke('embedMedia', { entity_id: entityId }); } catch (error) { console.error('Embedding non bloquant:', error.message); }
+    await base44.asServiceRole.entities.MediaItem.update(entityId, { ...data, searchable_text: searchable(item, data), analysis_status: 'processing', analysis_error: '', analysis_version: VERSION, analyzed_at: new Date().toISOString(), analysis_lock: '' });
+    let embedError;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await base44.asServiceRole.functions.invoke('embedMedia', { entity_id: entityId });
+        embedError = null;
+        break;
+      } catch (error) {
+        embedError = error;
+        if (attempt < 3) await sleep(attempt * 1000);
+      }
+    }
+    if (embedError) throw embedError;
+    await base44.asServiceRole.entities.MediaItem.update(entityId, { analysis_status: 'completed', analysis_error: '' });
     return Response.json({ success: true, status: 'completed', version: VERSION });
   } catch (error) {
     if (entityId) await base44.asServiceRole.entities.MediaItem.update(entityId, { analysis_status: 'failed', analysis_error: String(error.message || error).slice(0, 500), analysis_lock: '' });
