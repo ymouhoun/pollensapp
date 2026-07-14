@@ -13,10 +13,8 @@ import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
 import LoadingBeam from '@/components/memory/LoadingBeam';
 import SameVibeModal from '@/components/memory/SameVibeModal';
-import SearchMatchHint from '@/components/memory/SearchMatchHint';
 import Galaxy from '@/pages/Galaxy';
-import useLocalMediaSearch from '@/hooks/useLocalMediaSearch';
-import { embedMediaLocally } from '@/lib/localVision';
+import { useQuery } from '@tanstack/react-query';
 
 const ALL_TAGS = ['EDITORIAL', 'BEAUTY', 'STILL LIFE', 'SET DESIGN', '35MM', 'SUPER16', 'B&W', 'BAROQUE', 'OBJECTS', 'ORGANIC', '8MM', 'STILLS', 'ANAMORPHIC', 'LIGHT', 'GOTHIC', 'PORTRAITS'];
 
@@ -74,11 +72,34 @@ export default function Memory() {
 
   const items = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  const { resultIds: searchResults, resultItems: searchItems, reasons: searchReasons, error: searchError, isSearching } = useLocalMediaSearch(search);
+  const [searchResults, setSearchResults] = useState(null); // null = no search, [] = no results
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!search || search.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+
+    const runSearch = async () => {
+      setIsSearching(true);
+      try {
+        const response = await base44.functions.invoke('searchMedia', { query: search });
+        const resultIds = (response.data.results || []).map(r => r.id);
+        setSearchResults(resultIds);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults(null);
+      }
+      setIsSearching(false);
+    };
+
+    const debounce = setTimeout(runSearch, 400);
+    return () => clearTimeout(debounce);
+  }, [search]);
 
   const filtered = useMemo(() => {
-    const sourceItems = search && search.trim().length >= 2 && searchResults !== null ? searchItems : items;
-    let result = sourceItems.filter(item => {
+    let result = items.filter(item => {
       if (item.is_forgotten) return false;
       if (activeTag && !item.tags?.includes(activeTag)) return false;
       if (dateFilter !== 'all') {
@@ -107,7 +128,7 @@ export default function Memory() {
     }
 
     return result;
-  }, [items, searchItems, activeTag, dateFilter, colorFilter, search, searchResults]);
+  }, [items, activeTag, dateFilter, colorFilter, search, searchResults]);
 
   useEffect(() => {
     const onResize = () => {
@@ -183,14 +204,11 @@ export default function Memory() {
       setUploadingDrop(true);
       for (const file of files) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const isVideo = file.type.startsWith('video/');
-        const item = await base44.entities.MediaItem.create({
+        await base44.entities.MediaItem.create({
           title: file.name.split('.')[0],
           file_url,
-          content_type: isVideo ? 'video' : 'image',
-          embedding_status: isVideo ? undefined : 'pending',
+          content_type: file.type.startsWith('video/') ? 'video' : 'image',
         });
-        if (!isVideo) await embedMediaLocally(item.id, { file }).catch(() => {});
       }
       setUploadingDrop(false);
       queryClient.invalidateQueries({ queryKey: ['media-items'] });
@@ -253,8 +271,7 @@ export default function Memory() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search memory naturally..."
-            aria-label="Recherche intelligente dans la mémoire"
+            placeholder="Search memory..."
             className="bg-transparent border-none outline-none text-2xl text-center tracking-wide bg-[linear-gradient(110deg,rgba(255,255,255,0.15),35%,#fff,50%,rgba(255,255,255,0.15),75%,rgba(255,255,255,0.15))] bg-[length:200%_100%] bg-clip-text text-transparent placeholder:text-white/40"
             style={{ 
               fontFamily: 'Dhampir, serif', 
@@ -263,11 +280,6 @@ export default function Memory() {
               animation: 'shine 6s linear infinite'
             }}
           />
-          {(isSearching || searchError || (searchResults && !searchResults.length)) && (
-            <p className={`mt-1 text-[10px] tracking-wide ${searchError ? 'text-destructive' : 'text-foreground/45'}`}>
-              {isSearching ? 'Understanding and searching…' : searchError || 'No matching images'}
-            </p>
-          )}
           <style>{`
             @keyframes shine {
               0% { background-position: 200% 0; }
@@ -321,7 +333,6 @@ export default function Memory() {
                               {item.content_type === 'text'
                               ? <TextCard item={item} index={index} />
                               : <MediaCard item={item} index={index} onClick={setSelectedItem} onSameVibe={setVibeItem} />}
-                              <SearchMatchHint reason={searchReasons[item.id]} />
                             </div>
                           )}
                         </Draggable>
@@ -354,7 +365,6 @@ export default function Memory() {
                                 {item.content_type === 'text'
                                 ? <TextCard item={item} index={index} />
                                 : <MediaCard item={item} index={index} onClick={setSelectedItem} onSameVibe={setVibeItem} />}
-                                <SearchMatchHint reason={searchReasons[item.id]} />
                                 </div>
                                 )}
                                 </Draggable>

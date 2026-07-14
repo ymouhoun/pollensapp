@@ -208,14 +208,6 @@ export default function Settings() {
       {/* Tenants section */}
       <TenantsSection />
 
-      <section className="mb-10">
-        <h2 className="text-[11px] tracking-widest uppercase text-muted-foreground mb-4">Local AI</h2>
-        <Link to="/admin/backfill" className="flex items-center justify-between border border-border/40 rounded-lg p-5 hover:bg-muted/30 transition-colors group">
-          <span className="text-sm text-foreground">Vectorisation locale des images</span>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-foreground" />
-        </Link>
-      </section>
-
       {/* Generated Images section */}
       <section className="mb-10">
         <h2 className="text-[11px] tracking-widest uppercase text-muted-foreground mb-4">Generated Images</h2>

@@ -1,197 +1,109 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  let operation = null;
+  const user = await base44.auth.me();
+  if (user?.role !== 'admin') return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
 
-  try {
-    const user = await base44.auth.me();
-    if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+  const { limit = 10 } = await req.json();
 
-    const body = await req.json().catch(() => ({}));
-    const action = body.action || 'summary';
-    const version = 'visual-analysis-v1';
-    const pilotLimit = 10;
-    const batchSize = 2;
-    const operations = await base44.asServiceRole.entities.BackfillOperation.filter({ kind: 'media_analysis_pilot' }, '-created_date', 1);
-    operation = operations[0] || null;
+  const allItems = await base44.asServiceRole.entities.MediaItem.list('-created_date', 500);
+  const toProcess = allItems.filter(
+    item => item.content_type === 'image' && item.file_url && (!item.caption || item.caption === '')
+  ).slice(0, limit);
 
-    const items = await base44.asServiceRole.entities.MediaItem.list('-created_date', 500);
-    const images = items.filter((item) => item.content_type === 'image' && item.file_url);
-    const needsAnalysis = (item) => !item.analysis_status || item.analysis_status === 'failed' || (item.analysis_status === 'completed' && item.analysis_version !== version);
-    const candidates = images.filter(needsAnalysis);
-    const summary = (op) => ({
-      currentVersion: version,
-      totalImages: images.length,
-      totalToProcess: candidates.length,
-      pilotLimit,
-      estimatedCreditsMin: Math.min(pilotLimit, candidates.length),
-      estimatedCreditsMax: Math.min(pilotLimit, candidates.length) * 3,
-      operation: op,
-    });
+  let processed = 0;
+  const results = [];
 
-    if (action === 'summary') return Response.json(summary(operation));
+  for (const item of toProcess) {
+    try {
+      const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: `You are a visual curator specializing in cinema, editorial photography, still life, and fine art photography. Analyze this image with expert precision.
 
-    if (action === 'pause') {
-      if (operation?.status === 'running') {
-        operation = await base44.asServiceRole.entities.BackfillOperation.update(operation.id, { status: 'paused' });
-      }
-      return Response.json(summary(operation));
-    }
+Generate the following:
 
-    let targets = [];
-    let retryOnly = false;
+1. CAPTION: Write 2-4 sentences describing the image in precise visual language. Include subject and composition, lighting, color palette/tonal range, texture/grain, mood/atmosphere. If it appears to be a movie still, describe the scene, characters, and implied narrative.
 
-    if (action === 'start') {
-      if (operation) return Response.json({ error: 'Le lot pilote existe déjà; validation requise avant un nouveau lot.' }, { status: 409 });
-      const selected = candidates.slice(0, pilotLimit);
-      if (!selected.length) return Response.json(summary(null));
-      operation = await base44.asServiceRole.entities.BackfillOperation.create({
-        kind: 'media_analysis_pilot',
-        status: 'running',
-        pilot_limit: selected.length,
-        total_candidates_at_start: candidates.length,
-        processed: 0,
-        pending: selected.length,
-        succeeded: 0,
-        failed: 0,
-        skipped: 0,
-        processed_ids: [],
-        failed_ids: [],
-        estimated_credits_min: selected.length,
-        estimated_credits_max: selected.length * 3,
-        observed_analysis_calls: 0,
-        started_at: new Date().toISOString(),
-        last_error: '',
+2. STRUCTURED TAGS — for each category, provide relevant tags. Include synonyms and related terms to maximize search recall.
+
+Categories:
+- format: (movie still, editorial, still life, portrait, landscape, street, interior, fashion, documentary, abstract, etc.)
+- film_stock: (35mm, 16mm, 8mm, digital, instant film, large format, medium format, etc.)
+- color_type: (color, black and white, sepia, desaturated, cross-processed, color negative, hand-tinted, etc.)
+- lighting: (natural light, studio, backlit, side lit, top lit, low key, high key, neon, candlelight, golden hour, blue hour, overcast, hard light, soft light, chiaroscuro, rim light, etc.)
+- composition: (close-up, medium shot, wide shot, extreme close-up, over the shoulder, bird's eye, worm's eye, symmetrical, rule of thirds, centered, dutch angle, shallow depth of field, deep focus, etc.)
+- mood: (for each mood tag, also include 2-3 synonyms. e.g. if "melancholic" then also include "sad", "somber", "wistful")
+- color_palette: (warm tones, cool tones, earth tones, pastel, vivid, muted, monochromatic, complementary, analogous, etc.)
+- texture: (heavy grain, fine grain, smooth, soft focus, sharp, gritty, hazy, dreamy, crisp, etc.)
+- subject: (person, group, object, food, architecture, nature, vehicle, hands, silhouette, shadow, reflection, empty space, etc.)
+- era_feel: (1950s, 1960s, 1970s, 1980s, 1990s, 2000s, contemporary, timeless, retro, vintage, etc.)
+- reference_directors: (if the image resembles the visual style of known directors or photographers, list their names. Only include if genuinely relevant.)
+- keywords: (additional descriptive terms and synonyms for maximum discoverability)
+
+3. COLOR CLASSIFICATION: Classify the overall palette as exactly one of: warm, cool, neutral, dark, light, monochrome
+4. TINT: The dominant hue as a number 0-360 (0=red, 60=yellow, 120=green, 180=cyan, 240=blue, 300=magenta)
+
+Return JSON only.`,
+        file_urls: [item.file_url],
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            caption: { type: 'string' },
+            format: { type: 'array', items: { type: 'string' } },
+            film_stock: { type: 'array', items: { type: 'string' } },
+            color_type: { type: 'array', items: { type: 'string' } },
+            lighting: { type: 'array', items: { type: 'string' } },
+            composition: { type: 'array', items: { type: 'string' } },
+            mood: { type: 'array', items: { type: 'string' } },
+            color_palette_tags: { type: 'array', items: { type: 'string' } },
+            texture: { type: 'array', items: { type: 'string' } },
+            subject: { type: 'array', items: { type: 'string' } },
+            era_feel: { type: 'array', items: { type: 'string' } },
+            reference_directors: { type: 'array', items: { type: 'string' } },
+            keywords: { type: 'array', items: { type: 'string' } },
+            color_palette: { type: 'string' },
+            tint: { type: 'number' },
+          },
+        },
       });
-      targets = selected.slice(0, batchSize);
-    } else if (action === 'continue') {
-      if (operation?.status !== 'running') return Response.json(summary(operation));
-      const doneIds = operation.processed_ids || [];
-      const remainingSlots = Math.max(0, operation.pilot_limit - doneIds.length);
-      targets = candidates.filter((item) => !doneIds.includes(item.id)).slice(0, Math.min(batchSize, remainingSlots));
-    } else if (action === 'resume') {
-      if (!operation || !['paused', 'failed'].includes(operation.status)) {
-        return Response.json({ error: 'Aucun pilote interrompu à reprendre.' }, { status: 409 });
-      }
-      const doneIds = operation.processed_ids || [];
-      const remainingSlots = Math.max(0, operation.pilot_limit - doneIds.length);
-      targets = candidates.filter((item) => !doneIds.includes(item.id)).slice(0, Math.min(batchSize, remainingSlots));
-      operation = await base44.asServiceRole.entities.BackfillOperation.update(operation.id, { status: 'running', last_error: '' });
-    } else if (action === 'retry_failed') {
-      if (!operation?.failed_ids?.length) return Response.json({ error: 'Aucun échec à relancer.' }, { status: 409 });
-      retryOnly = true;
-      targets = operation.failed_ids.map((id) => images.find((item) => item.id === id)).filter(Boolean);
-      operation = await base44.asServiceRole.entities.BackfillOperation.update(operation.id, { status: 'running', last_error: '' });
-    } else {
-      return Response.json({ error: 'Action inconnue' }, { status: 400 });
+
+      const allTags = [
+        ...(result.format || []),
+        ...(result.film_stock || []),
+        ...(result.color_type || []),
+        ...(result.lighting || []),
+        ...(result.mood || []),
+        ...(result.subject || []),
+      ].filter(Boolean).slice(0, 20);
+
+      const update = {
+        caption: result.caption || '',
+        tags: allTags,
+        meta_format: result.format || [],
+        meta_film_stock: result.film_stock || [],
+        meta_color_type: result.color_type || [],
+        meta_lighting: result.lighting || [],
+        meta_composition: result.composition || [],
+        meta_mood: result.mood || [],
+        meta_color_palette: result.color_palette_tags || [],
+        meta_texture: result.texture || [],
+        meta_subject: result.subject || [],
+        meta_era: result.era_feel || [],
+        meta_directors: result.reference_directors || [],
+        meta_keywords: result.keywords || [],
+        color_palette: ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'].includes(result.color_palette) ? result.color_palette : null,
+        tint: typeof result.tint === 'number' ? result.tint : null,
+      };
+
+      await base44.asServiceRole.entities.MediaItem.update(item.id, update);
+      results.push({ id: item.id, title: item.title, status: 'success' });
+      processed++;
+    } catch (e) {
+      results.push({ id: item.id, title: item.title, status: 'error', error: e.message });
     }
-
-    let processedIds = [...(operation.processed_ids || [])];
-    let failedIds = [...(operation.failed_ids || [])];
-    let processed = operation.processed || 0;
-    let succeeded = operation.succeeded || 0;
-    let failed = operation.failed || 0;
-    let skipped = operation.skipped || 0;
-    let observedCalls = operation.observed_analysis_calls || 0;
-
-    for (const target of targets) {
-      const liveOperation = await base44.asServiceRole.entities.BackfillOperation.get(operation.id);
-      if (liveOperation.status !== 'running') {
-        operation = liveOperation;
-        break;
-      }
-
-      const item = await base44.asServiceRole.entities.MediaItem.get(target.id);
-      const alreadyProcessed = processedIds.includes(item.id);
-
-      if (!retryOnly && !needsAnalysis(item)) {
-        if (!alreadyProcessed) {
-          processedIds.push(item.id);
-          processed += 1;
-        }
-        skipped += 1;
-      } else {
-        try {
-          let response = { data: { status: 'completed' } };
-          let refreshed = item;
-          const metadataReady = refreshed.analysis_version === version && refreshed.searchable_text;
-          if (!(retryOnly && metadataReady)) {
-            response = await base44.asServiceRole.functions.invoke('analyzeMedia', { entity_id: item.id, force: true });
-            refreshed = await base44.asServiceRole.entities.MediaItem.get(item.id);
-            observedCalls += refreshed.analysis_attempts || 0;
-          }
-          if (refreshed.analysis_version === version && refreshed.searchable_text && !refreshed.vector_id) {
-            let vectorError = null;
-            for (let vectorAttempt = 1; vectorAttempt <= 3; vectorAttempt++) {
-              try {
-                await base44.asServiceRole.functions.invoke('embedMedia', { entity_id: item.id });
-                refreshed = await base44.asServiceRole.entities.MediaItem.get(item.id);
-                if (refreshed.vector_id) break;
-              } catch (error) {
-                vectorError = error;
-                if (vectorAttempt < 3) await new Promise((resolve) => setTimeout(resolve, vectorAttempt * 1000));
-              }
-            }
-            if (!refreshed.vector_id && vectorError) throw vectorError;
-          }
-          const complete = response.data?.status === 'completed' && refreshed.analysis_version === version && refreshed.searchable_text && refreshed.vector_id;
-          if (!complete) throw new Error(response.data?.error || refreshed.analysis_error || 'Analyse ou indexation incomplète');
-          if (refreshed.analysis_status !== 'completed') await base44.asServiceRole.entities.MediaItem.update(item.id, { analysis_status: 'completed', analysis_error: '' });
-
-          if (!alreadyProcessed) {
-            processedIds.push(item.id);
-            processed += 1;
-            succeeded += 1;
-          } else if (failedIds.includes(item.id)) {
-            failed = Math.max(0, failed - 1);
-            succeeded += 1;
-          }
-          failedIds = failedIds.filter((id) => id !== item.id);
-        } catch (error) {
-          if (!alreadyProcessed) {
-            processedIds.push(item.id);
-            processed += 1;
-            failed += 1;
-          }
-          if (!failedIds.includes(item.id)) failedIds.push(item.id);
-          await base44.asServiceRole.entities.MediaItem.update(item.id, {
-            analysis_status: 'failed',
-            analysis_error: String(error.message || error).slice(0, 500),
-          });
-        }
-      }
-
-      operation = await base44.asServiceRole.entities.BackfillOperation.update(operation.id, {
-        processed,
-        pending: Math.max(0, operation.pilot_limit - processed),
-        succeeded,
-        failed,
-        skipped,
-        processed_ids: processedIds,
-        failed_ids: failedIds,
-        observed_analysis_calls: observedCalls,
-      });
-    }
-
-    const currentOperation = await base44.asServiceRole.entities.BackfillOperation.get(operation.id);
-    const shouldFinish = retryOnly || currentOperation.processed >= currentOperation.pilot_limit || targets.length === 0;
-    if (currentOperation.status === 'running' && shouldFinish) {
-      operation = await base44.asServiceRole.entities.BackfillOperation.update(operation.id, {
-        status: 'completed', pending: 0, finished_at: new Date().toISOString(),
-      });
-    } else {
-      operation = currentOperation;
-    }
-
-    return Response.json(summary(operation));
-  } catch (error) {
-    if (operation?.id) {
-      await base44.asServiceRole.entities.BackfillOperation.update(operation.id, {
-        status: 'failed',
-        last_error: String(error.message || error).slice(0, 500),
-      });
-    }
-    return Response.json({ error: error.message }, { status: 500 });
   }
+
+  const totalUnanalyzed = allItems.filter(i => i.content_type === 'image' && i.file_url && (!i.caption || i.caption === '')).length - processed;
+
+  return Response.json({ processed, totalRemaining: totalUnanalyzed, results });
 });
