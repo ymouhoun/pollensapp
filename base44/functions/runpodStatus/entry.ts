@@ -15,6 +15,73 @@ function normalizeStatus(status: string) {
   return 'unknown';
 }
 
+function readUint32(bytes: Uint8Array, offset: number) {
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+}
+
+function writeUint32(value: number) {
+  return new Uint8Array([(value >>> 24) & 255, (value >>> 16) & 255, (value >>> 8) & 255, value & 255]);
+}
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function concatBytes(parts: Uint8Array[]) {
+  const output = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    output.set(part, offset);
+    offset += part.length;
+  }
+  return output;
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 32768) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+  }
+  return btoa(binary);
+}
+
+function embedWorkflow(imageData: unknown, workflow: unknown) {
+  if (typeof imageData !== 'string' || !workflow) return imageData;
+  const prefix = imageData.startsWith('data:') ? imageData.slice(0, imageData.indexOf(',') + 1) : '';
+  const rawBase64 = prefix ? imageData.slice(prefix.length) : imageData;
+  const bytes = Uint8Array.from(atob(rawBase64), (char) => char.charCodeAt(0));
+  if (bytes.length < 12 || readUint32(bytes, 0) !== 0x89504e47) return imageData;
+
+  let iendOffset = -1;
+  for (let offset = 8; offset + 12 <= bytes.length;) {
+    const length = readUint32(bytes, offset);
+    const type = new TextDecoder().decode(bytes.subarray(offset + 4, offset + 8));
+    if (type === 'IEND') {
+      iendOffset = offset;
+      break;
+    }
+    offset += 12 + length;
+  }
+  if (iendOffset < 0) return imageData;
+
+  const encoder = new TextEncoder();
+  const type = encoder.encode('iTXt');
+  const chunkData = concatBytes([
+    encoder.encode('workflow'),
+    new Uint8Array([0, 0, 0, 0, 0]),
+    encoder.encode(JSON.stringify(workflow)),
+  ]);
+  const checksum = crc32(concatBytes([type, chunkData]));
+  const chunk = concatBytes([writeUint32(chunkData.length), type, chunkData, writeUint32(checksum)]);
+  const embedded = concatBytes([bytes.subarray(0, iendOffset), chunk, bytes.subarray(iendOffset)]);
+  return prefix + bytesToBase64(embedded);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,7 +92,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'RUNPOD_API_KEY is not configured' }, { status: 500 });
     }
 
-    const { jobId, model = 'editorial' } = await req.json();
+    const { jobId, model = 'editorial', workflow } = await req.json();
     if (!jobId) return Response.json({ error: 'Missing jobId' }, { status: 400 });
 
     const endpointId = resolveEndpointId(model);
@@ -49,7 +116,7 @@ Deno.serve(async (req) => {
     const normalizedImages = images.map((image: Record<string, unknown>) => ({
       filename: image.filename || 'generation.png',
       type: image.type || 'base64',
-      data: image.data,
+      data: image.type === 's3_url' ? image.data : embedWorkflow(image.data, workflow),
     }));
     const firstImage = normalizedImages[0] || null;
 

@@ -45,6 +45,7 @@ export default function useStudio() {
   const warningTimer = useRef(null);
   const pollTimer = useRef(null);
   const jobIdRef = useRef(null);
+  const workflowRef = useRef(null);
   const modelRef = useRef(MODELS[0].checkpoint);
   const generationTokenRef = useRef(0);
   const generatingRef = useRef(false);
@@ -58,6 +59,7 @@ export default function useStudio() {
   const resetGenerationState = useCallback(() => {
     clearTimeout(pollTimer.current);
     jobIdRef.current = null;
+    workflowRef.current = null;
     generatingRef.current = false;
     setGeneratingPromptId(null);
     setPreviewImageUrl(null);
@@ -181,6 +183,7 @@ export default function useStudio() {
 
       if (generationToken !== generationTokenRef.current) return;
       jobIdRef.current = jobId;
+      workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
 
       const poll = async () => {
@@ -196,6 +199,7 @@ export default function useStudio() {
           const statusResponse = await base44.functions.invoke('runpodStatus', {
             jobId,
             model: modelRef.current,
+            workflow: workflowRef.current,
           });
           const job = statusResponse.data;
 
