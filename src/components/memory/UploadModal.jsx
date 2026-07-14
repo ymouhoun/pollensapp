@@ -31,6 +31,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }) {
         title: title || file.name.split('.')[0],
         file_url,
         content_type: isVideo ? 'video' : 'image',
+        analysis_status: isVideo ? undefined : 'pending',
         tags: tagList,
         collection: collection || undefined,
       });

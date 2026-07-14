@@ -23,7 +23,10 @@ Deno.serve(async (req) => {
 
     // Build searchable text corpus for this item from all metadata fields
     const fields = [
-      { text: item.caption || '', weight: 3 },
+      { text: item.searchable_text || '', weight: 4 },
+      { text: item.manual_caption_short_fr || item.caption_short_fr || item.caption || '', weight: 3 },
+      { text: item.manual_caption_detailed_fr || item.caption_detailed_fr || '', weight: 3 },
+      { text: item.manual_caption_en || item.caption_en || '', weight: 2.5 },
       { text: item.title || '', weight: 2 },
       { text: item.text_content || '', weight: 2 },
       { text: (item.meta_mood || []).join(' '), weight: 2 },

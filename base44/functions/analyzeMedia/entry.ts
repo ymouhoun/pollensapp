@@ -1,102 +1,105 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+
+const VERSION = 'visual-analysis-v1';
+const list = (value) => Array.isArray(value) ? value.filter(v => typeof v === 'string').map(v => v.trim()).filter(Boolean) : [];
+const clamp = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const temporary = (error) => /429|rate|timeout|temporar|503|502|network|fetch/i.test(error.message || '');
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function validate(raw) {
+  if (!raw || typeof raw !== 'object') throw new Error('Réponse d’analyse vide ou invalide');
+  const requiredText = ['caption_short_fr', 'caption_detailed_fr', 'caption_en'];
+  for (const key of requiredText) if (typeof raw[key] !== 'string' || !raw[key].trim()) throw new Error(`Champ invalide: ${key}`);
+  const location = ['intérieur', 'extérieur', 'indéterminé'].includes(raw.location_type) ? raw.location_type : 'indéterminé';
+  const orientation = ['portrait', 'paysage', 'carré', 'indéterminée'].includes(raw.orientation) ? raw.orientation : 'indéterminée';
+  const objects = Array.isArray(raw.objects) ? raw.objects.filter(o => o && typeof o.name_fr === 'string').map(o => ({ name_fr: o.name_fr.trim(), name_en: String(o.name_en || 'unknown').trim(), confidence: clamp(o.confidence) })) : [];
+  const colors = Array.isArray(raw.dominant_colors) ? raw.dominant_colors.filter(c => c && /^#[0-9A-Fa-f]{6}$/.test(c.hex || '')).map(c => ({ name_fr: String(c.name_fr || 'inconnu'), name_en: String(c.name_en || 'unknown'), hex: c.hex.toUpperCase() })).slice(0, 8) : [];
+  return {
+    caption_short_fr: raw.caption_short_fr.trim(), caption_detailed_fr: raw.caption_detailed_fr.trim(), caption_en: raw.caption_en.trim(),
+    objects, actions: list(raw.actions), scene_type: list(raw.scene_type), location_type: location,
+    visual_style: list(raw.visual_style), visual_era: list(raw.visual_era), medium: list(raw.medium), mood: list(raw.mood),
+    lighting: list(raw.lighting), composition: list(raw.composition), dominant_colors: colors, materials: list(raw.materials),
+    textures: list(raw.textures), ocr_text: list(raw.ocr_text), keywords_fr: list(raw.keywords_fr), keywords_en: list(raw.keywords_en),
+    people_count: Math.max(0, Math.round(Number(raw.people_count) || 0)), orientation,
+    observations_certaines: list(raw.observations_certaines), interpretations_esthetiques: list(raw.interpretations_esthetiques),
+    analysis_confidence: clamp(raw.analysis_confidence), analysis_warnings: list(raw.analysis_warnings),
+  };
+}
+
+function searchable(item, data) {
+  const values = [item.title, item.caption, item.caption_universal, item.manual_caption_short_fr, item.manual_caption_detailed_fr, item.manual_caption_en,
+    data.caption_short_fr, data.caption_detailed_fr, data.caption_en, ...(item.tags || []), ...data.objects.flatMap(o => [o.name_fr, o.name_en]),
+    ...data.actions, ...data.scene_type, data.location_type, ...data.visual_style, ...data.visual_era, ...data.medium, ...data.mood,
+    ...data.lighting, ...data.composition, ...data.dominant_colors.flatMap(c => [c.name_fr, c.name_en, c.hex]), ...data.materials,
+    ...data.textures, ...data.ocr_text, ...data.keywords_fr, ...data.keywords_en, ...data.observations_certaines, ...data.interpretations_esthetiques];
+  return [...new Set(values.filter(v => typeof v === 'string').map(v => v.trim().toLowerCase()).filter(Boolean))].join(' · ');
+}
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const body = await req.json();
+  let entityId = null;
+  try {
+    const body = await req.json();
+    if (!body?.event) {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    entityId = body?.event?.entity_id || body?.entity_id;
+    if (!entityId) return Response.json({ skipped: 'no entity_id' });
+    let item = await base44.asServiceRole.entities.MediaItem.get(entityId);
+    if (!item || item.content_type !== 'image' || !item.file_url) return Response.json({ skipped: 'not an image' });
+    if (item.analysis_status === 'completed' && !body.force) return Response.json({ skipped: 'already analyzed' });
+    if (item.analysis_status === 'processing') {
+      const lockAge = Date.now() - new Date(item.analysis_locked_at || 0).getTime();
+      if (lockAge < 15 * 60 * 1000) return Response.json({ skipped: 'analysis already running' });
+    }
+    if (body.force || item.analysis_status !== 'pending') await base44.asServiceRole.entities.MediaItem.update(entityId, { analysis_status: 'pending', analysis_error: '' });
 
-  // Support both automation payload and direct invocation
-  const entityId = body?.event?.entity_id || body?.entity_id;
-  if (!entityId) return Response.json({ skipped: 'no entity_id' });
+    const lock = crypto.randomUUID();
+    await base44.asServiceRole.entities.MediaItem.updateMany({ id: entityId, analysis_status: 'pending' }, { $set: { analysis_status: 'processing', analysis_lock: lock, analysis_locked_at: new Date().toISOString(), analysis_attempts: 0 } });
+    item = await base44.asServiceRole.entities.MediaItem.get(entityId);
+    if (item.analysis_lock !== lock) return Response.json({ skipped: 'analysis already claimed' });
 
-  const item = await base44.asServiceRole.entities.MediaItem.get(entityId);
-  if (!item) return Response.json({ skipped: 'not found' });
-  if (item.content_type !== 'image' || !item.file_url) return Response.json({ skipped: 'not an image' });
-
-  // Skip if already fully analyzed
-  if (item.caption && item.meta_keywords?.length > 0) return Response.json({ skipped: 'already analyzed' });
-
-  const prompt = `You are a visual curator specializing in cinema, editorial photography, still life, and fine art photography. Analyze this image with expert precision.
-
-Generate the following:
-
-1. CAPTION: Write 2-4 sentences describing the image in precise visual language. Include subject and composition, lighting, color palette/tonal range, texture/grain, mood/atmosphere. If it appears to be a movie still, describe the scene, characters, and implied narrative.
-
-2. STRUCTURED TAGS — for each category, provide relevant tags. Include synonyms and related terms to maximize search recall.
-
-Categories:
-- format: (movie still, editorial, still life, portrait, landscape, street, interior, fashion, documentary, abstract, etc.)
-- film_stock: (35mm, 16mm, 8mm, digital, instant film, large format, medium format, etc.)
-- color_type: (color, black and white, sepia, desaturated, cross-processed, color negative, hand-tinted, etc.)
-- lighting: (natural light, studio, backlit, side lit, top lit, low key, high key, neon, candlelight, golden hour, blue hour, overcast, hard light, soft light, chiaroscuro, rim light, etc.)
-- composition: (close-up, medium shot, wide shot, extreme close-up, over the shoulder, bird's eye, worm's eye, symmetrical, rule of thirds, centered, dutch angle, shallow depth of field, deep focus, etc.)
-- mood: (for each mood tag, also include 2-3 synonyms. e.g. if "melancholic" then also include "sad", "somber", "wistful")
-- color_palette: (warm tones, cool tones, earth tones, pastel, vivid, muted, monochromatic, complementary, analogous, etc.)
-- texture: (heavy grain, fine grain, smooth, soft focus, sharp, gritty, hazy, dreamy, crisp, etc.)
-- subject: (person, group, object, food, architecture, nature, vehicle, hands, silhouette, shadow, reflection, empty space, etc.)
-- era_feel: (1950s, 1960s, 1970s, 1980s, 1990s, 2000s, contemporary, timeless, retro, vintage, etc.)
-- reference_directors: (if the image resembles the visual style of known directors or photographers, list their names. e.g. Wong Kar-wai, Kubrick, Tarkovsky, Wes Anderson, Eggleston, Nan Goldin, Gregory Crewdson, etc. Only include if genuinely relevant.)
-- keywords: (additional descriptive terms and synonyms for maximum discoverability — include alternate phrasings, related concepts, visual descriptors)
-
-3. COLOR CLASSIFICATION: Classify the overall palette as exactly one of: warm, cool, neutral, dark, light, monochrome
-4. TINT: The dominant hue as a number 0-360 (0=red, 60=yellow, 120=green, 180=cyan, 240=blue, 300=magenta)
-
-Return JSON only.`;
-
-  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt,
-    file_urls: [item.file_url],
-    response_json_schema: {
-      type: 'object',
+    const prompt = `Analyse visuellement cette image pour une photothèque et un moodboard. Décris uniquement ce qui est observable. N’invente jamais un lieu, une marque, une identité ou un contexte. Utilise "inconnu" ou [] si une information ne peut pas être déterminée. N’identifie aucune personne et ne déduis aucun attribut sensible. Sépare strictement observations certaines et interprétations esthétiques. Recopie tout OCR exactement, sans correction ni complément. Donne des mots-clés concrets, synonymes utiles, français et équivalents anglais. Couvre palette, ambiance, lumière, cadrage, matières, textures, époque visuelle et style graphique. Les confiances sont entre 0 et 1. Retourne exclusivement l’objet JSON conforme au schéma.`;
+    const schema = {
+      type: 'object', additionalProperties: false,
       properties: {
-        caption: { type: 'string' },
-        format: { type: 'array', items: { type: 'string' } },
-        film_stock: { type: 'array', items: { type: 'string' } },
-        color_type: { type: 'array', items: { type: 'string' } },
-        lighting: { type: 'array', items: { type: 'string' } },
-        composition: { type: 'array', items: { type: 'string' } },
-        mood: { type: 'array', items: { type: 'string' } },
-        color_palette_tags: { type: 'array', items: { type: 'string' } },
-        texture: { type: 'array', items: { type: 'string' } },
-        subject: { type: 'array', items: { type: 'string' } },
-        era_feel: { type: 'array', items: { type: 'string' } },
-        reference_directors: { type: 'array', items: { type: 'string' } },
-        keywords: { type: 'array', items: { type: 'string' } },
-        color_palette: { type: 'string' },
-        tint: { type: 'number' },
+        caption_short_fr: { type: 'string' }, caption_detailed_fr: { type: 'string' }, caption_en: { type: 'string' },
+        objects: { type: 'array', items: { type: 'object', properties: { name_fr: { type: 'string' }, name_en: { type: 'string' }, confidence: { type: 'number' } }, required: ['name_fr', 'name_en', 'confidence'] } },
+        actions: { type: 'array', items: { type: 'string' } }, scene_type: { type: 'array', items: { type: 'string' } },
+        location_type: { type: 'string', enum: ['intérieur', 'extérieur', 'indéterminé'] }, visual_style: { type: 'array', items: { type: 'string' } },
+        visual_era: { type: 'array', items: { type: 'string' } }, medium: { type: 'array', items: { type: 'string' } }, mood: { type: 'array', items: { type: 'string' } },
+        lighting: { type: 'array', items: { type: 'string' } }, composition: { type: 'array', items: { type: 'string' } },
+        dominant_colors: { type: 'array', items: { type: 'object', properties: { name_fr: { type: 'string' }, name_en: { type: 'string' }, hex: { type: 'string' } }, required: ['name_fr', 'name_en', 'hex'] } },
+        materials: { type: 'array', items: { type: 'string' } }, textures: { type: 'array', items: { type: 'string' } }, ocr_text: { type: 'array', items: { type: 'string' } },
+        keywords_fr: { type: 'array', items: { type: 'string' } }, keywords_en: { type: 'array', items: { type: 'string' } }, people_count: { type: 'number' },
+        orientation: { type: 'string', enum: ['portrait', 'paysage', 'carré', 'indéterminée'] }, analysis_confidence: { type: 'number' },
+        analysis_warnings: { type: 'array', items: { type: 'string' } }, observations_certaines: { type: 'array', items: { type: 'string' } }, interpretations_esthetiques: { type: 'array', items: { type: 'string' } }
       },
-    },
-  });
+      required: ['caption_short_fr','caption_detailed_fr','caption_en','objects','actions','scene_type','location_type','visual_style','visual_era','medium','mood','lighting','composition','dominant_colors','materials','textures','ocr_text','keywords_fr','keywords_en','people_count','orientation','analysis_confidence','analysis_warnings','observations_certaines','interpretations_esthetiques']
+    };
 
-  // Build flat tags array from all categories for backward compatibility
-  const allTags = [
-    ...(result.format || []),
-    ...(result.film_stock || []),
-    ...(result.color_type || []),
-    ...(result.lighting || []),
-    ...(result.mood || []),
-    ...(result.subject || []),
-  ].filter(Boolean).slice(0, 20);
+    let data;
+    let lastError;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await base44.asServiceRole.entities.MediaItem.update(entityId, { analysis_attempts: attempt });
+      try {
+        const raw = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt, file_urls: [item.file_url], response_json_schema: schema });
+        data = validate(raw);
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 3 || !temporary(error)) break;
+        await sleep(attempt * 1500);
+      }
+    }
+    if (!data) throw lastError || new Error('Analyse impossible');
 
-  const update = {
-    caption: result.caption || '',
-    tags: allTags,
-    meta_format: result.format || [],
-    meta_film_stock: result.film_stock || [],
-    meta_color_type: result.color_type || [],
-    meta_lighting: result.lighting || [],
-    meta_composition: result.composition || [],
-    meta_mood: result.mood || [],
-    meta_color_palette: result.color_palette_tags || [],
-    meta_texture: result.texture || [],
-    meta_subject: result.subject || [],
-    meta_era: result.era_feel || [],
-    meta_directors: result.reference_directors || [],
-    meta_keywords: result.keywords || [],
-    color_palette: ['warm', 'cool', 'neutral', 'dark', 'light', 'monochrome'].includes(result.color_palette) ? result.color_palette : null,
-    tint: typeof result.tint === 'number' ? result.tint : null,
-  };
-
-  await base44.asServiceRole.entities.MediaItem.update(entityId, update);
-
-  return Response.json({ success: true, caption: update.caption, tagCount: allTags.length });
+    await base44.asServiceRole.entities.MediaItem.update(entityId, { ...data, searchable_text: searchable(item, data), analysis_status: 'completed', analysis_error: '', analysis_version: VERSION, analyzed_at: new Date().toISOString(), analysis_lock: '' });
+    try { await base44.asServiceRole.functions.invoke('embedMedia', { entity_id: entityId }); } catch (error) { console.error('Embedding non bloquant:', error.message); }
+    return Response.json({ success: true, status: 'completed', version: VERSION });
+  } catch (error) {
+    if (entityId) await base44.asServiceRole.entities.MediaItem.update(entityId, { analysis_status: 'failed', analysis_error: String(error.message || error).slice(0, 500), analysis_lock: '' });
+    return Response.json({ error: error.message || 'Analysis failed' }, { status: 500 });
+  }
 });

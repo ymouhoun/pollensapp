@@ -29,15 +29,227 @@
       "items": {
         "type": "string"
       },
-      "description": "Tags for categorization"
+      "description": "Manually editable tags"
     },
     "caption": {
       "type": "string",
-      "description": "AI-generated rich visual description of the image"
+      "description": "Legacy caption preserved for compatibility"
     },
     "caption_universal": {
       "type": "string",
-      "description": "VLM-generated universal caption: rich prose covering subject, action, setting, lighting, mood, era, composition, garments, materials"
+      "description": "Legacy universal caption preserved for compatibility"
+    },
+    "caption_short_fr": {
+      "type": "string",
+      "description": "Automatic concise factual caption in French"
+    },
+    "caption_detailed_fr": {
+      "type": "string",
+      "description": "Automatic detailed caption in French"
+    },
+    "caption_en": {
+      "type": "string",
+      "description": "Automatic English caption"
+    },
+    "manual_caption_short_fr": {
+      "type": "string",
+      "description": "Human-edited French short caption; never overwritten automatically"
+    },
+    "manual_caption_detailed_fr": {
+      "type": "string",
+      "description": "Human-edited French detailed caption; never overwritten automatically"
+    },
+    "manual_caption_en": {
+      "type": "string",
+      "description": "Human-edited English caption; never overwritten automatically"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name_fr": {
+            "type": "string"
+          },
+          "name_en": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Visible objects with confidence"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "scene_type": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "location_type": {
+      "type": "string",
+      "enum": [
+        "int\u00e9rieur",
+        "ext\u00e9rieur",
+        "ind\u00e9termin\u00e9"
+      ]
+    },
+    "visual_style": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "visual_era": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "medium": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mood": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lighting": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "composition": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dominant_colors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name_fr": {
+            "type": "string"
+          },
+          "name_en": {
+            "type": "string"
+          },
+          "hex": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "textures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ocr_text": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "keywords_fr": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "keywords_en": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "people_count": {
+      "type": "number"
+    },
+    "orientation": {
+      "type": "string",
+      "enum": [
+        "portrait",
+        "paysage",
+        "carr\u00e9",
+        "ind\u00e9termin\u00e9e"
+      ]
+    },
+    "observations_certaines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "interpretations_esthetiques": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "analysis_confidence": {
+      "type": "number"
+    },
+    "analysis_warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "searchable_text": {
+      "type": "string",
+      "description": "Deterministically assembled search corpus"
+    },
+    "analysis_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ]
+    },
+    "analysis_error": {
+      "type": "string"
+    },
+    "analysis_attempts": {
+      "type": "number",
+      "default": 0
+    },
+    "analysis_version": {
+      "type": "string"
+    },
+    "analysis_lock": {
+      "type": "string"
+    },
+    "analysis_locked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "analyzed_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "palette": {
       "type": "array",
@@ -52,15 +264,14 @@
           }
         }
       },
-      "description": "Array of 5 dominant colors with hex and name"
+      "description": "Legacy palette"
     },
     "structural_signals": {
       "type": "object",
-      "description": "Structural analysis: has_face, face_count, aspect_ratio, grain_level, has_text, dominant_subject"
+      "description": "Legacy structural analysis"
     },
     "vector_id": {
-      "type": "string",
-      "description": "Reference ID in the vector store (Pinecone)"
+      "type": "string"
     },
     "enrichment_status": {
       "type": "string",
@@ -70,101 +281,86 @@
         "done",
         "failed"
       ],
-      "default": "pending",
-      "description": "Status of the enrichment pipeline"
+      "default": "pending"
     },
     "enriched_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "When enrichment was completed"
+      "format": "date-time"
     },
     "tenant_id": {
-      "type": "string",
-      "description": "Tenant this image belongs to"
+      "type": "string"
     },
     "meta_format": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Format tags: movie still, editorial, still life, portrait, etc."
+      }
     },
     "meta_film_stock": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Film stock tags: 35mm, 16mm, 8mm, digital, etc."
+      }
     },
     "meta_color_type": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Color type tags: color, black and white, sepia, etc."
+      }
     },
     "meta_lighting": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Lighting tags: natural light, studio, backlit, etc."
+      }
     },
     "meta_composition": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Composition tags: close-up, wide shot, symmetrical, etc."
+      }
     },
     "meta_mood": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Mood tags with synonyms: melancholic, nostalgic, tense, etc."
+      }
     },
     "meta_color_palette": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Color palette tags: warm tones, cool tones, earth tones, etc."
+      }
     },
     "meta_texture": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Texture tags: heavy grain, fine grain, smooth, etc."
+      }
     },
     "meta_subject": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Subject tags: person, object, architecture, etc."
+      }
     },
     "meta_era": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Era/feel tags: 1970s, contemporary, timeless, etc."
+      }
     },
     "meta_directors": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Reference directors/photographers whose style this resembles"
+      }
     },
     "meta_keywords": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Additional keywords and synonyms for discoverability"
+      }
     },
     "color_palette": {
       "type": "string",
@@ -175,12 +371,10 @@
         "dark",
         "light",
         "monochrome"
-      ],
-      "description": "Auto-detected dominant color palette of the image"
+      ]
     },
     "tint": {
-      "type": "number",
-      "description": "Hue value 0-360 degrees for tint-based sorting"
+      "type": "number"
     },
     "is_kept": {
       "type": "boolean",
@@ -191,8 +385,7 @@
       "default": false
     },
     "collection": {
-      "type": "string",
-      "description": "Collection this belongs to"
+      "type": "string"
     }
   },
   "required": [

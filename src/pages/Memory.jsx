@@ -204,10 +204,12 @@ export default function Memory() {
       setUploadingDrop(true);
       for (const file of files) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const isVideo = file.type.startsWith('video/');
         await base44.entities.MediaItem.create({
           title: file.name.split('.')[0],
           file_url,
-          content_type: file.type.startsWith('video/') ? 'video' : 'image',
+          content_type: isVideo ? 'video' : 'image',
+          analysis_status: isVideo ? undefined : 'pending',
         });
       }
       setUploadingDrop(false);

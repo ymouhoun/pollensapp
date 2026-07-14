@@ -14,9 +14,8 @@ Deno.serve(async (req) => {
   const item = await base44.asServiceRole.entities.MediaItem.get(entityId);
   if (!item) return Response.json({ skipped: 'not found' });
 
-  // Need caption_universal to embed
-  const textToEmbed = item.caption_universal || item.caption || '';
-  if (!textToEmbed) return Response.json({ skipped: 'no caption to embed' });
+  const textToEmbed = item.searchable_text || item.caption_universal || item.caption || '';
+  if (!textToEmbed) return Response.json({ skipped: 'no searchable text to embed' });
 
   // 1. Get embedding from Voyage AI
   const voyageRes = await fetch('https://api.voyageai.com/v1/embeddings', {

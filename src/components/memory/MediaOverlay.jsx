@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Trash2, Zap, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
+import ImageAnalysisPanel from '@/components/memory/ImageAnalysisPanel';
 
 export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
   const queryClient = useQueryClient();
@@ -124,8 +125,9 @@ export default function MediaOverlay({ item, onClose, onPrev, onNext }) {
           </div>
 
           {/* Sidebar actions */}
-          <div className="flex flex-col gap-3 min-w-[140px]">
-            <p className="text-foreground/70 text-sm font-light truncate max-w-[160px]">{filename}</p>
+          <div className="flex flex-col gap-3 min-w-[280px] max-w-[320px]">
+            <p className="text-foreground/70 text-sm font-light truncate max-w-[280px]">{filename}</p>
+            <ImageAnalysisPanel item={item} onUpdated={() => queryClient.invalidateQueries({ queryKey: ['media-items'] })} />
             <button
               onClick={handleUseAsPrompt}
               className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors text-sm font-light disabled:opacity-50"
