@@ -49,6 +49,15 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			entropy: {
+  			  bg: 'hsl(var(--entropy-bg))',
+  			  panel: 'hsl(var(--entropy-panel))',
+  			  foreground: 'hsl(var(--entropy-foreground))',
+  			  muted: 'hsl(var(--entropy-muted))',
+  			  faint: 'hsl(var(--entropy-faint))',
+  			  border: 'hsl(var(--entropy-border))',
+  			  shadow: 'hsl(var(--entropy-shadow))'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

@@ -9,15 +9,15 @@ export default function StudioIndicator({ status, gpuName, onStop }) {
     <div className="flex items-center gap-2 text-[10px] tracking-widest" style={{ fontFamily: 'var(--font-sans)' }}>
       <span className="relative flex h-2 w-2 items-center justify-center">
         <span
-          className="absolute inline-flex h-full w-full rounded-full bg-white/30 animate-ping blur-[1px]"
+          className="absolute inline-flex h-full w-full rounded-full bg-entropy-muted animate-ping blur-[1px]"
           style={{ animationDuration: '2s' }}
         />
-        <span className="relative inline-flex h-1 w-1 rounded-full bg-white blur-[0.5px]" style={{ boxShadow: '0 0 4px 1.5px rgba(255,255,255,0.5)' }} />
+        <span className="relative inline-flex h-1 w-1 rounded-full bg-entropy-foreground blur-[0.5px]" style={{ boxShadow: '0 0 4px 1.5px hsl(var(--entropy-foreground) / 0.35)' }} />
       </span>
-      <span className="text-white/30">{gpuName || 'GPU'}</span>
+      <span className="text-entropy-muted">{gpuName || 'GPU'}</span>
       <motion.button
         onClick={onStop}
-        className="text-white/25 hover:text-red-500 transition-colors"
+        className="text-entropy-faint hover:text-red-500 transition-colors"
         whileHover={{ rotate: [0, -8, 8, -8, 8, 0] }}
         transition={{ duration: 0.4 }}
       >

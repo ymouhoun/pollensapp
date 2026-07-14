@@ -3,6 +3,7 @@ import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
 import StudioIndicator from './StudioIndicator';
+import EntropyThemeToggle from './EntropyThemeToggle';
 import { MODELS } from '@/lib/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
@@ -18,7 +19,7 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange, isDark, onToggleTheme }) {
   const [cfg, setCfg] = useState(3.5);
   const [rescaleCfg, setRescaleCfg] = useState(0.7);
   const [rescaleEnabled, setRescaleEnabled] = useState(true);
@@ -94,40 +95,41 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             <button
               key={m.checkpoint}
               onClick={() => onModelChange(m.checkpoint)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-entropy-border backdrop-blur-2xl transition-all"
               style={{
                 background: selectedModel === m.checkpoint
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
+                  ? 'hsl(var(--entropy-panel) / 0.96)'
+                  : 'hsl(var(--entropy-panel) / 0.68)',
                 boxShadow: selectedModel === m.checkpoint
-                  ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
+                  ? '0 4px 20px hsl(var(--entropy-shadow) / 0.18)'
                   : 'none',
                 fontFamily: 'var(--font-sans)',
               }}
             >
               <motion.span
-                className="w-1 h-1 rounded-full bg-white"
+                className="w-1 h-1 rounded-full bg-entropy-foreground"
                 animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
                 transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
               />
-              <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
+              <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-entropy-foreground' : 'text-entropy-muted'}`}>
                 {m.label}
               </span>
             </button>
           ))}
         </div>
-        <div className="pt-1">
+        <div className="flex items-center gap-2 pt-1">
+          <EntropyThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
         </div>
       </div>
 
       <div
-        className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
+        className="rounded-2xl overflow-hidden border border-entropy-border shadow-2xl backdrop-blur-2xl"
         onDragOver={event => event.preventDefault()}
         onDrop={handleImageDrop}
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(200,180,220,0.05) 50%, rgba(180,160,210,0.08) 100%)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.15)',
+          background: 'hsl(var(--entropy-panel) / 0.86)',
+          boxShadow: '0 8px 40px hsl(var(--entropy-shadow) / 0.22), inset 0 1px 0 hsl(var(--entropy-foreground) / 0.08)',
         }}
       >
         {/* Text input */}
@@ -136,7 +138,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             <motion.span
               className="absolute top-4 left-5 text-[15px] pointer-events-none select-none bg-clip-text text-transparent"
               style={{
-                backgroundImage: 'linear-gradient(110deg, #404040, 35%, #888, 50%, #404040, 75%, #404040)',
+                backgroundImage: 'linear-gradient(110deg, hsl(var(--entropy-faint)), 35%, hsl(var(--entropy-muted)), 50%, hsl(var(--entropy-faint)), 75%, hsl(var(--entropy-faint)))',
                 backgroundSize: '200% 100%',
                 fontFamily: 'var(--font-sans)',
               }}
@@ -153,7 +155,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
             disabled={disabled}
             rows={1}
-            className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
+            className="w-full bg-transparent text-entropy-foreground text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
             style={{ fontFamily: 'var(--font-sans)' }}
             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
@@ -199,12 +201,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
               onClick={generating ? onCancelGeneration : handleGenerate}
               disabled={!generating && disabled}
               className="ml-1.5 w-6 h-6 flex items-center justify-center rounded-full transition-all disabled:opacity-20"
-              style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
+              style={{ background: generating ? 'hsl(var(--entropy-foreground) / 0.08)' : 'hsl(var(--entropy-foreground) / 0.12)' }}
             >
               {generating ? (
-                <CircleX className="w-3.5 h-3.5 text-white/60" strokeWidth={1.5} />
+                <CircleX className="w-3.5 h-3.5 text-entropy-foreground" strokeWidth={1.5} />
               ) : (
-                <ArrowUp className="w-3.5 h-3.5 text-white/70" strokeWidth={2} />
+                <ArrowUp className="w-3.5 h-3.5 text-entropy-foreground" strokeWidth={2} />
               )}
             </button>
           </div>
@@ -244,7 +246,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
   };
 
   return (
-    <span className={`text-white/35 flex items-center gap-1 group transition-opacity ${enabled ? 'opacity-100' : 'opacity-30'}`}>
+    <span className={`text-entropy-muted flex items-center gap-1 group transition-opacity ${enabled ? 'opacity-100' : 'opacity-30'}`}>
       <span
         onClick={onToggle}
         className={onToggle ? 'cursor-pointer select-none' : ''}
@@ -255,7 +257,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
       <span
         onPointerDown={handlePointerDown}
         onDoubleClick={() => enabled && defaultValue !== undefined && onChange(defaultValue)}
-        className="text-white/65 font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className="text-entropy-foreground font-medium text-[10px] tracking-widest w-6 text-center cursor-ew-resize select-none hover:text-entropy-foreground transition-colors"
       >
         {displayValue}
       </span>
@@ -264,7 +266,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
 }
 
 function Divider() {
-  return <span className="text-white/15">|</span>;
+  return <span className="text-entropy-border">|</span>;
 }
 
 function SeedParam({ mode, onModeChange, value, onValueChange }) {
@@ -293,9 +295,9 @@ function SeedParam({ mode, onModeChange, value, onValueChange }) {
   };
 
   return (
-    <span className="text-white/35 flex items-center gap-1">
+    <span className="text-entropy-muted flex items-center gap-1">
       <span
-        className="cursor-pointer select-none hover:text-white/55 transition-colors"
+        className="cursor-pointer select-none hover:text-entropy-muted transition-colors"
         onClick={() => onModeChange(mode === 'random' ? 'fixed' : 'random')}
         title={mode === 'random' ? 'Randomize (click to fix)' : 'Fixed (click to randomize)'}
       >
@@ -303,7 +305,7 @@ function SeedParam({ mode, onModeChange, value, onValueChange }) {
       </span>
       <span
         onPointerDown={handlePointerDown}
-        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className="text-entropy-foreground font-medium cursor-ew-resize select-none hover:text-entropy-foreground transition-colors"
       >
         {value}
       </span>
@@ -345,12 +347,12 @@ function DragCycleParam({ label, value, options, onChange, defaultValue }) {
   const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
 
   return (
-    <span className="text-white/35 flex items-center gap-1">
+    <span className="text-entropy-muted flex items-center gap-1">
       {label}{' '}
       <span
         onPointerDown={handlePointerDown}
         onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
-        className="text-white/65 font-medium cursor-ew-resize select-none hover:text-white/90 transition-colors"
+        className="text-entropy-foreground font-medium cursor-ew-resize select-none hover:text-entropy-foreground transition-colors"
       >
         {display}
       </span>
@@ -363,9 +365,9 @@ function SelectParam({ label, value, options, onChange, defaultValue }) {
   const raw = typeof value === 'string' && value.includes('(') ? value.split(' ')[0] : value;
   const display = typeof raw === 'string' ? raw.toUpperCase() : raw;
   return (
-    <span className="relative text-white/35 flex items-center gap-1">
+    <span className="relative text-entropy-muted flex items-center gap-1">
       <span onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}>{label}{' '}
-      <span className="text-white/65 font-medium">{display}</span></span>
+      <span className="text-entropy-foreground font-medium">{display}</span></span>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -373,7 +375,7 @@ function SelectParam({ label, value, options, onChange, defaultValue }) {
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
-      <ChevronDown className="w-2.5 h-2.5 text-white/30" />
+      <ChevronDown className="w-2.5 h-2.5 text-entropy-faint" />
     </span>
   );
 }

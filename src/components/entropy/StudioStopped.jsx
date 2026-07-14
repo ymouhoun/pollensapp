@@ -10,12 +10,12 @@ export default function StudioStopped({ onStart }) {
     >
       <button
         onClick={() => onStart()}
-        className="group px-8 py-3 rounded-xl border border-white/15 hover:border-white/30 bg-white/5 hover:bg-white/10 transition-all duration-300"
+        className="group px-8 py-3 rounded-xl border border-entropy-border bg-entropy-panel transition-all duration-300 hover:shadow-lg"
       >
-        <span className="text-sm text-white/60 group-hover:text-white/90 tracking-wide transition-colors" style={{ fontFamily: 'var(--font-sans)' }}>
+        <span className="text-sm text-entropy-muted group-hover:text-entropy-foreground tracking-wide transition-colors" style={{ fontFamily: 'var(--font-sans)' }}>
           Start Studio
         </span>
-        <p className="text-[10px] text-white/25 mt-1 tracking-widest" style={{ fontFamily: 'var(--font-sans)' }}>
+        <p className="text-[10px] text-entropy-faint mt-1 tracking-widest" style={{ fontFamily: 'var(--font-sans)' }}>
           ON-DEMAND GPU
         </p>
       </button>

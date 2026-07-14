@@ -21,8 +21,8 @@ export default function EntropyContextMenu({ position, onClose, onSaveToMemory, 
       style={{
         top: position.y,
         left: position.x,
-        background: 'rgba(15, 15, 20, 0.35)',
-        borderColor: 'rgba(255, 255, 255, 0.07)',
+        background: 'hsl(var(--entropy-panel) / 0.86)',
+        borderColor: 'hsl(var(--entropy-border))',
         backdropFilter: 'blur(60px) saturate(180%)',
         WebkitBackdropFilter: 'blur(60px) saturate(180%)',
       }}
@@ -30,7 +30,7 @@ export default function EntropyContextMenu({ position, onClose, onSaveToMemory, 
       <div className="py-0.5">
         <MenuItem icon={Save} label="Save to memory" onClick={() => { onSaveToMemory(); onClose(); }} />
         <MenuItem icon={Download} label="Download" onClick={() => { onDownload(); onClose(); }} />
-        <div className="h-px bg-white/10 my-0.5" />
+        <div className="h-px bg-entropy-border my-0.5" />
         <MenuItem icon={Trash2} label="Delete" onClick={() => { onDelete(); onClose(); }} danger />
       </div>
     </div>
@@ -42,7 +42,7 @@ function MenuItem({ icon: Icon, label, onClick, danger }) {
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-        danger ? 'text-red-400 hover:bg-red-500/15' : 'text-white/70 hover:bg-white/10'
+        danger ? 'text-red-400 hover:bg-red-500/15' : 'text-entropy-foreground hover:bg-entropy-bg'
       }`}
     >
       <Icon className="w-3 h-3 opacity-60 flex-shrink-0" strokeWidth={1.5} />
