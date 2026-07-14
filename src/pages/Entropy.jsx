@@ -89,7 +89,7 @@ export default function Entropy() {
     if (!frontImageUrl) return;
     const res = await fetch(frontImageUrl);
     const blob = await res.blob();
-    const file = new File([blob], `entropy-${Date.now()}.png`, { type: blob.type });
+    const file = new File([blob], `pollens_${String(Date.now()).slice(-6)}.png`, { type: blob.type });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     await base44.entities.MediaItem.create({ content_type: 'image', file_url, title: prompt.slice(0, 80) || 'Entropy generation' });
   }, [frontImageUrl, prompt]);
@@ -101,7 +101,7 @@ export default function Entropy() {
     const downloadUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = `entropy-${Date.now()}.png`;
+    a.download = `pollens_${String(Date.now()).slice(-6)}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
