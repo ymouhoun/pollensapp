@@ -86,12 +86,18 @@ export default function Entropy() {
     await base44.entities.MediaItem.create({ content_type: 'image', file_url, title: prompt.slice(0, 80) || 'Entropy generation' });
   }, [frontImageUrl, prompt]);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     if (!frontImageUrl) return;
+    const response = await fetch(frontImageUrl);
+    const blob = await response.blob();
+    const downloadUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = frontImageUrl;
+    a.href = downloadUrl;
     a.download = `entropy-${Date.now()}.png`;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
+    URL.revokeObjectURL(downloadUrl);
   }, [frontImageUrl]);
 
   const handleDeleteGenerated = useCallback(() => {
