@@ -40,19 +40,11 @@ export default function Entropy() {
   }, []);
 
   const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
-  const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [contextMenu, setContextMenu] = useState(null);
   const inputRef = useRef(null);
   const lastSeenBatch = useRef(null);
 
   const studio = useStudio();
-
-  useEffect(() => {
-    const deviceTheme = window.matchMedia('(prefers-color-scheme: dark)');
-    const syncTheme = (event) => setIsDark(event.matches);
-    deviceTheme.addEventListener('change', syncTheme);
-    return () => deviceTheme.removeEventListener('change', syncTheme);
-  }, []);
 
   // When a generated batch appears, push every image to the front of the deck
   useEffect(() => {
@@ -143,7 +135,7 @@ export default function Entropy() {
   };
 
   return (
-    <div className={`${isDark ? 'dark' : ''} fixed inset-0 bg-entropy-bg text-entropy-foreground overflow-hidden transition-colors duration-300`}>
+    <div className="fixed inset-0 bg-black overflow-hidden">
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
 
       {/* Center area — state dependent */}
@@ -163,12 +155,12 @@ export default function Entropy() {
           <StudioError message={studio.errorMessage} onRetry={handleRetry} />
         )}
         {studio.status === 'STOPPING' && (
-          <p className="text-xs text-entropy-muted tracking-widest uppercase">
+          <p className="text-xs text-white/30 tracking-widest uppercase">
             Session ended
           </p>
         )}
         {studio.status === 'READY' && !studio.generatingPromptId && deck.length === 0 && (
-          <p className="text-entropy-faint text-xs tracking-widest uppercase select-none">
+          <p className="text-white/10 text-xs tracking-widest uppercase select-none">
             entropy
           </p>
         )}
@@ -234,8 +226,6 @@ export default function Entropy() {
         onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
-        isDark={isDark}
-        onToggleTheme={() => setIsDark(value => !value)}
       />
     </div>
   );
