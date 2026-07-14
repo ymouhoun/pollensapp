@@ -24,7 +24,7 @@ function buildWorkflow(input: Record<string, unknown>) {
   const batchSize = Math.max(1, Math.min(4, Math.floor(numberOrDefault(input.batchSize, 1))));
   const shift = Math.max(0, Math.min(3, numberOrDefault(input.shift, 1.2)));
   const aspectRatio = String(input.aspectRatio || '3:4 (Golden Ratio)');
-  const sampler = String(input.sampler || 'res_3m');
+  const sampler = String(input.sampler || 'res_2s');
   const scheduler = String(input.scheduler || 'kl_optimal');
 
   return {

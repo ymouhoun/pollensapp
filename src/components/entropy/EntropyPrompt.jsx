@@ -26,7 +26,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
   const [ratio, setRatio] = useState('3:4 (Golden Ratio)');
   const [shift, setShift] = useState(1.2);
   const [steps, setSteps] = useState(45);
-  const [sampler, setSampler] = useState('res_3m');
+  const [sampler, setSampler] = useState('res_2s');
   const [scheduler, setScheduler] = useState('kl_optimal');
   const [seedMode, setSeedMode] = useState('random');
   const [seedValue, setSeedValue] = useState(() => String(getRandomSeed()));
@@ -149,7 +149,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, generatin
           <div className="flex items-center gap-1">
             <SeedParam mode={seedMode} onModeChange={setSeedMode} value={seedValue} onValueChange={setSeedValue} />
             <Divider />
-            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_3m" />
+            <SelectParam label="SAMPLER" value={sampler} options={SAMPLERS} onChange={setSampler} defaultValue="res_2s" />
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
             <button
