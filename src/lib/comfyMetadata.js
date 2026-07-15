@@ -56,9 +56,13 @@ function settingsFromGraph(rawGraph) {
   const rescale = findType('RescaleCFG');
   const sampling = findType('ModelSamplingAuraFlow');
   const modelNode = linkedNode(graph, sampler.inputs?.model);
+  const positiveNode = linkedNode(graph, sampler.inputs?.positive);
 
   return {
     positivePrompt: promptFromLink(graph, sampler.inputs?.positive),
+    complementaryPrompt: positiveNode?.class_type === 'ConditioningCombine'
+      ? promptFromLink(graph, positiveNode.inputs?.conditioning_2)
+      : undefined,
     seed: sampler.inputs?.seed ?? sampler.inputs?.noise_seed,
     steps: sampler.inputs?.steps,
     cfg: sampler.inputs?.cfg,

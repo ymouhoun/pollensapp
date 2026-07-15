@@ -14,6 +14,7 @@ function numberOrDefault(value: unknown, fallback: number) {
 function buildWorkflow(input: Record<string, unknown>) {
   const positivePrompt = String(input.positivePrompt || '').trim();
   if (!positivePrompt) throw new Error('The prompt is empty');
+  const complementaryPrompt = String(input.complementaryPrompt === undefined ? 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples' : input.complementaryPrompt).trim();
 
   const seed = Math.max(0, Math.floor(numberOrDefault(input.seed, Date.now())));
   const steps = Math.max(1, Math.min(100, Math.floor(numberOrDefault(input.steps, 45))));
@@ -35,7 +36,7 @@ function buildWorkflow(input: Record<string, unknown>) {
     },
     '809': {
       inputs: {
-        text: 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples',
+        text: complementaryPrompt,
         clip: ['808', 0],
       },
       class_type: 'CLIPTextEncode',

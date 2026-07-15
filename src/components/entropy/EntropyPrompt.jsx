@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
+import ComplementaryPromptNotch from './ComplementaryPromptNotch';
 import { MODELS } from '@/lib/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_3m', 'res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
 const SCHEDULERS = ['kl_optimal', 'beta57', 'ddim_uniform', 'simple', 'bong_tangent'];
 const MAX_SEED = 999999999999;
+const DEFAULT_COMPLEMENTARY_PROMPT = 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples';
 
 const sanitizeSeedValue = (value) => {
   const digitsOnly = String(value).replace(/\D/g, '').slice(0, 12);
@@ -18,6 +20,7 @@ const sanitizeSeedValue = (value) => {
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, onCancelGeneration, selectedModel, onModelChange }) {
+  const [complementaryPrompt, setComplementaryPrompt] = useState(DEFAULT_COMPLEMENTARY_PROMPT);
   const [cfg, setCfg] = useState(3.5);
   const [rescaleCfg, setRescaleCfg] = useState(0.7);
   const [rescaleEnabled, setRescaleEnabled] = useState(true);
@@ -38,7 +41,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
   const handleGenerate = () => {
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
-    onGenerate({ steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+    onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
   };
 
   const handleImageDrop = async (event) => {
@@ -59,6 +62,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
 
       const settings = await extractComfySettings(file);
       if (settings.positivePrompt) setPrompt(settings.positivePrompt);
+      if (settings.complementaryPrompt !== undefined) setComplementaryPrompt(settings.complementaryPrompt);
       if (settings.cfg !== undefined) setCfg(Number(settings.cfg));
       if (settings.rescaleCfg !== undefined) setRescaleCfg(Number(settings.rescaleCfg));
       setRescaleEnabled(settings.rescaleEnabled);
@@ -116,6 +120,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
           ))}
         </div>
       </div>
+
+      <ComplementaryPromptNotch value={complementaryPrompt} onChange={setComplementaryPrompt} />
 
       <div
         className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"

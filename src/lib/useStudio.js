@@ -136,6 +136,7 @@ export default function useStudio() {
         file_url,
         prompt: params.positivePrompt || '',
         params: {
+          complementaryPrompt: params.complementaryPrompt,
           steps: params.steps,
           cfg: params.cfg,
           rescaleCfg: params.rescaleCfg,

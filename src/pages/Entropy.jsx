@@ -116,6 +116,7 @@ export default function Entropy() {
     if (!prompt.trim() || studio.generatingPromptId) return;
     studio.generate({
       positivePrompt: prompt,
+      complementaryPrompt: params.complementaryPrompt,
       steps: params.steps,
       cfg: params.cfg,
       rescaleCfg: params.rescaleCfg,
