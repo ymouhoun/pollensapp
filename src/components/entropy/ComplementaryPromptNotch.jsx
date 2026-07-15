@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export default function ComplementaryPromptNotch({ value, onChange }) {
-  const [open, setOpen] = useState(false);
+export default function ComplementaryPromptNotch({ value, onChange, open, onOpenChange }) {
 
   return (
     <div className="relative z-10 ml-4 w-[calc(100%_-_2rem)]">
       <button
         type="button"
-        onClick={() => setOpen(current => !current)}
+        onClick={() => onOpenChange(!open)}
         aria-expanded={open}
         className="flex items-center gap-1.5 rounded-t-xl border border-b-0 border-white/10 bg-white/[0.07] px-3 py-1.5 text-[9px] uppercase tracking-widest text-white/40 backdrop-blur-2xl hover:text-white/65"
       >

@@ -28,6 +28,7 @@ const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, onCancelGeneration, selectedModel, onModelChange }) {
   const [complementaryPrompt, setComplementaryPrompt] = useState(DEFAULT_COMPLEMENTARY_PROMPT);
+  const [complementaryOpen, setComplementaryOpen] = useState(false);
   const [cfg, setCfg] = useState(3.5);
   const [rescaleCfg, setRescaleCfg] = useState(0.7);
   const [rescaleEnabled, setRescaleEnabled] = useState(true);
@@ -49,6 +50,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
 
   const handleGenerate = () => {
     if (inputRef?.current) inputRef.current.style.height = 'auto';
+    setComplementaryOpen(false);
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
     onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
@@ -150,7 +152,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
         </DropdownMenu>
       </div>
 
-      <ComplementaryPromptNotch value={complementaryPrompt} onChange={setComplementaryPrompt} />
+      <ComplementaryPromptNotch
+        value={complementaryPrompt}
+        onChange={setComplementaryPrompt}
+        open={complementaryOpen}
+        onOpenChange={setComplementaryOpen}
+      />
 
       <div
         className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
