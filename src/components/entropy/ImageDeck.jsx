@@ -15,6 +15,20 @@ export default function ImageDeck({ images, onBringToFront, onCycle, onContextMe
   const swipeDistance = useRef(0);
   const lastSwipe = useRef(0);
 
+  React.useEffect(() => {
+    if (!onCycle || images.length < 2) return undefined;
+
+    const handleKeyDown = (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      if (event.key === 'ArrowRight') onCycle(1);
+      if (event.key === 'ArrowLeft') onCycle(-1);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [images.length, onCycle]);
+
   const handleWheel = (event) => {
     if (!onCycle || images.length < 2 || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
     const now = Date.now();
