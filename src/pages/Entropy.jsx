@@ -70,6 +70,15 @@ export default function Entropy() {
     });
   }, []);
 
+  const handleCycleDeck = useCallback((direction) => {
+    setDeck(prev => {
+      if (prev.length < 2) return prev;
+      return direction > 0
+        ? [...prev.slice(1), prev[0]]
+        : [prev[prev.length - 1], ...prev.slice(0, -1)];
+    });
+  }, []);
+
   const handleImportedImage = useCallback((file) => {
     const url = URL.createObjectURL(file);
     setDeck(prev => [
@@ -189,6 +198,7 @@ export default function Entropy() {
                 <ImageDeck
                   images={deck}
                   onBringToFront={studio.generatingPromptId ? undefined : handleBringToFront}
+                  onCycle={studio.generatingPromptId ? undefined : handleCycleDeck}
                   onContextMenu={studio.generatingPromptId ? undefined : handleImageContextMenu}
                 />
               </div>

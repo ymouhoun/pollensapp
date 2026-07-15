@@ -10,13 +10,13 @@ const DECK_STYLES = [
   { offset: -680, blur: 14, scale: 0.64, opacity: 0.25 },
 ];
 
-export default function ImageDeck({ images, onBringToFront, onContextMenu }) {
+export default function ImageDeck({ images, onBringToFront, onCycle, onContextMenu }) {
   const visible = images.slice(0, MAX_VISIBLE);
   const swipeDistance = useRef(0);
   const lastSwipe = useRef(0);
 
   const handleWheel = (event) => {
-    if (!onBringToFront || images.length < 2 || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+    if (!onCycle || images.length < 2 || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
     const now = Date.now();
     if (now - lastSwipe.current < 450) {
       swipeDistance.current = 0;
@@ -26,10 +26,10 @@ export default function ImageDeck({ images, onBringToFront, onContextMenu }) {
     swipeDistance.current += event.deltaX;
     if (Math.abs(swipeDistance.current) < 45) return;
 
-    const nextImage = swipeDistance.current > 0 ? images[1] : images[images.length - 1];
+    const direction = swipeDistance.current > 0 ? 1 : -1;
     swipeDistance.current = 0;
     lastSwipe.current = now;
-    onBringToFront(nextImage.id);
+    onCycle(direction);
   };
 
   return (
