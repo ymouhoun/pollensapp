@@ -48,6 +48,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
   const selectedModelLabel = MODELS.find(model => model.checkpoint === selectedModel)?.label || MODELS[0].label;
 
   const handleGenerate = () => {
+    if (inputRef?.current) inputRef.current.style.height = 'auto';
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
     onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
