@@ -27,7 +27,7 @@ for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++)
       CHUNK_OFFSETS.push({ dx, dy, dz });
 CHUNK_OFFSETS.sort((a, b) => (a.dx*a.dx + a.dy*a.dy + a.dz*a.dz) - (b.dx*b.dx + b.dy*b.dy + b.dz*b.dz));
 
-const CHUNKS_PER_FRAME = 4; // max chunks to spawn per frame
+const CHUNKS_PER_FRAME = 2; // keep initial scene construction within the frame budget
 
 // ─── Seeded RNG ───────────────────────────────────────────────────
 function seededRandom(seed) {
@@ -83,13 +83,15 @@ function generateChunkPlanes(cx, cy, cz) {
 const MAX_TEX_CACHE = 150;
 const texLoader = new THREE.TextureLoader();
 const texCache = new Map();
-const MAX_CONCURRENT_LOADS = 6;
+const pendingTextureLoads = new Map();
+const MAX_CONCURRENT_LOADS = 3;
 let activeLoads = 0;
 const loadQueue = [];
+const sharedPlaneGeometry = new THREE.PlaneGeometry(1, 1);
 
 function processLoadQueue() {
   while (activeLoads < MAX_CONCURRENT_LOADS && loadQueue.length > 0) {
-    const { url, cb } = loadQueue.shift();
+    const { url } = loadQueue.shift();
     activeLoads++;
     texLoader.load(url, (tex) => {
       activeLoads--;
@@ -102,15 +104,26 @@ function processLoadQueue() {
         texCache.get(first).dispose();
         texCache.delete(first);
       }
-      cb(tex);
+      const callbacks = pendingTextureLoads.get(url) || [];
+      pendingTextureLoads.delete(url);
+      callbacks.forEach(cb => cb(tex));
       processLoadQueue();
-    }, undefined, () => { activeLoads--; processLoadQueue(); });
+    }, undefined, () => {
+      activeLoads--;
+      pendingTextureLoads.delete(url);
+      processLoadQueue();
+    });
   }
 }
 
 function loadTexture(url, cb) {
   if (texCache.has(url)) { cb(texCache.get(url)); return; }
-  loadQueue.push({ url, cb });
+  if (pendingTextureLoads.has(url)) {
+    pendingTextureLoads.get(url).push(cb);
+    return;
+  }
+  pendingTextureLoads.set(url, [cb]);
+  loadQueue.push({ url });
   processLoadQueue();
 }
 
@@ -157,7 +170,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
   // ── Chunk management ──────────────────────────────────────────
   function destroyAllChunks(s) {
     s.chunks.forEach(({ meshes }) => {
-      meshes.forEach(m => { s.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      meshes.forEach(m => { s.scene.remove(m); m.material.dispose(); });
     });
     s.chunks.clear();
     s.activeMeshes = [];
@@ -174,15 +187,15 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
       const item = s.media[p.mediaIndex % s.media.length];
       if (!item?.file_url) return;
 
-      const geo = new THREE.PlaneGeometry(p.size, p.size);
       const mat = new THREE.MeshBasicMaterial({
         transparent: true, opacity: 0,
         side: THREE.FrontSide, // FrontSide only — halves fragment work
         toneMapped: false,
         depthWrite: false, // transparent planes don't need depth writes
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(sharedPlaneGeometry, mat);
       mesh.position.copy(p.position);
+      mesh.scale.set(p.size, p.size, 1);
       mesh.userData = { item, chunkCx: cx, chunkCy: cy, chunkCz: cz, targetOpacity: 0 };
       s.scene.add(mesh);
       meshes.push(mesh);
@@ -195,8 +208,7 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
           const a = img.width / img.height;
           const w = a >= 1 ? p.size : p.size * a;
           const h = a >= 1 ? p.size / a : p.size;
-          mesh.geometry.dispose();
-          mesh.geometry = new THREE.PlaneGeometry(w, h);
+          mesh.scale.set(w, h, 1);
         }
         mat.map = tex;
         mat.needsUpdate = true;
@@ -211,7 +223,6 @@ export default function Galaxy({ onSelectItem, filteredMedia }) {
     if (!chunk) return;
     chunk.meshes.forEach(m => {
       s.scene.remove(m);
-      m.geometry.dispose();
       m.material.dispose();
       // Remove from activeMeshes
       const idx = s.activeMeshes.indexOf(m);
