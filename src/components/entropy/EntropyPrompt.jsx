@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
-import StudioIndicator from './StudioIndicator';
 import { MODELS } from '@/lib/useStudio';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
@@ -18,7 +17,7 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, gpuName, onStopStudio, onCancelGeneration, selectedModel, onModelChange }) {
+export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, onCancelGeneration, selectedModel, onModelChange }) {
   const [cfg, setCfg] = useState(3.5);
   const [rescaleCfg, setRescaleCfg] = useState(0.7);
   const [rescaleEnabled, setRescaleEnabled] = useState(true);
@@ -88,7 +87,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
       className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[1080px] max-w-[calc(100vw-2rem)]"
     >
       {/* Model pill + studio indicator above the box */}
-      <div className="flex items-start justify-between mb-2.5 px-1 gap-3">
+      <div className="flex items-start mb-2.5 px-1 gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {MODELS.map(m => (
             <button
@@ -115,9 +114,6 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
               </span>
             </button>
           ))}
-        </div>
-        <div className="pt-1">
-          <StudioIndicator status={studioStatus} gpuName={gpuName} onStop={onStopStudio} />
         </div>
       </div>
 

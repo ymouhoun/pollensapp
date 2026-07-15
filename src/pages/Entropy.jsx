@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import EntropyPrompt from '@/components/entropy/EntropyPrompt';
 import EntropyContextMenu from '@/components/entropy/EntropyContextMenu';
-import StudioStopped from '@/components/entropy/StudioStopped';
+import StudioToggle from '@/components/entropy/StudioToggle';
 import StudioLoading from '@/components/entropy/StudioLoading';
 import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
@@ -137,12 +137,15 @@ export default function Entropy() {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       <InactivityToast visible={studio.showInactivityWarning} onKeepAlive={studio.keepAlive} />
+      <StudioToggle
+        status={studio.status}
+        gpuName={studio.gpuName}
+        onStart={() => studio.startStudio(selectedModel)}
+        onStop={studio.stopStudio}
+      />
 
       {/* Center area — state dependent */}
       <div className="w-full h-full flex items-center justify-center">
-        {studio.status === 'STOPPED' && (
-          <StudioStopped onStart={() => studio.startStudio(selectedModel)} />
-        )}
         {studio.status === 'STARTING' && (
           <StudioLoading
             gpuName={studio.gpuName}
@@ -154,17 +157,12 @@ export default function Entropy() {
         {studio.status === 'ERROR' && (
           <StudioError message={studio.errorMessage} onRetry={handleRetry} />
         )}
-        {studio.status === 'STOPPING' && (
-          <p className="text-xs text-white/30 tracking-widest uppercase">
-            Session ended
-          </p>
-        )}
-        {studio.status === 'READY' && !studio.generatingPromptId && deck.length === 0 && (
+        {!['STARTING', 'ERROR'].includes(studio.status) && !studio.generatingPromptId && deck.length === 0 && (
           <p className="text-white/10 text-xs tracking-widest uppercase select-none">
             entropy
           </p>
         )}
-        {studio.status === 'READY' && (studio.generatingPromptId || deck.length > 0) && (
+        {!['STARTING', 'ERROR'].includes(studio.status) && (studio.generatingPromptId || deck.length > 0) && (
           <div className="relative flex items-center justify-center">
             {/* Deck behind — shifted left when generating to make room */}
             {deck.length > 0 && (
@@ -221,8 +219,6 @@ export default function Entropy() {
         generating={!!studio.generatingPromptId}
         inputRef={inputRef}
         studioStatus={studio.status}
-        gpuName={studio.gpuName}
-        onStopStudio={studio.stopStudio}
         onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
