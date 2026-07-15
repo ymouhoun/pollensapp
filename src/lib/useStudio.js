@@ -3,6 +3,12 @@ import { base44 } from '@/api/base44Client';
 
 export const MODELS = [
   { label: 'Editorial', checkpoint: 'editorial' },
+  { label: 'Ambrojo', checkpoint: 'ambrojo' },
+  { label: 'Still Life', checkpoint: 'still-life' },
+  { label: '35mm', checkpoint: '35mm' },
+  { label: 'Stills', checkpoint: 'stills' },
+  { label: 'Super16', checkpoint: 'super16' },
+  { label: 'Beauty', checkpoint: 'beauty' },
 ];
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000;

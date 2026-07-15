@@ -2,8 +2,33 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 
-function resolveEndpointId() {
-  return Deno.env.get('RUNPOD_ENDPOINT_ID');
+const MODEL_CHECKPOINTS: Record<string, string> = {
+  editorial: 'edito04.safetensors',
+  ambrojo: 'ambrojo04.safetensors',
+  'still-life': 'naturemorte04.safetensors',
+  '35mm': '35mm04.safetensors',
+  stills: 'stills_q.safetensors',
+  super16: 'super16_q.safetensors',
+  beauty: 'beauty_q.safetensors',
+};
+
+function resolveEndpointId(model: string) {
+  const configuredEndpoints = Deno.env.get('RUNPOD_ENDPOINTS_JSON');
+  if (configuredEndpoints) {
+    try {
+      const endpoints = JSON.parse(configuredEndpoints);
+      return endpoints[model] || null;
+    } catch {
+      throw new Error('RUNPOD_ENDPOINTS_JSON is not valid JSON');
+    }
+  }
+  return model === 'editorial' ? Deno.env.get('RUNPOD_ENDPOINT_ID') : null;
+}
+
+function resolveCheckpoint(model: string) {
+  const checkpoint = MODEL_CHECKPOINTS[model];
+  if (!checkpoint) throw new Error(`Unknown model "${model}"`);
+  return checkpoint;
 }
 
 function numberOrDefault(value: unknown, fallback: number) {
@@ -11,7 +36,7 @@ function numberOrDefault(value: unknown, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function buildWorkflow(input: Record<string, unknown>) {
+function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
   const positivePrompt = String(input.positivePrompt || '').trim();
   if (!positivePrompt) throw new Error('The prompt is empty');
   const complementaryPrompt = String(input.complementaryPrompt === undefined ? 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples' : input.complementaryPrompt).trim();
@@ -71,7 +96,7 @@ function buildWorkflow(input: Record<string, unknown>) {
       _meta: { title: 'VAE Decode' },
     },
     '817': {
-      inputs: { unet_name: 'edito04.safetensors', weight_dtype: 'default' },
+      inputs: { unet_name: checkpoint, weight_dtype: 'default' },
       class_type: 'UNETLoader',
       _meta: { title: 'Load Diffusion Model' },
     },
@@ -137,12 +162,13 @@ Deno.serve(async (req) => {
 
     const input = await req.json();
     const model = String(input.model || 'editorial');
+    const checkpoint = resolveCheckpoint(model);
     const endpointId = resolveEndpointId(model);
     if (!endpointId) {
       return Response.json({ error: `No RunPod endpoint configured for model "${model}"` }, { status: 500 });
     }
 
-    const workflow = buildWorkflow(input);
+    const workflow = buildWorkflow(input, checkpoint);
     const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/run`, {
       method: 'POST',
       headers: {

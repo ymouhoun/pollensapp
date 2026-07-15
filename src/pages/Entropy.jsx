@@ -131,6 +131,15 @@ export default function Entropy() {
     });
   };
 
+  const handleModelChange = async (model) => {
+    if (model === selectedModel || studio.generatingPromptId) return;
+
+    setSelectedModel(model);
+    if (studio.status === 'READY') {
+      await studio.startStudio(model);
+    }
+  };
+
   const handleRetry = async () => {
     await studio.stopStudio();
   };
@@ -222,7 +231,7 @@ export default function Entropy() {
         studioStatus={studio.status}
         onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
+        onModelChange={handleModelChange}
       />
     </div>
   );

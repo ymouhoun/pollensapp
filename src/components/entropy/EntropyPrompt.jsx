@@ -4,6 +4,13 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
 import ComplementaryPromptNotch from './ComplementaryPromptNotch';
 import { MODELS } from '@/lib/useStudio';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const ASPECT_RATIOS = ['1:1', '3:4 (Golden Ratio)', '4:3', '9:16', '16:9', '21:9'];
 const SAMPLERS = ['res_3m', 'res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'dpmpp_2m'];
@@ -37,6 +44,8 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
 
   const isReady = studioStatus === 'READY';
   const disabled = generating || !isReady;
+  const modelSwitchDisabled = generating || ['STARTING', 'STOPPING'].includes(studioStatus);
+  const selectedModelLabel = MODELS.find(model => model.checkpoint === selectedModel)?.label || MODELS[0].label;
 
   const handleGenerate = () => {
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
@@ -90,35 +99,54 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[1080px] max-w-[calc(100vw-2rem)]"
     >
-      {/* Model pill + studio indicator above the box */}
+      {/* Model selector above the box */}
       <div className="flex items-start mb-2.5 px-1 gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {MODELS.map(m => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild disabled={modelSwitchDisabled}>
             <button
-              key={m.checkpoint}
-              onClick={() => onModelChange(m.checkpoint)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all"
+              type="button"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 backdrop-blur-2xl transition-all outline-none disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background: selectedModel === m.checkpoint
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,180,220,0.03) 100%)',
-                boxShadow: selectedModel === m.checkpoint
-                  ? '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'
-                  : 'none',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
                 fontFamily: 'var(--font-sans)',
               }}
+              aria-label={`Selected model: ${selectedModelLabel}`}
             >
               <motion.span
                 className="w-1 h-1 rounded-full bg-white"
-                animate={{ opacity: selectedModel === m.checkpoint ? [0.3, 1, 0.3] : 0.15 }}
-                transition={selectedModel === m.checkpoint ? { repeat: Infinity, duration: 2, ease: 'easeInOut' } : {}}
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
               />
-              <span className={`text-[9px] tracking-widest uppercase ${selectedModel === m.checkpoint ? 'text-white/80' : 'text-white/30'}`}>
-                {m.label}
+              <span className="text-[9px] tracking-widest uppercase text-white/80">
+                {selectedModelLabel}
               </span>
+              <ChevronDown className="w-2.5 h-2.5 text-white/35" strokeWidth={1.5} />
             </button>
-          ))}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            align="start"
+            sideOffset={8}
+            className="min-w-[150px] rounded-xl border-white/10 p-1.5 text-white shadow-2xl backdrop-blur-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(24,22,27,0.96) 0%, rgba(14,13,16,0.98) 100%)',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            <DropdownMenuRadioGroup value={selectedModel} onValueChange={onModelChange}>
+              {MODELS.map(model => (
+                <DropdownMenuRadioItem
+                  key={model.checkpoint}
+                  value={model.checkpoint}
+                  className="rounded-lg py-1.5 pl-7 pr-3 text-[9px] tracking-widest uppercase text-white/50 outline-none focus:bg-white/10 focus:text-white/90 data-[state=checked]:text-white/90"
+                >
+                  {model.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <ComplementaryPromptNotch value={complementaryPrompt} onChange={setComplementaryPrompt} />

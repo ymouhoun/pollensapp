@@ -17,10 +17,32 @@ For multiple models, replace the single endpoint variable with:
 Example:
 
 ```json
-{"editorial":"YOUR_ENDPOINT_ID","second-model":"ANOTHER_ENDPOINT_ID"}
+{
+  "editorial": "EDITORIAL_ENDPOINT_ID",
+  "ambrojo": "AMBROJO_ENDPOINT_ID",
+  "still-life": "STILL_LIFE_ENDPOINT_ID",
+  "35mm": "35MM_ENDPOINT_ID",
+  "stills": "STILLS_ENDPOINT_ID",
+  "super16": "SUPER16_ENDPOINT_ID",
+  "beauty": "BEAUTY_ENDPOINT_ID"
+}
 ```
 
 `RUNPOD_ENDPOINTS_JSON` takes precedence over `RUNPOD_ENDPOINT_ID`.
+Keep the model keys exactly as shown: the frontend, endpoint routing and ComfyUI
+checkpoint allowlist all use these stable identifiers.
+
+## Model routing
+
+| Model key | ComfyUI checkpoint |
+| --- | --- |
+| `editorial` | `edito04.safetensors` |
+| `ambrojo` | `ambrojo04.safetensors` |
+| `still-life` | `naturemorte04.safetensors` |
+| `35mm` | `35mm04.safetensors` |
+| `stills` | `stills_q.safetensors` |
+| `super16` | `super16_q.safetensors` |
+| `beauty` | `beauty_q.safetensors` |
 
 ## Base44 functions
 
