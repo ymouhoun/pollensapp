@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Save, Download, Trash2 } from 'lucide-react';
+import { Save, Download, ScanFace, Trash2 } from 'lucide-react';
 
-export default function EntropyContextMenu({ position, onClose, onSaveToMemory, onDownload, onDelete }) {
+export default function EntropyContextMenu({ position, onClose, onSaveToMemory, onFaceDetail, onDownload, onDelete }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -28,6 +28,8 @@ export default function EntropyContextMenu({ position, onClose, onSaveToMemory, 
       }}
     >
       <div className="py-0.5">
+        <MenuItem icon={ScanFace} label="Face detail" onClick={() => { onFaceDetail(); onClose(); }} />
+        <div className="h-px bg-white/10 my-0.5" />
         <MenuItem icon={Save} label="Save to memory" onClick={() => { onSaveToMemory(); onClose(); }} />
         <MenuItem icon={Download} label="Download" onClick={() => { onDownload(); onClose(); }} />
         <div className="h-px bg-white/10 my-0.5" />

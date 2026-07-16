@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
-import { ChevronDown, ArrowUp, CircleX } from 'lucide-react';
+import { ChevronDown, ArrowUp, CircleX, ScanFace, Sparkles } from 'lucide-react';
 import ComplementaryPromptNotch from './ComplementaryPromptNotch';
 import { MODELS } from '@/lib/useStudio';
 import {
@@ -26,7 +26,22 @@ const sanitizeSeedValue = (value) => {
 
 const getRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
-export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDrop, dropImageUrl, generating, inputRef, studioStatus, onCancelGeneration, selectedModel, onModelChange }) {
+export default function EntropyPrompt({
+  prompt,
+  setPrompt,
+  onGenerate,
+  onFaceDetail,
+  operationMode,
+  onOperationModeChange,
+  onImageDrop,
+  dropImageUrl,
+  generating,
+  inputRef,
+  studioStatus,
+  onCancelGeneration,
+  selectedModel,
+  onModelChange,
+}) {
   const [complementaryPrompt, setComplementaryPrompt] = useState(DEFAULT_COMPLEMENTARY_PROMPT);
   const [complementaryOpen, setComplementaryOpen] = useState(false);
   const [cfg, setCfg] = useState(3.5);
@@ -54,6 +69,19 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
     onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+  };
+
+  const handlePrimaryAction = () => {
+    if (operationMode === 'face-detail') {
+      if (!dropImageUrl) {
+        setDropError('Import or generate an image first. The front image will be used as the source.');
+        return;
+      }
+      setDropError('');
+      onFaceDetail();
+      return;
+    }
+    handleGenerate();
   };
 
   const handleImageDrop = async (event) => {
@@ -102,7 +130,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="fixed bottom-8 left-0 right-0 mx-auto z-30 w-[1080px] max-w-[calc(100vw-2rem)]"
     >
-      {/* Model selector above the box */}
+      {/* Model and workflow selectors above the box */}
       <div className="flex items-start mb-2.5 px-1 gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild disabled={modelSwitchDisabled}>
@@ -150,14 +178,40 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        <div
+          className="flex items-center rounded-lg border border-white/10 p-0.5 backdrop-blur-2xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.09), rgba(200,180,220,0.05))',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+            fontFamily: 'var(--font-sans)',
+          }}
+          aria-label="Studio workflow"
+        >
+          <WorkflowModeButton
+            active={operationMode === 'generation'}
+            disabled={generating}
+            icon={Sparkles}
+            label="Generate"
+            onClick={() => onOperationModeChange('generation')}
+          />
+          <WorkflowModeButton
+            active={operationMode === 'face-detail'}
+            disabled={generating}
+            icon={ScanFace}
+            label="Face detail"
+            onClick={() => onOperationModeChange('face-detail')}
+          />
+        </div>
       </div>
 
-      <ComplementaryPromptNotch
-        value={complementaryPrompt}
-        onChange={setComplementaryPrompt}
-        open={complementaryOpen}
-        onOpenChange={setComplementaryOpen}
-      />
+      {operationMode === 'generation' && (
+        <ComplementaryPromptNotch
+          value={complementaryPrompt}
+          onChange={setComplementaryPrompt}
+          open={complementaryOpen}
+          onOpenChange={setComplementaryOpen}
+        />
+      )}
 
       <div
         className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-2xl"
@@ -181,14 +235,16 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
               animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
               transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
             >
-              {isReady ? 'What do you want to create...' : 'Start the studio to generate...'}
+              {isReady
+                ? (operationMode === 'face-detail' ? 'Describe the face treatment...' : 'What do you want to create...')
+                : 'Start the studio to generate...'}
             </motion.span>
           )}
           <textarea
             ref={inputRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handleGenerate(); } }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && isReady) { e.preventDefault(); e.target.style.height = 'auto'; handlePrimaryAction(); } }}
             disabled={disabled}
             rows={1}
             className="w-full bg-transparent text-white/75 text-[15px] outline-none resize-none overflow-hidden disabled:opacity-30"
@@ -198,11 +254,12 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
           {dropError && <p className="mt-1 text-[10px] text-red-300/70">{dropError}</p>}
         </div>
 
-        {/* Metadata bar */}
-        <div
+        {/* Generation settings */}
+        {operationMode === 'generation' ? (
+          <div
           className="flex flex-wrap items-center justify-between gap-y-1 px-4 py-1.5 text-[10px] tracking-wide"
           style={{ fontFamily: 'var(--font-banana)' }}
-        >
+          >
           {/* Left group */}
           <div className="flex items-center gap-1">
             <EditableParam label="CFG" value={cfg} onChange={setCfg} min={1} max={20} step={0.1} type="float" defaultValue={3.5} />
@@ -234,7 +291,7 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
             <Divider />
             <SelectParam label="SCHEDULER" value={scheduler} options={SCHEDULERS} onChange={setScheduler} defaultValue="kl_optimal" />
             <button
-              onClick={generating ? onCancelGeneration : handleGenerate}
+              onClick={generating ? onCancelGeneration : handlePrimaryAction}
               disabled={!generating && disabled}
               className="ml-1.5 w-6 h-6 flex items-center justify-center rounded-full transition-all disabled:opacity-20"
               style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
@@ -246,9 +303,52 @@ export default function EntropyPrompt({ prompt, setPrompt, onGenerate, onImageDr
               )}
             </button>
           </div>
-        </div>
+          </div>
+        ) : (
+          <div
+            className="flex items-center justify-between px-4 py-1.5 text-[10px] tracking-wide"
+            style={{ fontFamily: 'var(--font-banana)' }}
+          >
+            <div className="flex items-center gap-2 text-white/35">
+              <span className={dropImageUrl ? 'text-white/65' : 'text-amber-200/55'}>
+                SOURCE {dropImageUrl ? 'FRONT IMAGE' : 'REQUIRED'}
+              </span>
+              <Divider />
+              <span>AUTO FACE DETECTION</span>
+              <Divider />
+              <span>FACE LORA</span>
+            </div>
+            <button
+              onClick={generating ? onCancelGeneration : handlePrimaryAction}
+              disabled={!generating && disabled}
+              className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full transition-all disabled:opacity-20"
+              style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
+              aria-label={generating ? 'Cancel generation' : 'Configure face detail'}
+            >
+              {generating ? (
+                <CircleX className="h-3.5 w-3.5 text-white/60" strokeWidth={1.5} />
+              ) : (
+                <ScanFace className="h-3.5 w-3.5 text-white/70" strokeWidth={1.7} />
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
+  );
+}
+
+function WorkflowModeButton({ active, disabled, icon: Icon, label, onClick }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[8px] uppercase tracking-widest transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'bg-white/10 text-white/80 shadow-sm' : 'text-white/30 hover:text-white/55'}`}
+    >
+      <Icon className="h-2.5 w-2.5" strokeWidth={1.5} />
+      {label}
+    </button>
   );
 }
 

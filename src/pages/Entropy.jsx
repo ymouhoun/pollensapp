@@ -7,7 +7,9 @@ import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
 import ImageDeck from '@/components/entropy/ImageDeck';
+import FaceDetailPanel from '@/components/entropy/FaceDetailPanel';
 import useStudio, { MODELS } from '@/lib/useStudio';
+import { prepareFaceImage } from '@/lib/faceImage';
 import { base44 } from '@/api/base44Client';
 
 export default function Entropy() {
@@ -40,11 +42,28 @@ export default function Entropy() {
   }, []);
 
   const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
+  const [operationMode, setOperationMode] = useState('generation');
   const [contextMenu, setContextMenu] = useState(null);
+  const [facePanelOpen, setFacePanelOpen] = useState(false);
+  const [faceLoras, setFaceLoras] = useState([]);
+  const [faceCatalogError, setFaceCatalogError] = useState('');
   const inputRef = useRef(null);
   const lastSeenBatch = useRef(null);
 
   const studio = useStudio();
+
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('faceLoraCatalog', {}).then((response) => {
+      if (!active) return;
+      setFaceLoras(Array.isArray(response.data?.faces) ? response.data.faces : []);
+      setFaceCatalogError(response.data?.error || '');
+    }).catch((error) => {
+      if (!active) return;
+      setFaceCatalogError(error?.response?.data?.error || error?.message || 'Unable to load Face LoRAs');
+    });
+    return () => { active = false; };
+  }, []);
 
   // When a generated batch appears, push every image to the front of the deck
   useEffect(() => {
@@ -93,6 +112,25 @@ export default function Entropy() {
   }, []);
 
   const frontImageUrl = deck.length > 0 ? deck[0].url : null;
+
+  const handleOpenFaceDetail = useCallback(() => {
+    if (!frontImageUrl || studio.generatingPromptId) return;
+    setOperationMode('face-detail');
+    setContextMenu(null);
+    setFacePanelOpen(true);
+  }, [frontImageUrl, studio.generatingPromptId]);
+
+  const handleFaceDetailSubmit = useCallback(async (params) => {
+    if (!frontImageUrl) throw new Error('No source image is selected');
+    const sourceImage = await prepareFaceImage(frontImageUrl);
+    const started = await studio.refineFace({
+      ...params,
+      sourceImage,
+      positivePrompt: params.prompt,
+    });
+    if (!started) throw new Error(studio.errorMessage || 'Unable to start face detailing');
+    return true;
+  }, [frontImageUrl, studio]);
 
   const handleSaveToMemory = useCallback(async () => {
     if (!frontImageUrl) return;
@@ -224,16 +262,33 @@ export default function Entropy() {
           position={contextMenu}
           onClose={() => setContextMenu(null)}
           onSaveToMemory={handleSaveToMemory}
+          onFaceDetail={handleOpenFaceDetail}
           onDownload={handleDownload}
           onDelete={handleDeleteGenerated}
         />
       )}
+
+      <FaceDetailPanel
+        open={facePanelOpen}
+        imageUrl={frontImageUrl}
+        faces={faceLoras}
+        selectedModel={selectedModel}
+        studioReady={studio.status === 'READY'}
+        generating={!!studio.generatingPromptId}
+        initialPrompt={prompt}
+        catalogError={faceCatalogError}
+        onClose={() => setFacePanelOpen(false)}
+        onSubmit={handleFaceDetailSubmit}
+      />
 
       {/* Fixed bottom prompt bar — always visible */}
       <EntropyPrompt
         prompt={prompt}
         setPrompt={setPrompt}
         onGenerate={handleGenerate}
+        onFaceDetail={handleOpenFaceDetail}
+        operationMode={operationMode}
+        onOperationModeChange={setOperationMode}
         onImageDrop={handleImportedImage}
         dropImageUrl={frontImageUrl}
         generating={!!studio.generatingPromptId}

@@ -155,6 +155,10 @@ export default function useStudio() {
           scheduler: params.scheduler,
           seed: params.seed,
           model: modelRef.current,
+          operation: params.operation || 'generation',
+          faceLoraId: params.faceLoraId,
+          loraStrength: params.loraStrength,
+          denoise: params.denoise,
         },
       });
     } catch (error) {
@@ -162,13 +166,13 @@ export default function useStudio() {
     }
   }, []);
 
-  const generate = useCallback(async (params) => {
-    if (status !== 'READY' || generatingRef.current) return;
+  const runJob = useCallback(async (functionName, params, fallbackSteps) => {
+    if (status !== 'READY' || generatingRef.current) return false;
 
     generatingRef.current = true;
     generationTokenRef.current += 1;
     const generationToken = generationTokenRef.current;
-    const totalSteps = params.steps || 45;
+    const totalSteps = params.steps || fallbackSteps;
     const generationStartedAt = Date.now();
     let runningPolls = 0;
 
@@ -181,14 +185,14 @@ export default function useStudio() {
     setGeneratingPromptId('submitting');
 
     try {
-      const submitResponse = await base44.functions.invoke('runpodSubmit', {
+      const submitResponse = await base44.functions.invoke(functionName, {
         ...params,
         model: modelRef.current,
       });
       const jobId = submitResponse.data?.jobId;
       if (!jobId) throw new Error(submitResponse.data?.error || 'RunPod did not return a job ID');
 
-      if (generationToken !== generationTokenRef.current) return;
+      if (generationToken !== generationTokenRef.current) return false;
       jobIdRef.current = jobId;
       workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
@@ -248,13 +252,25 @@ export default function useStudio() {
         }
       };
 
-      poll();
+      void poll();
+      return true;
     } catch (error) {
       console.error('RunPod submission failed:', error);
       resetGenerationState();
       setErrorMessage(errorMessage(error, 'Unable to start generation'));
+      return false;
     }
   }, [cancelActiveJob, persistGeneratedImage, resetGenerationState, resetInactivity, status]);
+
+  const generate = useCallback(
+    params => runJob('runpodSubmit', { ...params, operation: 'generation' }, 45),
+    [runJob],
+  );
+
+  const refineFace = useCallback(
+    params => runJob('runpodFaceSubmit', { ...params, operation: 'face-detail' }, 25),
+    [runJob],
+  );
 
   const cancelGeneration = useCallback(async () => {
     generationTokenRef.current += 1;
@@ -298,6 +314,7 @@ export default function useStudio() {
     startStudio,
     stopStudio,
     generate,
+    refineFace,
     cancelGeneration,
     interruptGeneration,
     clearGeneratedImage,
