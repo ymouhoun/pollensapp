@@ -197,6 +197,7 @@ export default function Entropy() {
       <StudioToggle
         status={studio.status}
         gpuName={studio.gpuName}
+        endpointRef={studio.endpointRef}
         statusMessage={studio.statusMessage}
         onStart={() => studio.startStudio(selectedModel)}
         onStop={studio.stopStudio}

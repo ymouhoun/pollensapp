@@ -273,7 +273,13 @@ Deno.serve(async (req) => {
     if (!response.ok || !data.id) {
       return Response.json({ error: data.error || `RunPod submission failed (${response.status})` }, { status: 502 });
     }
-    return Response.json({ jobId: data.id, status: data.status || 'IN_QUEUE', model, workflow });
+    return Response.json({
+      jobId: data.id,
+      status: data.status || 'IN_QUEUE',
+      model,
+      endpointRef: endpointId.slice(-6),
+      workflow,
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
     return Response.json({
       ready: true,
       model,
+      endpointRef: endpointId.slice(-6),
       gpuName,
       workerConnected: Boolean(activeWorker),
       workers: data.workers || {},

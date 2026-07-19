@@ -36,6 +36,7 @@ function previewToDataUrl(preview) {
 export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
   const [gpuName, setGpuName] = useState(null);
+  const [endpointRef, setEndpointRef] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [bootProgress, setBootProgress] = useState(0);
   const [errorMessageState, setErrorMessage] = useState('');
@@ -93,6 +94,7 @@ export default function useStudio() {
     await cancelActiveJob();
     resetGenerationState();
     setGpuName(null);
+    setEndpointRef(null);
     setBootProgress(0);
     setStatusMessage('');
     setStatus('STOPPED');
@@ -122,6 +124,7 @@ export default function useStudio() {
       // A serverless endpoint is ready before RunPod assigns a physical GPU.
       // The concrete GPU name is filled in by runpodStatus once a job starts.
       setGpuName(response.data.gpuName || null);
+      setEndpointRef(response.data.endpointRef || null);
       setBootProgress(100);
       setStatusMessage('Ready');
       setStatus('READY');
@@ -197,6 +200,7 @@ export default function useStudio() {
 
       if (generationToken !== generationTokenRef.current) return false;
       jobIdRef.current = jobId;
+      if (submitResponse.data?.endpointRef) setEndpointRef(submitResponse.data.endpointRef);
       workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
       setStatusMessage('In queue');
@@ -314,6 +318,7 @@ export default function useStudio() {
     instanceId: null,
     baseUrl: null,
     gpuName,
+    endpointRef,
     costPerHour: null,
     statusMessage,
     bootProgress,

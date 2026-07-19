@@ -198,6 +198,7 @@ Deno.serve(async (req) => {
     return Response.json({
       status: normalizedStatus,
       rawStatus: data.status,
+      endpointRef: endpointId.slice(-6),
       delayTime: data.delayTime || 0,
       executionTime: data.executionTime || 0,
       workerId,
