@@ -1,6 +1,50 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+const workerGpuCache = new Map<string, { name: string; expiresAt: number }>();
+
+function formatGpuName(value: unknown) {
+  if (!value) return null;
+  const name = String(value);
+  if (/B200/i.test(name)) return 'B200';
+  if (/H200/i.test(name)) return 'H200';
+  if (/RTX.*6000|6000.*RTX/i.test(name)) return 'RTX 6000 PRO';
+  return name.replace(/^NVIDIA\s+/i, '');
+}
+
+async function findWorkerGpuName(endpointId: string, workerId: string | null) {
+  const cacheKey = `${endpointId}:${workerId || 'active'}`;
+  const cached = workerGpuCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.name;
+
+  try {
+    const response = await fetch(`https://rest.runpod.io/v1/endpoints/${endpointId}?includeWorkers=true`, {
+      headers: { Authorization: `Bearer ${RUNPOD_API_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return null;
+
+    const endpoint = await response.json().catch(() => ({}));
+    const workers = Array.isArray(endpoint.workers) ? endpoint.workers : [];
+    const worker = workers.find((candidate: Record<string, unknown>) =>
+      workerId && String(candidate.id || candidate.workerId || '') === workerId
+    ) || workers.sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
+      new Date(String(b.lastStartedAt || 0)).getTime() - new Date(String(a.lastStartedAt || 0)).getTime()
+    )[0];
+
+    const name = formatGpuName(
+      worker?.gpu?.displayName ||
+      worker?.machine?.gpuDisplayName ||
+      worker?.machine?.gpuType?.displayName ||
+      endpoint.gpuTypeIds?.[0]
+    );
+    if (name) workerGpuCache.set(cacheKey, { name, expiresAt: Date.now() + 5 * 60 * 1000 });
+    return name;
+  } catch {
+    // GPU metadata is informative only; it must never interrupt a generation.
+    return null;
+  }
+}
 
 function resolveEndpointId(model: string) {
   const endpointOverride = Deno.env.get(
@@ -125,6 +169,10 @@ Deno.serve(async (req) => {
     }
 
     const normalizedStatus = normalizeStatus(data.status);
+    const workerId = data.workerId ? String(data.workerId) : null;
+    const gpuName = workerId && ['running', 'completed'].includes(normalizedStatus)
+      ? await findWorkerGpuName(endpointId, workerId)
+      : null;
     const output = data.output && typeof data.output === 'object' ? data.output : {};
     const images = Array.isArray(output.images) ? output.images : [];
     const normalizedImages = images.map((image: Record<string, unknown>) => ({
@@ -152,6 +200,8 @@ Deno.serve(async (req) => {
       rawStatus: data.status,
       delayTime: data.delayTime || 0,
       executionTime: data.executionTime || 0,
+      workerId,
+      gpuName,
       progress,
       image: firstImage,
       images: normalizedImages,

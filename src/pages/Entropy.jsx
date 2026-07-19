@@ -197,9 +197,19 @@ export default function Entropy() {
       <StudioToggle
         status={studio.status}
         gpuName={studio.gpuName}
+        statusMessage={studio.statusMessage}
         onStart={() => studio.startStudio(selectedModel)}
         onStop={studio.stopStudio}
       />
+
+      {studio.status === 'READY' && studio.errorMessage && (
+        <div
+          role="alert"
+          className="fixed left-1/2 top-20 z-50 max-w-[min(90vw,680px)] -translate-x-1/2 rounded-xl border border-red-300/20 bg-red-950/70 px-4 py-2.5 text-center text-[11px] tracking-wide text-red-100/85 shadow-2xl backdrop-blur-xl"
+        >
+          {studio.errorMessage}
+        </div>
+      )}
 
       {/* Center area — state dependent */}
       <div className="w-full h-full flex items-center justify-center">

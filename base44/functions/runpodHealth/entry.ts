@@ -21,7 +21,8 @@ function resolveEndpointId(model: string) {
 }
 
 function formatGpuName(value: unknown) {
-  const name = String(value || 'GPU');
+  if (!value) return null;
+  const name = String(value);
   if (/B200/i.test(name)) return 'B200';
   if (/H200/i.test(name)) return 'H200';
   if (/RTX.*6000|6000.*RTX/i.test(name)) return 'RTX 6000 PRO';
@@ -79,6 +80,7 @@ Deno.serve(async (req) => {
       ready: true,
       model,
       gpuName,
+      workerConnected: Boolean(activeWorker),
       workers: data.workers || {},
       jobs: data.jobs || {},
     });

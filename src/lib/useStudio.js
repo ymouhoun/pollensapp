@@ -119,7 +119,9 @@ export default function useStudio() {
         throw new Error(response.data?.error || 'The RunPod endpoint is unavailable');
       }
 
-      setGpuName(response.data.gpuName || 'RunPod Serverless');
+      // A serverless endpoint is ready before RunPod assigns a physical GPU.
+      // The concrete GPU name is filled in by runpodStatus once a job starts.
+      setGpuName(response.data.gpuName || null);
       setBootProgress(100);
       setStatusMessage('Ready');
       setStatus('READY');
@@ -183,6 +185,7 @@ export default function useStudio() {
     setPreviewImageUrl(null);
     setGenProgress({ step: 0, total: totalSteps });
     setGeneratingPromptId('submitting');
+    setStatusMessage('Submitting');
 
     try {
       const submitResponse = await base44.functions.invoke(functionName, {
@@ -196,6 +199,7 @@ export default function useStudio() {
       jobIdRef.current = jobId;
       workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
+      setStatusMessage('In queue');
 
       const poll = async () => {
         if (generationToken !== generationTokenRef.current || !generatingRef.current) return;
@@ -213,6 +217,12 @@ export default function useStudio() {
             workflow: workflowRef.current,
           });
           const job = statusResponse.data;
+
+          if (job?.gpuName) setGpuName(job.gpuName);
+          if (job?.status === 'queued') setStatusMessage('In queue');
+          if (job?.status === 'running') {
+            setStatusMessage(job.gpuName ? `Running · ${job.gpuName}` : 'Running');
+          }
 
           if (job?.progress) {
             const step = Math.max(0, Number(job.progress.step || 0));
@@ -235,6 +245,7 @@ export default function useStudio() {
             setGeneratedImageUrl(imageUrls[0]);
             setGeneratedImageUrls(imageUrls);
             resetGenerationState();
+            setStatusMessage('Ready');
             resetInactivity();
             imageUrls.forEach(imageUrl => void persistGeneratedImage(imageUrl, params));
             return;
@@ -248,6 +259,7 @@ export default function useStudio() {
         } catch (error) {
           console.error('RunPod generation failed:', error);
           resetGenerationState();
+          setStatusMessage('Ready');
           setErrorMessage(errorMessage(error, 'Generation failed'));
         }
       };
@@ -257,6 +269,7 @@ export default function useStudio() {
     } catch (error) {
       console.error('RunPod submission failed:', error);
       resetGenerationState();
+      setStatusMessage('Ready');
       setErrorMessage(errorMessage(error, 'Unable to start generation'));
       return false;
     }
