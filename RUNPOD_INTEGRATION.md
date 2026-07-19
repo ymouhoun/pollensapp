@@ -80,7 +80,7 @@ the generated image. `source` stays server-side and must point to a file inside
 
 | Model key | ComfyUI checkpoint |
 | --- | --- |
-| `editorial` | `editorial04.safetensors` |
+| `editorial` | `edito04.safetensors` |
 | `ambrojo` | `ambrojo04.safetensors` |
 | `still-life` | `naturemorte04.safetensors` |
 | `35mm` | `35mm04.safetensors` |

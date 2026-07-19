@@ -5,7 +5,7 @@ const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 const INPUT_IMAGE_NAME = 'pollen-face-input.jpg';
 
 const MODEL_CHECKPOINTS: Record<string, string> = {
-  editorial: 'editorial04.safetensors',
+  editorial: 'edito04.safetensors',
   ambrojo: 'ambrojo04.safetensors',
   'still-life': 'naturemorte04.safetensors',
   '35mm': '35mm04.safetensors',
@@ -172,7 +172,7 @@ function buildFaceWorkflow(input: Record<string, unknown>, checkpoint: string, f
     },
     '803': {
       inputs: {
-        clip_name: 'qwen_2.5_vl_7b_fp8_scaled.safetensors',
+        clip_name: 'qwen_2.5_VL_7b_fp8_scaled.safetensors',
         type: 'qwen_image',
         device: 'default',
       },
