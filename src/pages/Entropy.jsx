@@ -198,6 +198,7 @@ export default function Entropy() {
         status={studio.status}
         gpuName={studio.gpuName}
         endpointRef={studio.endpointRef}
+        jobRef={studio.jobRef}
         statusMessage={studio.statusMessage}
         onStart={() => studio.startStudio(selectedModel)}
         onStop={studio.stopStudio}

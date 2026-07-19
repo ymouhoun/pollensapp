@@ -37,6 +37,7 @@ export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
   const [gpuName, setGpuName] = useState(null);
   const [endpointRef, setEndpointRef] = useState(null);
+  const [jobRef, setJobRef] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [bootProgress, setBootProgress] = useState(0);
   const [errorMessageState, setErrorMessage] = useState('');
@@ -66,6 +67,7 @@ export default function useStudio() {
   const resetGenerationState = useCallback(() => {
     clearTimeout(pollTimer.current);
     jobIdRef.current = null;
+    setJobRef(null);
     workflowRef.current = null;
     generatingRef.current = false;
     setGeneratingPromptId(null);
@@ -200,6 +202,7 @@ export default function useStudio() {
 
       if (generationToken !== generationTokenRef.current) return false;
       jobIdRef.current = jobId;
+      setJobRef(String(jobId).slice(-8));
       if (submitResponse.data?.endpointRef) setEndpointRef(submitResponse.data.endpointRef);
       workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
@@ -222,6 +225,7 @@ export default function useStudio() {
           });
           const job = statusResponse.data;
 
+          if (job?.endpointRef) setEndpointRef(job.endpointRef);
           if (job?.gpuName) setGpuName(job.gpuName);
           if (job?.status === 'queued') setStatusMessage('In queue');
           if (job?.status === 'running') {
@@ -319,6 +323,7 @@ export default function useStudio() {
     baseUrl: null,
     gpuName,
     endpointRef,
+    jobRef,
     costPerHour: null,
     statusMessage,
     bootProgress,
