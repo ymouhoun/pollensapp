@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
+// Deployment refresh: 2026-07-19
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 const workerGpuCache = new Map<string, { name: string; expiresAt: number }>();
 
