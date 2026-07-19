@@ -13,6 +13,11 @@ const MODEL_CHECKPOINTS: Record<string, string> = {
 };
 
 function resolveEndpointId(model: string) {
+  const endpointOverride = Deno.env.get(
+    `RUNPOD_ENDPOINT_ID_${model.toUpperCase().replace(/-/g, '_')}`,
+  )?.trim();
+  if (endpointOverride) return endpointOverride;
+
   const configuredEndpoints = Deno.env.get('RUNPOD_ENDPOINTS_JSON');
   if (configuredEndpoints) {
     try {

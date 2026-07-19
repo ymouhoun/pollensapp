@@ -3,6 +3,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 
 function resolveEndpointId(model: string) {
+  const endpointOverride = Deno.env.get(
+    `RUNPOD_ENDPOINT_ID_${model.toUpperCase().replace(/-/g, '_')}`,
+  )?.trim();
+  if (endpointOverride) return endpointOverride;
+
   const configuredEndpoints = Deno.env.get('RUNPOD_ENDPOINTS_JSON');
   if (configuredEndpoints) {
     try {

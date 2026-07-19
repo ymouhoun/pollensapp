@@ -34,6 +34,18 @@ Example:
 Keep the model keys exactly as shown: the frontend, endpoint routing and ComfyUI
 checkpoint allowlist all use these stable identifiers.
 
+If the JSON secret is already masked in Base44, a single model can be redirected
+without replacing it. Add a per-model override secret; it takes precedence over
+both variables above:
+
+- `RUNPOD_ENDPOINT_ID_EDITORIAL`
+- `RUNPOD_ENDPOINT_ID_AMBROJO`
+- `RUNPOD_ENDPOINT_ID_STILL_LIFE`
+- `RUNPOD_ENDPOINT_ID_35MM`
+- `RUNPOD_ENDPOINT_ID_STILLS`
+- `RUNPOD_ENDPOINT_ID_SUPER16`
+- `RUNPOD_ENDPOINT_ID_BEAUTY`
+
 Example Face LoRA entry:
 
 ```json
