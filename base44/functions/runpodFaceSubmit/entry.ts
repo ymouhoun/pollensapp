@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
-// Deployment refresh: 2026-07-20T00:10+02:00 — expose the resolved route.
+// Deployment refresh: 2026-07-20T01:05+02:00 — preserve FaceDetailer with a targeted retry.
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 const INPUT_IMAGE_NAME = 'pollen-face-input.jpg';
 
@@ -167,8 +167,8 @@ function buildFaceWorkflow(input: Record<string, unknown>, checkpoint: string, f
         sam_model_opt: ['946', 0],
         segm_detector_opt: ['800', 1],
       },
-      class_type: 'FaceDetailer',
-      _meta: { title: 'FaceDetailer' },
+      class_type: 'PollenFaceDetailerAutoRetry',
+      _meta: { title: 'FaceDetailer (auto retry)' },
     },
     '803': {
       inputs: {

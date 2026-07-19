@@ -1,34 +1,41 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
-const STATUS_MESSAGES = [
-  "Processing your prompt...",
-  "Rendering light and texture...",
-  "Building composition...",
-  "Refining details...",
-  "Almost there...",
-];
+const STAGE_PROGRESS = {
+  submitting: 0.03,
+  searching_gpu: 0.07,
+  starting_worker: 0.12,
+  preparing_worker: 0.18,
+  preparing_face_assets: 0.24,
+  starting_comfy: 0.28,
+  comfy_ready: 0.32,
+  uploading_source: 0.35,
+  queueing_workflow: 0.38,
+  workflow_queued: 0.4,
+  loading_models: 0.46,
+  detecting_face: 0.52,
+  refining_face: 0.62,
+  sampling: 0.55,
+  decoding: 0.88,
+  refining_details: 0.92,
+  saving: 0.96,
+  finalizing: 0.98,
+  completed: 1,
+};
 
-export default function GenerationPreview({ progress, onStop, previewImageUrl, showFinalImage, finalImageUrl }) {
-  const { step, total } = progress;
-  const [messageIndex, setMessageIndex] = useState(0);
-  const [messageFade, setMessageFade] = useState(true);
+export default function GenerationPreview({
+  progress,
+  statusMessage,
+  statusDetail,
+  onStop,
+  previewImageUrl,
+  showFinalImage,
+  finalImageUrl,
+}) {
+  const { step, total, stage } = progress;
   const [stopped, setStopped] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const grainRef = useRef(null);
   const startTime = useRef(Date.now());
-
-  // Rotating status messages every 8s
-  useEffect(() => {
-    if (stopped || showFinalImage) return;
-    const interval = setInterval(() => {
-      setMessageFade(false);
-      setTimeout(() => {
-        setMessageIndex(i => (i + 1) % STATUS_MESSAGES.length);
-        setMessageFade(true);
-      }, 400);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [stopped, showFinalImage]);
 
   // Film grain animation — shift background-position every 100ms
   useEffect(() => {
@@ -43,14 +50,18 @@ export default function GenerationPreview({ progress, onStop, previewImageUrl, s
     return () => clearInterval(interval);
   }, [showFinalImage]);
 
-  // Progress ratio — time-based fallback smoothed with step data
+  // Use real ComfyUI stages before sampler step data becomes available.
   const progressRatio = useMemo(() => {
     if (stopped) return 0;
-    if (total > 0 && step > 0) return Math.min(step / total, 0.99);
-    // Time-based estimate: 90s default
+    if (total > 0 && step > 0 && ['sampling', 'refining_face'].includes(stage)) {
+      const start = stage === 'refining_face' ? 0.62 : 0.52;
+      const span = stage === 'refining_face' ? 0.24 : 0.34;
+      return Math.min(start + (step / total) * span, 0.9);
+    }
+    if (stage && STAGE_PROGRESS[stage] !== undefined) return STAGE_PROGRESS[stage];
     const elapsed = (Date.now() - startTime.current) / 1000;
-    return Math.min(elapsed / 90, 0.95);
-  }, [step, total, stopped]);
+    return Math.min(0.05 + elapsed / 600, 0.25);
+  }, [step, total, stage, stopped]);
 
   const handleStop = () => {
     setStopped(true);
@@ -118,16 +129,18 @@ export default function GenerationPreview({ progress, onStop, previewImageUrl, s
           pointerEvents: showFinalImage && imageLoaded ? 'none' : 'auto',
         }}
       >
-        {/* Rotating status message */}
+        {/* Real RunPod / ComfyUI status */}
         <p
+          aria-live="polite"
           className="text-[11px] text-white/50 mb-3 tracking-wide"
-          style={{
-            fontFamily: 'var(--font-sans)',
-            opacity: messageFade ? 1 : 0,
-            transition: 'opacity 0.4s ease',
-          }}
+          style={{ fontFamily: 'var(--font-sans)' }}
         >
-          {stopped ? "Generation stopped." : STATUS_MESSAGES[messageIndex]}
+          {stopped ? 'Generation stopped.' : (statusMessage || 'Preparing generation')}
+          {!stopped && statusDetail && (
+            <span className="mt-1 block text-[10px] text-white/30">
+              {statusDetail}
+            </span>
+          )}
         </p>
 
         {/* Progress bar */}
@@ -148,9 +161,9 @@ export default function GenerationPreview({ progress, onStop, previewImageUrl, s
         >
           {stopped
             ? ""
-            : total > 0
+            : total > 0 && step > 0 && ['sampling', 'refining_face'].includes(stage)
               ? `Generating — step ${step} / ${total}`
-              : "Generating..."
+              : (stage ? stage.replaceAll('_', ' ') : 'Preparing...')
           }
         </p>
       </div>

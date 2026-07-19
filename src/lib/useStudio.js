@@ -39,6 +39,7 @@ export default function useStudio() {
   const [endpointRef, setEndpointRef] = useState(null);
   const [jobRef, setJobRef] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusDetail, setStatusDetail] = useState('');
   const [bootProgress, setBootProgress] = useState(0);
   const [errorMessageState, setErrorMessage] = useState('');
 
@@ -46,7 +47,7 @@ export default function useStudio() {
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
   const [generatedImageUrls, setGeneratedImageUrls] = useState([]);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
-  const [genProgress, setGenProgress] = useState({ step: 0, total: 0 });
+  const [genProgress, setGenProgress] = useState({ step: 0, total: 0, stage: null });
 
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const inactivityTimer = useRef(null);
@@ -72,7 +73,8 @@ export default function useStudio() {
     generatingRef.current = false;
     setGeneratingPromptId(null);
     setPreviewImageUrl(null);
-    setGenProgress({ step: 0, total: 0 });
+    setGenProgress({ step: 0, total: 0, stage: null });
+    setStatusDetail('');
   }, []);
 
   const cancelActiveJob = useCallback(async () => {
@@ -99,6 +101,7 @@ export default function useStudio() {
     setEndpointRef(null);
     setBootProgress(0);
     setStatusMessage('');
+    setStatusDetail('');
     setStatus('STOPPED');
   }, [cancelActiveJob, clearTimers, resetGenerationState]);
 
@@ -116,6 +119,7 @@ export default function useStudio() {
     setBootProgress(20);
     setErrorMessage('');
     setStatusMessage('Connecting to RunPod...');
+    setStatusDetail('Checking the serverless endpoint');
 
     try {
       const response = await base44.functions.invoke('runpodHealth', { model });
@@ -129,6 +133,7 @@ export default function useStudio() {
       setEndpointRef(response.data.endpointRef || null);
       setBootProgress(100);
       setStatusMessage('Ready');
+      setStatusDetail('');
       setStatus('READY');
       resetInactivity();
     } catch (error) {
@@ -181,16 +186,16 @@ export default function useStudio() {
     const generationToken = generationTokenRef.current;
     const totalSteps = params.steps || fallbackSteps;
     const generationStartedAt = Date.now();
-    let runningPolls = 0;
-
     resetInactivity();
     setErrorMessage('');
     setGeneratedImageUrl(null);
     setGeneratedImageUrls([]);
     setPreviewImageUrl(null);
-    setGenProgress({ step: 0, total: totalSteps });
+    setGpuName(null);
+    setGenProgress({ step: 0, total: totalSteps, stage: 'submitting' });
     setGeneratingPromptId('submitting');
-    setStatusMessage('Submitting');
+    setStatusMessage('Sending request');
+    setStatusDetail('Submitting the workflow to RunPod');
 
     try {
       const submitResponse = await base44.functions.invoke(functionName, {
@@ -206,13 +211,16 @@ export default function useStudio() {
       if (submitResponse.data?.endpointRef) setEndpointRef(submitResponse.data.endpointRef);
       workflowRef.current = submitResponse.data?.workflow || null;
       setGeneratingPromptId(jobId);
-      setStatusMessage('In queue');
+      setStatusMessage('Searching for GPU');
+      setStatusDetail('Waiting for compatible GPU capacity');
+      setGenProgress({ step: 0, total: totalSteps, stage: 'searching_gpu' });
 
       const poll = async () => {
         if (generationToken !== generationTokenRef.current || !generatingRef.current) return;
         if (Date.now() - generationStartedAt > MAX_GENERATION_TIME) {
           await cancelActiveJob();
           resetGenerationState();
+          setStatusMessage('Ready');
           setErrorMessage('Generation timed out');
           return;
         }
@@ -227,21 +235,28 @@ export default function useStudio() {
 
           if (job?.endpointRef) setEndpointRef(job.endpointRef);
           if (job?.gpuName) setGpuName(job.gpuName);
-          if (job?.status === 'queued') setStatusMessage('In queue');
-          if (job?.status === 'running') {
-            setStatusMessage(job.gpuName ? `Running · ${job.gpuName}` : 'Running');
+          if (job?.status === 'queued') {
+            setStatusMessage('Searching for GPU');
+            setStatusDetail('Waiting for compatible GPU capacity');
+            setGenProgress(current => ({ ...current, stage: 'searching_gpu' }));
           }
 
           if (job?.progress) {
             const step = Math.max(0, Number(job.progress.step || 0));
             const total = Math.max(0, Number(job.progress.total || totalSteps));
-            setGenProgress({ step, total });
+            setGenProgress({ step, total, stage: job.progress.stage || 'running' });
+            setStatusMessage(job.progress.stageLabel || 'Running workflow');
+            setStatusDetail(job.progress.detail || 'ComfyUI is processing the workflow');
             const previewUrl = previewToDataUrl(job.progress.previewImage);
             if (previewUrl) setPreviewImageUrl(previewUrl);
           } else if (job?.status === 'running') {
-            runningPolls += 1;
-            const estimatedStep = Math.min(totalSteps - 1, Math.floor(runningPolls / 3));
-            setGenProgress({ step: estimatedStep, total: totalSteps });
+            setStatusMessage('Starting worker');
+            setStatusDetail(
+              job.gpuName
+                ? 'Preparing the container and cached models'
+                : 'Assigning the worker and preparing its model cache',
+            );
+            setGenProgress(current => ({ ...current, stage: 'starting_worker' }));
           }
 
           if (job?.status === 'completed') {
@@ -249,11 +264,12 @@ export default function useStudio() {
             const imageUrls = images.map(imageToDataUrl).filter(Boolean);
             if (!imageUrls.length) throw new Error('RunPod completed the job without an image');
 
-            setGenProgress({ step: totalSteps, total: totalSteps });
+            setGenProgress({ step: totalSteps, total: totalSteps, stage: 'completed' });
             setGeneratedImageUrl(imageUrls[0]);
             setGeneratedImageUrls(imageUrls);
             resetGenerationState();
             setStatusMessage('Ready');
+            setStatusDetail('');
             resetInactivity();
             imageUrls.forEach(imageUrl => void persistGeneratedImage(imageUrl, params));
             return;
@@ -268,6 +284,7 @@ export default function useStudio() {
           console.error('RunPod generation failed:', error);
           resetGenerationState();
           setStatusMessage('Ready');
+          setStatusDetail('');
           setErrorMessage(errorMessage(error, 'Generation failed'));
         }
       };
@@ -278,6 +295,7 @@ export default function useStudio() {
       console.error('RunPod submission failed:', error);
       resetGenerationState();
       setStatusMessage('Ready');
+      setStatusDetail('');
       setErrorMessage(errorMessage(error, 'Unable to start generation'));
       return false;
     }
@@ -298,6 +316,7 @@ export default function useStudio() {
     clearTimeout(pollTimer.current);
     await cancelActiveJob();
     resetGenerationState();
+    setStatusMessage('Ready');
   }, [cancelActiveJob, resetGenerationState]);
 
   const interruptGeneration = cancelGeneration;
@@ -326,6 +345,7 @@ export default function useStudio() {
     jobRef,
     costPerHour: null,
     statusMessage,
+    statusDetail,
     bootProgress,
     errorMessage: errorMessageState,
     generatingPromptId,

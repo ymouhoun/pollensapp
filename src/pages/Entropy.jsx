@@ -258,6 +258,8 @@ export default function Entropy() {
               <div style={{ zIndex: 2 }}>
                 <GenerationPreview
                   progress={studio.genProgress}
+                  statusMessage={studio.statusMessage}
+                  statusDetail={studio.statusDetail}
                   onStop={studio.interruptGeneration}
                   previewImageUrl={studio.previewImageUrl}
                   showFinalImage={false}

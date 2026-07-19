@@ -183,8 +183,8 @@ Deno.serve(async (req) => {
     }));
     const firstImage = normalizedImages[0] || null;
 
-    // A customized worker can publish { step, total, previewImage } through
-    // runpod.serverless.progress_update(). The stock worker simply leaves this empty.
+    // The Pollen worker publishes both the active ComfyUI stage and sampler
+    // progress through runpod.serverless.progress_update().
     const progressCandidate = output.progress || data.progress || (
       normalizedStatus === 'running' && !output.images ? output : null
     );
@@ -193,6 +193,11 @@ Deno.serve(async (req) => {
           step: Number(progressCandidate.step || progressCandidate.value || 0),
           total: Number(progressCandidate.total || progressCandidate.max || 0),
           previewImage: progressCandidate.previewImage || progressCandidate.preview_image || null,
+          stage: typeof progressCandidate.stage === 'string' ? progressCandidate.stage : null,
+          stageLabel: typeof progressCandidate.stageLabel === 'string'
+            ? progressCandidate.stageLabel
+            : (typeof progressCandidate.stage_label === 'string' ? progressCandidate.stage_label : null),
+          detail: typeof progressCandidate.detail === 'string' ? progressCandidate.detail : null,
         }
       : null;
 
