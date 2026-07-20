@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
-// Deployment refresh: 2026-07-19T21:40+02:00
+// Deployment refresh: 2026-07-20T01:35+02:00 — tolerate queue-health propagation delays.
 const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
 
 function resolveEndpointId(model: string) {
@@ -59,13 +59,20 @@ Deno.serve(async (req) => {
     ]);
 
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      return Response.json({ error: data.error || `RunPod health check failed (${response.status})` }, { status: 502 });
-    }
+    const endpoint = await endpointResponse.json().catch(() => ({}));
 
-    const endpoint = endpointResponse.ok
-      ? await endpointResponse.json().catch(() => ({}))
-      : {};
+    // A Serverless endpoint can legitimately have zero active workers. The
+    // management API is therefore the authoritative existence check. The
+    // queue /health route is useful for metrics, but a transient 404 during a
+    // release must not prevent the studio from opening.
+    if (!endpointResponse.ok && !response.ok) {
+      const endpointRef = endpointId.slice(-6);
+      return Response.json({
+        error: endpoint.error || data.error ||
+          `RunPod endpoint ${endpointRef} was not found (REST ${endpointResponse.status}, health ${response.status})`,
+        endpointRef,
+      }, { status: 502 });
+    }
     const activeWorkers = Array.isArray(endpoint.workers) ? endpoint.workers : [];
     const activeWorker = activeWorkers.sort((a, b) =>
       new Date(b.lastStartedAt || 0).getTime() - new Date(a.lastStartedAt || 0).getTime()
@@ -85,6 +92,8 @@ Deno.serve(async (req) => {
       workerConnected: Boolean(activeWorker),
       workers: data.workers || {},
       jobs: data.jobs || {},
+      healthAvailable: response.ok,
+      healthWarning: response.ok ? null : `RunPod health returned ${response.status}`,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
