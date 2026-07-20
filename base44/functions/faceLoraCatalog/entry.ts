@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
     const faces = readFaceLoras().map(face => ({
       id: face.id,
       label: face.label,
+      source: face.source,
       defaultStrength: face.defaultStrength,
       strengths: face.strengths,
       models: face.models,

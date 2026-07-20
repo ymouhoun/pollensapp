@@ -31,6 +31,17 @@ async function decodeTextChunk(type, data) {
 
 const linkedNode = (graph, value) => Array.isArray(value) ? graph[String(value[0])] : null;
 
+const MODEL_BY_CHECKPOINT = {
+  'edito04.safetensors': 'editorial',
+  'editorial04.safetensors': 'editorial',
+  'ambrojo04.safetensors': 'ambrojo',
+  'naturemorte04.safetensors': 'still-life',
+  '35mm04.safetensors': '35mm',
+  'stills_q.safetensors': 'stills',
+  'super16_q.safetensors': 'super16',
+  'beauty_q.safetensors': 'beauty',
+};
+
 function promptFromLink(graph, value, visited = new Set()) {
   const node = linkedNode(graph, value);
   if (!node || visited.has(node)) return '';
@@ -49,8 +60,14 @@ function settingsFromGraph(rawGraph) {
   if (!graph || Array.isArray(graph)) throw new Error('This PNG does not contain an API workflow');
   const entries = Object.entries(graph).filter(([, node]) => node && typeof node === 'object');
   const findType = (type) => entries.find(([, node]) => node.class_type === type)?.[1];
-  const sampler = entries.find(([, node]) => String(node.class_type || '').startsWith('KSampler'))?.[1];
-  if (!sampler) throw new Error('No sampler parameters were found in this PNG');
+  const faceDetailer = entries.find(([, node]) => [
+    'PollenFaceDetailerAutoRetry',
+    'FaceDetailer',
+  ].includes(node.class_type))?.[1];
+  const expertSampler = findType('SharkSampler_Beta');
+  const standardSampler = entries.find(([, node]) => String(node.class_type || '').startsWith('KSampler'))?.[1];
+  const sampler = faceDetailer || expertSampler || standardSampler;
+  if (!sampler) throw new Error('No supported sampler parameters were found in this PNG');
 
   const resolution = findType('FluxResolutionNode');
   const latent = entries.find(([, node]) => ['EmptySD3LatentImage', 'EmptyLatentImage'].includes(node.class_type))?.[1];
@@ -58,8 +75,15 @@ function settingsFromGraph(rawGraph) {
   const sampling = findType('ModelSamplingAuraFlow');
   const modelNode = linkedNode(graph, sampler.inputs?.model);
   const positiveNode = linkedNode(graph, sampler.inputs?.positive);
+  const modelLoader = findType('UNETLoader');
+  const implicit = findType('ClownOptions_ImplicitSteps_Beta');
+  const loraLoader = findType('Power Lora Loader (rgthree)');
+  const lora = loraLoader?.inputs?.lora_1;
+  const operationMode = faceDetailer ? 'face-detail' : (expertSampler ? 'expert' : 'generation');
 
   return {
+    operationMode,
+    model: MODEL_BY_CHECKPOINT[String(modelLoader?.inputs?.unet_name || '')],
     positivePrompt: promptFromLink(graph, sampler.inputs?.positive),
     complementaryPrompt: positiveNode?.class_type === 'ConditioningCombine'
       ? promptFromLink(graph, positiveNode.inputs?.conditioning_2)
@@ -75,6 +99,11 @@ function settingsFromGraph(rawGraph) {
     rescaleCfg: rescale?.inputs?.multiplier,
     rescaleEnabled: modelNode?.class_type === 'RescaleCFG',
     shift: sampling?.inputs?.shift,
+    denoise: faceDetailer?.inputs?.denoise,
+    faceStrength: lora && typeof lora === 'object' ? lora.strength : undefined,
+    faceLora: lora && typeof lora === 'object' ? lora.lora : undefined,
+    implicitSteps: implicit?.inputs?.implicit_steps,
+    implicitEnabled: Boolean(implicit),
     promptEnhancer: Boolean(findType('LLMPromptEnhancer')),
   };
 }
@@ -94,6 +123,8 @@ export async function extractComfySettings(file) {
     offset += length + 12;
   }
 
+  // ComfyUI stores the executable API graph under `prompt`. Older Pollens
+  // images stored that same graph under `workflow`, so retain the fallback.
   const workflow = metadata.prompt || metadata.workflow;
   if (!workflow) throw new Error('No ComfyUI workflow metadata was found in this PNG');
   return settingsFromGraph(JSON.parse(workflow));

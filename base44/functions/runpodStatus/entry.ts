@@ -109,35 +109,148 @@ function bytesToBase64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-function embedWorkflow(imageData: unknown, workflow: unknown) {
+function isApiLink(value: unknown, workflow: Record<string, unknown>) {
+  return Array.isArray(value)
+    && value.length >= 2
+    && Object.prototype.hasOwnProperty.call(workflow, String(value[0]));
+}
+
+function numericNodeIds(workflow: Record<string, unknown>) {
+  const used = new Set<number>();
+  const mapping = new Map<string, number>();
+  let fallback = 1;
+  for (const key of Object.keys(workflow)) {
+    const parsed = Number(key);
+    let id = Number.isSafeInteger(parsed) && parsed >= 0 && !used.has(parsed) ? parsed : fallback;
+    while (used.has(id)) id += 1;
+    used.add(id);
+    mapping.set(key, id);
+    fallback = Math.max(fallback, id + 1);
+  }
+  return mapping;
+}
+
+function apiNodeInputs(node: Record<string, unknown>) {
+  return node.inputs && typeof node.inputs === 'object' && !Array.isArray(node.inputs)
+    ? node.inputs as Record<string, unknown>
+    : {};
+}
+
+function apiPromptToUiWorkflow(rawWorkflow: unknown) {
+  if (!rawWorkflow || typeof rawWorkflow !== 'object' || Array.isArray(rawWorkflow)) return null;
+  const workflow = rawWorkflow as Record<string, Record<string, unknown>>;
+  const idMap = numericNodeIds(workflow);
+  const links: Array<[number, number, number, number, number, string]> = [];
+  const nodeInputs = new Map<string, Array<Record<string, unknown>>>();
+  const nodeOutputs = new Map<string, Array<Record<string, unknown>>>();
+  let nextLinkId = 1;
+
+  for (const [targetKey, node] of Object.entries(workflow)) {
+    const inputs: Array<Record<string, unknown>> = [];
+    for (const [name, value] of Object.entries(apiNodeInputs(node))) {
+      if (!isApiLink(value, workflow)) continue;
+      const [sourceKey, sourceSlotValue] = value as [string | number, number];
+      const sourceId = idMap.get(String(sourceKey));
+      const targetId = idMap.get(targetKey);
+      if (sourceId === undefined || targetId === undefined) continue;
+      const sourceSlot = Number(sourceSlotValue) || 0;
+      const targetSlot = inputs.length;
+      const linkId = nextLinkId++;
+      inputs.push({ name, type: '*', link: linkId });
+      links.push([linkId, sourceId, sourceSlot, targetId, targetSlot, '*']);
+
+      const outputs = nodeOutputs.get(String(sourceKey)) || [];
+      while (outputs.length <= sourceSlot) {
+        outputs.push({ name: `output_${outputs.length}`, type: '*', links: [] });
+      }
+      (outputs[sourceSlot].links as number[]).push(linkId);
+      nodeOutputs.set(String(sourceKey), outputs);
+    }
+    nodeInputs.set(targetKey, inputs);
+  }
+
+  const nodes = Object.entries(workflow).map(([key, node], index) => {
+    const column = index % 4;
+    const row = Math.floor(index / 4);
+    const inputs = apiNodeInputs(node);
+    const widgetValues = Object.values(inputs).filter(value => !isApiLink(value, workflow));
+    return {
+      id: idMap.get(key),
+      type: String(node.class_type || 'Unknown'),
+      pos: [60 + column * 380, 60 + row * 260],
+      size: [320, 200],
+      flags: {},
+      order: index,
+      mode: 0,
+      inputs: nodeInputs.get(key) || [],
+      outputs: nodeOutputs.get(key) || [],
+      properties: {
+        'Node name for S&R': String(node.class_type || 'Unknown'),
+      },
+      widgets_values: widgetValues,
+      title: (node._meta as Record<string, unknown> | undefined)?.title,
+    };
+  });
+
+  return {
+    last_node_id: Math.max(0, ...Array.from(idMap.values())),
+    last_link_id: nextLinkId - 1,
+    nodes,
+    links,
+    groups: [],
+    config: {},
+    extra: { pollen: { layout: 'generated-from-api-prompt', version: 1 } },
+    version: 0.4,
+  };
+}
+
+function makeITextChunk(keyword: string, value: unknown) {
+  const encoder = new TextEncoder();
+  const type = encoder.encode('iTXt');
+  const chunkData = concatBytes([
+    encoder.encode(keyword),
+    new Uint8Array([0, 0, 0, 0, 0]),
+    encoder.encode(JSON.stringify(value)),
+  ]);
+  const checksum = crc32(concatBytes([type, chunkData]));
+  return concatBytes([writeUint32(chunkData.length), type, chunkData, writeUint32(checksum)]);
+}
+
+function pngTextKeyword(bytes: Uint8Array) {
+  const end = bytes.indexOf(0);
+  return end < 0 ? '' : new TextDecoder().decode(bytes.subarray(0, end));
+}
+
+function embedComfyMetadata(imageData: unknown, workflow: unknown) {
   if (typeof imageData !== 'string' || !workflow) return imageData;
   const prefix = imageData.startsWith('data:') ? imageData.slice(0, imageData.indexOf(',') + 1) : '';
   const rawBase64 = prefix ? imageData.slice(prefix.length) : imageData;
   const bytes = Uint8Array.from(atob(rawBase64), (char) => char.charCodeAt(0));
   if (bytes.length < 12 || readUint32(bytes, 0) !== 0x89504e47) return imageData;
 
-  let iendOffset = -1;
+  const parts: Uint8Array[] = [bytes.subarray(0, 8)];
+  let foundIend = false;
   for (let offset = 8; offset + 12 <= bytes.length;) {
     const length = readUint32(bytes, offset);
+    const end = offset + 12 + length;
+    if (end > bytes.length) return imageData;
     const type = new TextDecoder().decode(bytes.subarray(offset + 4, offset + 8));
     if (type === 'IEND') {
-      iendOffset = offset;
+      const uiWorkflow = apiPromptToUiWorkflow(workflow);
+      parts.push(makeITextChunk('prompt', workflow));
+      if (uiWorkflow) parts.push(makeITextChunk('workflow', uiWorkflow));
+      parts.push(bytes.subarray(offset));
+      foundIend = true;
       break;
     }
-    offset += 12 + length;
+    const chunkData = bytes.subarray(offset + 8, offset + 8 + length);
+    const replacesComfyMetadata = ['tEXt', 'iTXt', 'zTXt'].includes(type)
+      && ['prompt', 'workflow'].includes(pngTextKeyword(chunkData));
+    if (!replacesComfyMetadata) parts.push(bytes.subarray(offset, end));
+    offset = end;
   }
-  if (iendOffset < 0) return imageData;
-
-  const encoder = new TextEncoder();
-  const type = encoder.encode('iTXt');
-  const chunkData = concatBytes([
-    encoder.encode('workflow'),
-    new Uint8Array([0, 0, 0, 0, 0]),
-    encoder.encode(JSON.stringify(workflow)),
-  ]);
-  const checksum = crc32(concatBytes([type, chunkData]));
-  const chunk = concatBytes([writeUint32(chunkData.length), type, chunkData, writeUint32(checksum)]);
-  const embedded = concatBytes([bytes.subarray(0, iendOffset), chunk, bytes.subarray(iendOffset)]);
+  if (!foundIend) return imageData;
+  const embedded = concatBytes(parts);
   return prefix + bytesToBase64(embedded);
 }
 
@@ -179,7 +292,7 @@ Deno.serve(async (req) => {
     const normalizedImages = images.map((image: Record<string, unknown>) => ({
       filename: image.filename || 'generation.png',
       type: image.type || 'base64',
-      data: image.type === 's3_url' ? image.data : embedWorkflow(image.data, workflow),
+      data: image.type === 's3_url' ? image.data : embedComfyMetadata(image.data, workflow),
     }));
     const firstImage = normalizedImages[0] || null;
 

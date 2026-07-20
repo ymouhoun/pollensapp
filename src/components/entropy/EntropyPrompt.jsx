@@ -215,21 +215,59 @@ export default function EntropyPrompt({
       const settings = await extractComfySettings(file);
       if (settings.positivePrompt) setPrompt(settings.positivePrompt);
       if (settings.complementaryPrompt !== undefined) setComplementaryPrompt(settings.complementaryPrompt);
-      if (settings.cfg !== undefined) setCfg(Number(settings.cfg));
-      if (settings.rescaleCfg !== undefined) setRescaleCfg(Number(settings.rescaleCfg));
-      setRescaleEnabled(settings.rescaleEnabled);
-      if (settings.megapixels !== undefined) setMegapixels(Number(settings.megapixels));
-      if (settings.batchSize !== undefined) setBatchSize(Number(settings.batchSize));
-      if (settings.aspectRatio) setRatio(settings.aspectRatio);
-      if (settings.shift !== undefined) setShift(Number(settings.shift));
-      if (settings.steps !== undefined) setSteps(Number(settings.steps));
-      if (settings.sampler) setSampler(settings.sampler);
-      if (settings.scheduler) setScheduler(settings.scheduler);
-      setPromptEnhancerEnabled(settings.promptEnhancer === true);
-      if (settings.seed !== undefined) {
-        setSeedMode('fixed');
-        setSeedValue(String(settings.seed));
+      if (settings.model && settings.model !== selectedModel) onModelChange(settings.model);
+      if (settings.operationMode && settings.operationMode !== operationMode) {
+        onOperationModeChange(settings.operationMode);
       }
+
+      if (settings.operationMode === 'face-detail') {
+        if (settings.cfg !== undefined) setFaceCfg(Number(settings.cfg));
+        if (settings.faceStrength !== undefined) setFaceStrength(Number(settings.faceStrength));
+        if (settings.denoise !== undefined) setFaceDenoise(Number(settings.denoise));
+        if (settings.steps !== undefined) setFaceSteps(Number(settings.steps));
+        if (settings.sampler) setFaceSampler(settings.sampler);
+        if (settings.scheduler) setFaceScheduler(settings.scheduler);
+        if (settings.seed !== undefined) {
+          setFaceSeedMode('fixed');
+          setFaceSeedValue(String(settings.seed));
+        }
+        if (settings.faceLora) {
+          const source = `loras/${settings.faceLora}`.replace(/^loras\/loras\//, 'loras/');
+          const face = faceLoras.find(item => item.source === source);
+          if (face) setFaceId(face.id);
+        }
+      } else if (settings.operationMode === 'expert') {
+        if (settings.cfg !== undefined) setExpertCfg(Number(settings.cfg));
+        if (settings.rescaleCfg !== undefined) setExpertRescaleCfg(Number(settings.rescaleCfg));
+        if (settings.rescaleEnabled !== undefined) setExpertRescaleEnabled(settings.rescaleEnabled);
+        if (settings.megapixels !== undefined) setExpertMegapixels(Number(settings.megapixels));
+        if (settings.aspectRatio) setExpertRatio(settings.aspectRatio);
+        if (settings.shift !== undefined) setExpertShift(Number(settings.shift));
+        if (settings.steps !== undefined) setExpertSteps(Number(settings.steps));
+        if (settings.scheduler) setExpertScheduler(settings.scheduler);
+        if (settings.implicitSteps !== undefined) setExpertImplicitSteps(Number(settings.implicitSteps));
+        setExpertImplicitEnabled(settings.implicitEnabled === true);
+        if (settings.seed !== undefined) {
+          setExpertSeedMode('fixed');
+          setExpertSeedValue(String(settings.seed));
+        }
+      } else {
+        if (settings.cfg !== undefined) setCfg(Number(settings.cfg));
+        if (settings.rescaleCfg !== undefined) setRescaleCfg(Number(settings.rescaleCfg));
+        if (settings.rescaleEnabled !== undefined) setRescaleEnabled(settings.rescaleEnabled);
+        if (settings.megapixels !== undefined) setMegapixels(Number(settings.megapixels));
+        if (settings.batchSize !== undefined) setBatchSize(Number(settings.batchSize));
+        if (settings.aspectRatio) setRatio(settings.aspectRatio);
+        if (settings.shift !== undefined) setShift(Number(settings.shift));
+        if (settings.steps !== undefined) setSteps(Number(settings.steps));
+        if (settings.sampler) setSampler(settings.sampler);
+        if (settings.scheduler) setScheduler(settings.scheduler);
+        if (settings.seed !== undefined) {
+          setSeedMode('fixed');
+          setSeedValue(String(settings.seed));
+        }
+      }
+      setPromptEnhancerEnabled(settings.promptEnhancer === true);
       onImageDrop(file);
     } catch (error) {
       setDropError(error.message || 'Unable to read this image');
