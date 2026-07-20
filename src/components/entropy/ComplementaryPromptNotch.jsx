@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 export default function ComplementaryPromptNotch({ value, onChange, open, onOpenChange }) {
 
   return (
-    <div className="relative z-10 ml-4 w-[calc(100%_-_2rem)]">
+    <div className="relative z-10 ml-auto mr-4 flex w-[calc(100%_-_2rem)] flex-col items-end">
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
@@ -15,7 +15,7 @@ export default function ComplementaryPromptNotch({ value, onChange, open, onOpen
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="rounded-tr-xl border border-b-0 border-white/10 bg-white/[0.07] p-3 backdrop-blur-2xl">
+        <div className="w-full rounded-tl-xl border border-b-0 border-white/10 bg-white/[0.07] p-3 backdrop-blur-2xl">
           <textarea
             value={value}
             onChange={event => onChange(event.target.value)}
