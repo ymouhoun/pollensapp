@@ -212,6 +212,11 @@ Deno.serve(async (req) => {
       progress,
       image: firstImage,
       images: normalizedImages,
+      enhancedPrompt: typeof output.enhancedPrompt === 'string' ? output.enhancedPrompt : null,
+      enhancedNegativePrompt: typeof output.enhancedNegativePrompt === 'string'
+        ? output.enhancedNegativePrompt
+        : null,
+      enhancerPreset: typeof output.enhancerPreset === 'string' ? output.enhancerPreset : null,
       error: normalizedStatus === 'failed'
         ? (output.error || data.error || output.details || 'Generation failed')
         : null,

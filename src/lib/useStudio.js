@@ -213,6 +213,10 @@ export default function useStudio() {
           faceLoraId: params.faceLoraId,
           loraStrength: params.loraStrength,
           denoise: params.denoise,
+          promptEnhancer: params.promptEnhancer === true,
+          enhancedPrompt: params.enhancedPrompt,
+          enhancedNegativePrompt: params.enhancedNegativePrompt,
+          enhancerPreset: params.enhancerPreset,
         },
       });
     } catch (error) {
@@ -320,7 +324,13 @@ export default function useStudio() {
             setStatusMessage('Ready');
             setStatusDetail('');
             resetInactivity();
-            imageUrls.forEach(imageUrl => void persistGeneratedImage(imageUrl, params));
+            const persistedParams = {
+              ...params,
+              enhancedPrompt: job.enhancedPrompt || undefined,
+              enhancedNegativePrompt: job.enhancedNegativePrompt || undefined,
+              enhancerPreset: job.enhancerPreset || undefined,
+            };
+            imageUrls.forEach(imageUrl => void persistGeneratedImage(imageUrl, persistedParams));
             return;
           }
 

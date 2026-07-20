@@ -13,6 +13,19 @@ const MODEL_CHECKPOINTS: Record<string, string> = {
   beauty: 'beauty_q.safetensors',
 };
 
+const MODEL_ENHANCER_PRESETS: Record<string, string> = {
+  editorial: 'editorial',
+  ambrojo: 'ambrojo_bw',
+  'still-life': 'still_life',
+  '35mm': '35mm_colour',
+  stills: 'stills',
+  super16: 'super16',
+  beauty: 'beauty',
+};
+
+const PROMPT_ENHANCER_MODEL = 'Qwen3-8B-Q8_0.gguf';
+const DEFAULT_NEGATIVE_PROMPT = 'unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face';
+
 function resolveEndpointId(model: string) {
   const endpointOverride = Deno.env.get(
     `RUNPOD_ENDPOINT_ID_${model.toUpperCase().replace(/-/g, '_')}`,
@@ -42,7 +55,37 @@ function numberOrDefault(value: unknown, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
+function buildPromptEnhancerNode(
+  input: Record<string, unknown>,
+  model: string,
+  positivePrompt: string,
+) {
+  if (input.promptEnhancer !== true) return {};
+
+  const stylePreset = MODEL_ENHANCER_PRESETS[model];
+  if (!stylePreset) throw new Error(`No Prompt Enhancer preset configured for model "${model}"`);
+
+  return {
+    '807': {
+      inputs: {
+        model: PROMPT_ENHANCER_MODEL,
+        style_preset: stylePreset,
+        prompt: positivePrompt,
+        temperature: 0.7,
+        top_p: 0.9,
+        max_tokens: 512,
+        repeat_penalty: 1.1,
+        n_ctx: 8192,
+        n_gpu_layers: 99,
+        seed: 0,
+      },
+      class_type: 'LLMPromptEnhancer',
+      _meta: { title: 'LLM Prompt Enhancer (GPU)' },
+    },
+  };
+}
+
+function buildWorkflow(input: Record<string, unknown>, checkpoint: string, model: string) {
   const positivePrompt = String(input.positivePrompt || '').trim();
   if (!positivePrompt) throw new Error('The prompt is empty');
   const complementaryPrompt = String(input.complementaryPrompt === undefined ? 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples' : input.complementaryPrompt).trim();
@@ -58,8 +101,10 @@ function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
   const aspectRatio = String(input.aspectRatio || '3:4 (Golden Ratio)');
   const sampler = String(input.sampler || 'res_2s');
   const scheduler = String(input.scheduler || 'kl_optimal');
+  const promptEnhancer = input.promptEnhancer === true;
 
   return {
+    ...buildPromptEnhancerNode(input, model, positivePrompt),
     '808': {
       inputs: { clip_name: 'qwen_2.5_VL_7b_fp8_scaled.safetensors', type: 'qwen_image', device: 'default' },
       class_type: 'CLIPLoader',
@@ -80,7 +125,7 @@ function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
     },
     '811': {
       inputs: {
-        text: 'unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face',
+        text: promptEnhancer ? ['807', 1] : DEFAULT_NEGATIVE_PROMPT,
         clip: ['808', 0],
       },
       class_type: 'CLIPTextEncode',
@@ -107,9 +152,9 @@ function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
       _meta: { title: 'Load Diffusion Model' },
     },
     '818': {
-      inputs: { text: positivePrompt, clip: ['808', 0] },
+      inputs: { text: promptEnhancer ? ['807', 0] : positivePrompt, clip: ['808', 0] },
       class_type: 'CLIPTextEncode',
-      _meta: { title: 'Positive Prompt' },
+      _meta: { title: promptEnhancer ? 'Positive Prompt (Enhanced by LLM)' : 'Positive Prompt' },
     },
     '819': {
       inputs: {
@@ -156,7 +201,7 @@ function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
   };
 }
 
-function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string) {
+function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string, model: string) {
   const positivePrompt = String(input.positivePrompt || '').trim();
   if (!positivePrompt) throw new Error('The prompt is empty');
   const complementaryPrompt = String(
@@ -178,8 +223,10 @@ function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string)
   const implicitSteps = Math.max(1, Math.min(20, Math.floor(numberOrDefault(input.implicitSteps, 2))));
   const implicitEnabled = input.implicitEnabled !== false;
   const scheduler = String(input.scheduler || 'kl_optimal');
+  const promptEnhancer = input.promptEnhancer === true;
 
   return {
+    ...buildPromptEnhancerNode(input, model, positivePrompt),
     '808': {
       inputs: { clip_name: 'qwen_2.5_VL_7b_fp8_scaled.safetensors', type: 'qwen_image', device: 'default' },
       class_type: 'CLIPLoader',
@@ -197,7 +244,7 @@ function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string)
     },
     '811': {
       inputs: {
-        text: 'unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face',
+        text: promptEnhancer ? ['807', 1] : DEFAULT_NEGATIVE_PROMPT,
         clip: ['808', 0],
       },
       class_type: 'CLIPTextEncode',
@@ -224,9 +271,9 @@ function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string)
       _meta: { title: 'Load Diffusion Model' },
     },
     '818': {
-      inputs: { text: positivePrompt, clip: ['808', 0] },
+      inputs: { text: promptEnhancer ? ['807', 0] : positivePrompt, clip: ['808', 0] },
       class_type: 'CLIPTextEncode',
-      _meta: { title: 'Positive Prompt (Subject - Enhanced by LLM)' },
+      _meta: { title: promptEnhancer ? 'Positive Prompt (Enhanced by LLM)' : 'Positive Prompt (Subject)' },
     },
     '819': {
       inputs: {
@@ -350,8 +397,8 @@ Deno.serve(async (req) => {
 
     const expertMode = input.expertMode === true || input.operation === 'expert-generation';
     const workflow = expertMode
-      ? buildExpertWorkflow(input, checkpoint)
-      : buildWorkflow(input, checkpoint);
+      ? buildExpertWorkflow(input, checkpoint, model)
+      : buildWorkflow(input, checkpoint, model);
     const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/run`, {
       method: 'POST',
       headers: {
@@ -375,6 +422,7 @@ Deno.serve(async (req) => {
       status: data.status || 'IN_QUEUE',
       model,
       operation: expertMode ? 'expert-generation' : 'generation',
+      promptEnhancer: input.promptEnhancer === true,
       endpointRef: endpointId.slice(-6),
       workflow,
     });

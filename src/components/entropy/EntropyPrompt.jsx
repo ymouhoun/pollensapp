@@ -82,6 +82,7 @@ export default function EntropyPrompt({
   const [faceSeedValue, setFaceSeedValue] = useState(() => String(getRandomSeed()));
   const [faceSubmitting, setFaceSubmitting] = useState(false);
   const [dropError, setDropError] = useState('');
+  const [promptEnhancerEnabled, setPromptEnhancerEnabled] = useState(false);
 
   const isReady = studioStatus === 'READY';
   const disabled = generating || faceSubmitting || !isReady;
@@ -108,7 +109,7 @@ export default function EntropyPrompt({
     setComplementaryOpen(false);
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
-    onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+    onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed, promptEnhancer: promptEnhancerEnabled });
   };
 
   const handleExpertGenerate = () => {
@@ -132,6 +133,7 @@ export default function EntropyPrompt({
       scheduler: expertScheduler,
       seed: nextSeed,
       expertMode: true,
+      promptEnhancer: promptEnhancerEnabled,
     });
   };
 
@@ -223,6 +225,7 @@ export default function EntropyPrompt({
       if (settings.steps !== undefined) setSteps(Number(settings.steps));
       if (settings.sampler) setSampler(settings.sampler);
       if (settings.scheduler) setScheduler(settings.scheduler);
+      setPromptEnhancerEnabled(settings.promptEnhancer === true);
       if (settings.seed !== undefined) {
         setSeedMode('fixed');
         setSeedValue(String(settings.seed));
@@ -288,6 +291,26 @@ export default function EntropyPrompt({
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        {operationMode !== 'face-detail' && (
+          <button
+            type="button"
+            disabled={generating || faceSubmitting}
+            onClick={() => setPromptEnhancerEnabled(enabled => !enabled)}
+            aria-pressed={promptEnhancerEnabled}
+            aria-label={promptEnhancerEnabled ? 'Disable Prompt Enhancer' : 'Enable Prompt Enhancer'}
+            className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[8px] uppercase tracking-widest outline-none backdrop-blur-2xl transition-all disabled:cursor-not-allowed disabled:opacity-40 ${promptEnhancerEnabled ? 'border-white/20 bg-white/15 text-white/90 shadow-sm' : 'border-white/10 bg-white/[0.06] text-white/35 hover:text-white/60'}`}
+            style={{
+              boxShadow: promptEnhancerEnabled
+                ? '0 4px 22px rgba(210,190,255,0.16), inset 0 1px 0 rgba(255,255,255,0.16)'
+                : '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+              fontFamily: 'var(--font-sans)',
+            }}
+            title="Enhance the subject prompt and negative prompt with Qwen 8B"
+          >
+            <Sparkles className="h-2.5 w-2.5" strokeWidth={1.5} />
+            Enhance
+          </button>
+        )}
         {operationMode === 'face-detail' && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={generating || faceSubmitting || !compatibleFaces.length}>

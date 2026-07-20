@@ -36,6 +36,7 @@ function promptFromLink(graph, value, visited = new Set()) {
   if (!node || visited.has(node)) return '';
   visited.add(node);
   if (node.class_type === 'CLIPTextEncode' && typeof node.inputs?.text === 'string') return node.inputs.text;
+  if (node.class_type === 'LLMPromptEnhancer' && typeof node.inputs?.prompt === 'string') return node.inputs.prompt;
   for (const input of Object.values(node.inputs || {})) {
     const prompt = promptFromLink(graph, input, visited);
     if (prompt) return prompt;
@@ -74,6 +75,7 @@ function settingsFromGraph(rawGraph) {
     rescaleCfg: rescale?.inputs?.multiplier,
     rescaleEnabled: modelNode?.class_type === 'RescaleCFG',
     shift: sampling?.inputs?.shift,
+    promptEnhancer: Boolean(findType('LLMPromptEnhancer')),
   };
 }
 

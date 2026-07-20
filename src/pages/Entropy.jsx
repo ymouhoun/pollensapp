@@ -175,6 +175,7 @@ export default function Entropy() {
       scheduler: params.scheduler,
       seed: params.seed,
       expertMode: params.expertMode === true,
+      promptEnhancer: params.promptEnhancer === true,
     });
   };
 
