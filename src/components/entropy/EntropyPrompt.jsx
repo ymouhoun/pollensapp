@@ -17,6 +17,7 @@ const SAMPLERS = ['res_3m', 'res_2s', 'res_5s', 'er_sde', 'rk_beta', 'euler', 'd
 const SCHEDULERS = ['kl_optimal', 'beta57', 'ddim_uniform', 'simple', 'bong_tangent'];
 const MAX_SEED = 999999999999;
 const DEFAULT_COMPLEMENTARY_PROMPT = 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples';
+const DEFAULT_FACE_PROMPT = 'Detailed natural face, expressive eyes, realistic skin texture, visible pores, subtle asymmetry, editorial portrait photography';
 
 const sanitizeSeedValue = (value) => {
   const digitsOnly = String(value).replace(/\D/g, '').slice(0, 12);
@@ -41,6 +42,8 @@ export default function EntropyPrompt({
   onCancelGeneration,
   selectedModel,
   onModelChange,
+  faceLoras = [],
+  faceCatalogError = '',
 }) {
   const [complementaryPrompt, setComplementaryPrompt] = useState(DEFAULT_COMPLEMENTARY_PROMPT);
   const [complementaryOpen, setComplementaryOpen] = useState(false);
@@ -56,12 +59,37 @@ export default function EntropyPrompt({
   const [scheduler, setScheduler] = useState('kl_optimal');
   const [seedMode, setSeedMode] = useState('random');
   const [seedValue, setSeedValue] = useState(() => String(getRandomSeed()));
+  const [faceId, setFaceId] = useState('');
+  const [faceCfg, setFaceCfg] = useState(3.7);
+  const [faceStrength, setFaceStrength] = useState(0.7);
+  const [faceDenoise, setFaceDenoise] = useState(0.65);
+  const [faceSteps, setFaceSteps] = useState(25);
+  const [faceSampler, setFaceSampler] = useState('res_2s');
+  const [faceScheduler, setFaceScheduler] = useState('kl_optimal');
+  const [faceSeedMode, setFaceSeedMode] = useState('random');
+  const [faceSeedValue, setFaceSeedValue] = useState(() => String(getRandomSeed()));
+  const [faceSubmitting, setFaceSubmitting] = useState(false);
   const [dropError, setDropError] = useState('');
 
   const isReady = studioStatus === 'READY';
-  const disabled = generating || !isReady;
-  const modelSwitchDisabled = generating || ['STARTING', 'STOPPING'].includes(studioStatus);
+  const disabled = generating || faceSubmitting || !isReady;
+  const modelSwitchDisabled = generating || faceSubmitting || ['STARTING', 'STOPPING'].includes(studioStatus);
   const selectedModelLabel = MODELS.find(model => model.checkpoint === selectedModel)?.label || MODELS[0].label;
+  const compatibleFaces = React.useMemo(
+    () => faceLoras.filter(face => !face.models?.length || face.models.includes(selectedModel)),
+    [faceLoras, selectedModel],
+  );
+  const selectedFace = compatibleFaces.find(face => face.id === faceId) || null;
+
+  React.useEffect(() => {
+    const nextFace = compatibleFaces.find(face => face.id === faceId) || compatibleFaces[0];
+    if (!nextFace) {
+      if (faceId) setFaceId('');
+      return;
+    }
+    if (faceId !== nextFace.id) setFaceId(nextFace.id);
+    setFaceStrength(nextFace.strengths?.[selectedModel] ?? nextFace.defaultStrength ?? 0.7);
+  }, [compatibleFaces, faceId, selectedModel]);
 
   const handleGenerate = () => {
     if (inputRef?.current) inputRef.current.style.height = 'auto';
@@ -71,6 +99,40 @@ export default function EntropyPrompt({
     onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
   };
 
+  const handleFaceDetail = async () => {
+    if (!selectedFace) {
+      setDropError(faceCatalogError || 'No compatible Face LoRA is available for this model.');
+      return;
+    }
+    if (!prompt.trim()) {
+      setDropError('Describe the face treatment before starting.');
+      return;
+    }
+    const nextSeed = faceSeedMode === 'random'
+      ? getRandomSeed()
+      : Number(sanitizeSeedValue(faceSeedValue));
+    setFaceSeedValue(String(nextSeed));
+    setFaceSubmitting(true);
+    try {
+      await onFaceDetail({
+        faceLoraId: selectedFace.id,
+        prompt: prompt.trim(),
+        loraStrength: faceStrength,
+        denoise: faceDenoise,
+        steps: faceSteps,
+        cfg: faceCfg,
+        rescaleCfg: 0.7,
+        sampler: faceSampler,
+        scheduler: faceScheduler,
+        seed: nextSeed,
+      });
+    } catch (error) {
+      setDropError(error.message || 'Unable to start face detailing.');
+    } finally {
+      setFaceSubmitting(false);
+    }
+  };
+
   const handlePrimaryAction = () => {
     if (operationMode === 'face-detail') {
       if (!dropImageUrl) {
@@ -78,10 +140,18 @@ export default function EntropyPrompt({
         return;
       }
       setDropError('');
-      onFaceDetail();
+      void handleFaceDetail();
       return;
     }
     handleGenerate();
+  };
+
+  const handleOperationModeChange = (nextMode) => {
+    if (nextMode === operationMode) return;
+    setDropError('');
+    setComplementaryOpen(false);
+    if (nextMode === 'face-detail' && !prompt.trim()) setPrompt(DEFAULT_FACE_PROMPT);
+    onOperationModeChange(nextMode);
   };
 
   const handleImageDrop = async (event) => {
@@ -178,6 +248,50 @@ export default function EntropyPrompt({
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        {operationMode === 'face-detail' && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild disabled={generating || faceSubmitting || !compatibleFaces.length}>
+              <button
+                type="button"
+                className="flex max-w-[210px] items-center gap-1.5 rounded-lg border border-white/10 px-2 py-1 outline-none backdrop-blur-2xl transition-all disabled:cursor-not-allowed disabled:opacity-40"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(200,180,220,0.08) 100%)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                aria-label={`Selected Face LoRA: ${selectedFace?.label || 'none'}`}
+              >
+                <ScanFace className="h-2.5 w-2.5 shrink-0 text-white/50" strokeWidth={1.5} />
+                <span className="truncate text-[9px] uppercase tracking-widest text-white/80">
+                  {selectedFace?.label || 'Face LoRA'}
+                </span>
+                <ChevronDown className="h-2.5 w-2.5 shrink-0 text-white/35" strokeWidth={1.5} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="max-h-72 min-w-[210px] overflow-y-auto rounded-xl border-white/10 p-1.5 text-white shadow-2xl backdrop-blur-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(24,22,27,0.96) 0%, rgba(14,13,16,0.98) 100%)',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <DropdownMenuRadioGroup value={faceId} onValueChange={setFaceId}>
+                {compatibleFaces.map(face => (
+                  <DropdownMenuRadioItem
+                    key={face.id}
+                    value={face.id}
+                    className="rounded-lg py-1.5 pl-7 pr-3 text-[9px] uppercase tracking-widest text-white/50 outline-none focus:bg-white/10 focus:text-white/90 data-[state=checked]:text-white/90"
+                  >
+                    {face.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <div
           className="flex items-center rounded-lg border border-white/10 p-0.5 backdrop-blur-2xl"
           style={{
@@ -189,17 +303,17 @@ export default function EntropyPrompt({
         >
           <WorkflowModeButton
             active={operationMode === 'generation'}
-            disabled={generating}
+            disabled={generating || faceSubmitting}
             icon={Sparkles}
             label="Generate"
-            onClick={() => onOperationModeChange('generation')}
+            onClick={() => handleOperationModeChange('generation')}
           />
           <WorkflowModeButton
             active={operationMode === 'face-detail'}
-            disabled={generating}
+            disabled={generating || faceSubmitting}
             icon={ScanFace}
             label="Face detail"
-            onClick={() => onOperationModeChange('face-detail')}
+            onClick={() => handleOperationModeChange('face-detail')}
           />
         </div>
       </div>
@@ -251,7 +365,11 @@ export default function EntropyPrompt({
             style={{ fontFamily: 'var(--font-sans)' }}
             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
-          {dropError && <p className="mt-1 text-[10px] text-red-300/70">{dropError}</p>}
+          {(dropError || (operationMode === 'face-detail' && faceCatalogError)) && (
+            <p className="mt-1 text-[10px] text-red-300/70">
+              {dropError || faceCatalogError}
+            </p>
+          )}
         </div>
 
         {/* Generation settings */}
@@ -306,31 +424,48 @@ export default function EntropyPrompt({
           </div>
         ) : (
           <div
-            className="flex items-center justify-between px-4 py-1.5 text-[10px] tracking-wide"
+            className="flex flex-wrap items-center justify-between gap-y-1 px-4 py-1.5 text-[10px] tracking-wide"
             style={{ fontFamily: 'var(--font-banana)' }}
           >
-            <div className="flex items-center gap-2 text-white/35">
-              <span className={dropImageUrl ? 'text-white/65' : 'text-amber-200/55'}>
-                SOURCE {dropImageUrl ? 'FRONT IMAGE' : 'REQUIRED'}
-              </span>
+            <div className="flex items-center gap-1">
+              <EditableParam label="CFG" value={faceCfg} onChange={setFaceCfg} min={0} max={20} step={0.1} type="float" precision={1} defaultValue={3.7} />
               <Divider />
-              <span>AUTO FACE DETECTION</span>
+              <EditableParam
+                label="STRENGTH"
+                value={faceStrength}
+                onChange={setFaceStrength}
+                min={0}
+                max={2}
+                step={0.01}
+                type="float"
+                precision={2}
+                defaultValue={selectedFace?.strengths?.[selectedModel] ?? selectedFace?.defaultStrength ?? 0.7}
+              />
               <Divider />
-              <span>FACE LORA</span>
+              <EditableParam label="DENOISER" value={faceDenoise} onChange={setFaceDenoise} min={0.2} max={1} step={0.01} type="float" precision={2} defaultValue={0.65} />
+              <Divider />
+              <EditableParam label="STEPS" value={faceSteps} onChange={setFaceSteps} min={1} max={60} step={1} defaultValue={25} />
             </div>
-            <button
-              onClick={generating ? onCancelGeneration : handlePrimaryAction}
-              disabled={!generating && disabled}
-              className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full transition-all disabled:opacity-20"
-              style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
-              aria-label={generating ? 'Cancel generation' : 'Configure face detail'}
-            >
-              {generating ? (
-                <CircleX className="h-3.5 w-3.5 text-white/60" strokeWidth={1.5} />
-              ) : (
-                <ScanFace className="h-3.5 w-3.5 text-white/70" strokeWidth={1.7} />
-              )}
-            </button>
+            <div className="flex items-center gap-1">
+              <SeedParam mode={faceSeedMode} onModeChange={setFaceSeedMode} value={faceSeedValue} onValueChange={setFaceSeedValue} />
+              <Divider />
+              <SelectParam label="SAMPLER" value={faceSampler} options={SAMPLERS} onChange={setFaceSampler} defaultValue="res_2s" />
+              <Divider />
+              <SelectParam label="SCHEDULER" value={faceScheduler} options={SCHEDULERS} onChange={setFaceScheduler} defaultValue="kl_optimal" />
+              <button
+                onClick={generating ? onCancelGeneration : handlePrimaryAction}
+                disabled={!generating && (disabled || !selectedFace)}
+                className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full transition-all disabled:opacity-20"
+                style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
+                aria-label={generating ? 'Cancel generation' : 'Refine face'}
+              >
+                {generating ? (
+                  <CircleX className="h-3.5 w-3.5 text-white/60" strokeWidth={1.5} />
+                ) : (
+                  <ArrowUp className="h-3.5 w-3.5 text-white/70" strokeWidth={2} />
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -352,8 +487,8 @@ function WorkflowModeButton({ active, disabled, icon: Icon, label, onClick }) {
   );
 }
 
-function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', defaultValue, enabled = true, onToggle }) {
-  const displayValue = type === 'float' ? value.toFixed(1) : value;
+function EditableParam({ label, value, onChange, min, max, step = 1, type = 'number', precision = 1, defaultValue, enabled = true, onToggle }) {
+  const displayValue = type === 'float' ? Number(value).toFixed(precision) : value;
   const startX = React.useRef(0);
   const startValue = React.useRef(value);
 
@@ -373,7 +508,7 @@ function EditableParam({ label, value, onChange, min, max, step = 1, type = 'num
     let newValue = startValue.current + (delta / sensitivity) * range;
     newValue = Math.round(newValue / step) * step;
     newValue = Math.max(min, Math.min(max, newValue));
-    onChange(type === 'float' ? parseFloat(newValue.toFixed(1)) : Math.round(newValue));
+    onChange(type === 'float' ? parseFloat(newValue.toFixed(precision)) : Math.round(newValue));
   };
 
   const handlePointerUp = () => {

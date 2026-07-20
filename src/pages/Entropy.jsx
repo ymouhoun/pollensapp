@@ -7,7 +7,6 @@ import StudioError from '@/components/entropy/StudioError';
 import InactivityToast from '@/components/entropy/InactivityToast';
 import GenerationPreview from '@/components/entropy/GenerationPreview';
 import ImageDeck from '@/components/entropy/ImageDeck';
-import FaceDetailPanel from '@/components/entropy/FaceDetailPanel';
 import useStudio, { MODELS } from '@/lib/useStudio';
 import { prepareFaceImage } from '@/lib/faceImage';
 import { base44 } from '@/api/base44Client';
@@ -44,7 +43,6 @@ export default function Entropy() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0].checkpoint);
   const [operationMode, setOperationMode] = useState('generation');
   const [contextMenu, setContextMenu] = useState(null);
-  const [facePanelOpen, setFacePanelOpen] = useState(false);
   const [faceLoras, setFaceLoras] = useState([]);
   const [faceCatalogError, setFaceCatalogError] = useState('');
   const inputRef = useRef(null);
@@ -117,7 +115,6 @@ export default function Entropy() {
     if (!frontImageUrl || studio.generatingPromptId) return;
     setOperationMode('face-detail');
     setContextMenu(null);
-    setFacePanelOpen(true);
   }, [frontImageUrl, studio.generatingPromptId]);
 
   const handleFaceDetailSubmit = useCallback(async (params) => {
@@ -282,25 +279,12 @@ export default function Entropy() {
         />
       )}
 
-      <FaceDetailPanel
-        open={facePanelOpen}
-        imageUrl={frontImageUrl}
-        faces={faceLoras}
-        selectedModel={selectedModel}
-        studioReady={studio.status === 'READY'}
-        generating={!!studio.generatingPromptId}
-        initialPrompt={prompt}
-        catalogError={faceCatalogError}
-        onClose={() => setFacePanelOpen(false)}
-        onSubmit={handleFaceDetailSubmit}
-      />
-
       {/* Fixed bottom prompt bar — always visible */}
       <EntropyPrompt
         prompt={prompt}
         setPrompt={setPrompt}
         onGenerate={handleGenerate}
-        onFaceDetail={handleOpenFaceDetail}
+        onFaceDetail={handleFaceDetailSubmit}
         operationMode={operationMode}
         onOperationModeChange={setOperationMode}
         onImageDrop={handleImportedImage}
@@ -311,6 +295,8 @@ export default function Entropy() {
         onCancelGeneration={studio.cancelGeneration}
         selectedModel={selectedModel}
         onModelChange={handleModelChange}
+        faceLoras={faceLoras}
+        faceCatalogError={faceCatalogError}
       />
     </div>
   );
