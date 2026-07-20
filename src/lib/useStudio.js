@@ -36,6 +36,7 @@ function previewToDataUrl(preview) {
 export default function useStudio() {
   const [status, setStatus] = useState('STOPPED');
   const [gpuName, setGpuName] = useState(null);
+  const [workerState, setWorkerState] = useState('serverless');
   const [endpointRef, setEndpointRef] = useState(null);
   const [jobRef, setJobRef] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
@@ -53,6 +54,8 @@ export default function useStudio() {
   const inactivityTimer = useRef(null);
   const warningTimer = useRef(null);
   const pollTimer = useRef(null);
+  const healthTimer = useRef(null);
+  const healthPollTokenRef = useRef(0);
   const jobIdRef = useRef(null);
   const workflowRef = useRef(null);
   const modelRef = useRef(MODELS[0].checkpoint);
@@ -61,6 +64,7 @@ export default function useStudio() {
 
   const clearTimers = useCallback(() => {
     clearTimeout(pollTimer.current);
+    clearTimeout(healthTimer.current);
     clearTimeout(inactivityTimer.current);
     clearTimeout(warningTimer.current);
   }, []);
@@ -93,11 +97,13 @@ export default function useStudio() {
   const stopStudioInternal = useCallback(async () => {
     setStatus('STOPPING');
     generationTokenRef.current += 1;
+    healthPollTokenRef.current += 1;
     clearTimers();
     setShowInactivityWarning(false);
     await cancelActiveJob();
     resetGenerationState();
     setGpuName(null);
+    setWorkerState('serverless');
     setEndpointRef(null);
     setBootProgress(0);
     setStatusMessage('');
@@ -114,6 +120,9 @@ export default function useStudio() {
   }, [stopStudioInternal]);
 
   const startStudio = useCallback(async (model = MODELS[0].checkpoint) => {
+    healthPollTokenRef.current += 1;
+    const healthPollToken = healthPollTokenRef.current;
+    clearTimeout(healthTimer.current);
     modelRef.current = model;
     setStatus('STARTING');
     setBootProgress(20);
@@ -127,15 +136,45 @@ export default function useStudio() {
         throw new Error(response.data?.error || 'The RunPod endpoint is unavailable');
       }
 
-      // A serverless endpoint is ready before RunPod assigns a physical GPU.
-      // The concrete GPU name is filled in by runpodStatus once a job starts.
-      setGpuName(response.data.gpuName || null);
-      setEndpointRef(response.data.endpointRef || null);
+      const applyHealth = data => {
+        const nextWorkerState = data.workerState || (data.workerReady ? 'ready' : 'serverless');
+        setGpuName(data.gpuName || null);
+        setEndpointRef(data.endpointRef || null);
+        setWorkerState(nextWorkerState);
+        if (nextWorkerState === 'initializing') {
+          setStatusMessage('Initializing');
+          setStatusDetail('Preparing the container and cached models');
+        } else {
+          setStatusMessage('Ready');
+          setStatusDetail('');
+        }
+        return nextWorkerState;
+      };
+
+      const initialWorkerState = applyHealth(response.data);
       setBootProgress(100);
-      setStatusMessage('Ready');
-      setStatusDetail('');
       setStatus('READY');
       resetInactivity();
+
+      if (initialWorkerState === 'initializing') {
+        const pollHealth = async () => {
+          if (healthPollToken !== healthPollTokenRef.current) return;
+          try {
+            const nextResponse = await base44.functions.invoke('runpodHealth', { model });
+            if (healthPollToken !== healthPollTokenRef.current) return;
+            const nextWorkerState = applyHealth(nextResponse.data || {});
+            if (nextWorkerState === 'initializing') {
+              healthTimer.current = setTimeout(pollHealth, 2000);
+            }
+          } catch (error) {
+            console.warn('RunPod worker readiness check failed:', error);
+            if (healthPollToken === healthPollTokenRef.current) {
+              healthTimer.current = setTimeout(pollHealth, 3000);
+            }
+          }
+        };
+        healthTimer.current = setTimeout(pollHealth, 2000);
+      }
     } catch (error) {
       setErrorMessage(errorMessage(error, 'Unable to connect to RunPod'));
       setStatus('ERROR');
@@ -185,6 +224,8 @@ export default function useStudio() {
     if (status !== 'READY' || generatingRef.current) return false;
 
     generatingRef.current = true;
+    healthPollTokenRef.current += 1;
+    clearTimeout(healthTimer.current);
     generationTokenRef.current += 1;
     const generationToken = generationTokenRef.current;
     const totalSteps = params.steps || fallbackSteps;
@@ -195,6 +236,7 @@ export default function useStudio() {
     setGeneratedImageUrls([]);
     setPreviewImageUrl(null);
     setGpuName(null);
+    setWorkerState('searching');
     setGenProgress({ step: 0, total: totalSteps, stage: 'submitting' });
     setGeneratingPromptId('submitting');
     setStatusMessage('Sending request');
@@ -239,12 +281,14 @@ export default function useStudio() {
           if (job?.endpointRef) setEndpointRef(job.endpointRef);
           if (job?.gpuName) setGpuName(job.gpuName);
           if (job?.status === 'queued') {
+            setWorkerState('searching');
             setStatusMessage('Searching for GPU');
             setStatusDetail('Waiting for compatible GPU capacity');
             setGenProgress(current => ({ ...current, stage: 'searching_gpu' }));
           }
 
           if (job?.progress) {
+            setWorkerState('ready');
             const step = Math.max(0, Number(job.progress.step || 0));
             const total = Math.max(0, Number(job.progress.total || totalSteps));
             setGenProgress({ step, total, stage: job.progress.stage || 'running' });
@@ -253,6 +297,7 @@ export default function useStudio() {
             const previewUrl = previewToDataUrl(job.progress.previewImage);
             if (previewUrl) setPreviewImageUrl(previewUrl);
           } else if (job?.status === 'running') {
+            setWorkerState('initializing');
             setStatusMessage('Starting worker');
             setStatusDetail(
               job.gpuName
@@ -263,6 +308,7 @@ export default function useStudio() {
           }
 
           if (job?.status === 'completed') {
+            setWorkerState('ready');
             const images = job.images?.length ? job.images : [job.image];
             const imageUrls = images.map(imageToDataUrl).filter(Boolean);
             if (!imageUrls.length) throw new Error('RunPod completed the job without an image');
@@ -342,6 +388,7 @@ export default function useStudio() {
   useEffect(() => {
     return () => {
       generationTokenRef.current += 1;
+      healthPollTokenRef.current += 1;
       clearTimers();
     };
   }, [clearTimers]);
@@ -351,6 +398,7 @@ export default function useStudio() {
     instanceId: null,
     baseUrl: null,
     gpuName,
+    workerState,
     endpointRef,
     jobRef,
     costPerHour: null,

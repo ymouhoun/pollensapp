@@ -1,20 +1,27 @@
 import React from 'react';
 
-export default function StudioToggle({ status, gpuName, endpointRef, jobRef, statusMessage, onStart, onStop }) {
+export default function StudioToggle({ status, gpuName, workerState, endpointRef, jobRef, statusMessage, onStart, onStop }) {
   const isOn = ['STARTING', 'READY', 'STOPPING'].includes(status);
   const isBusy = status === 'STARTING' || status === 'STOPPING';
-  const label = status === 'STARTING'
-    ? 'CONNECTING'
-    : status === 'STOPPING'
-      ? 'STOPPING'
-      : status === 'READY'
-        ? (statusMessage && statusMessage !== 'Ready'
-          ? statusMessage.toUpperCase()
-          : (gpuName ? `${gpuName} CONNECTED` : 'SERVERLESS READY'))
-        : 'STUDIO';
+  let label = 'STUDIO';
+  if (status === 'STARTING') label = 'CONNECTING';
+  if (status === 'STOPPING') label = 'STOPPING';
+  if (status === 'READY') {
+    if (workerState === 'initializing' && statusMessage === 'Initializing') {
+      label = `${gpuName || 'GPU'} INITIALIZING`;
+    } else if (statusMessage && statusMessage !== 'Ready') {
+      label = statusMessage.toUpperCase();
+    } else if (workerState === 'initializing') {
+      label = 'INITIALIZING';
+    } else {
+      label = gpuName && workerState === 'ready' ? `${gpuName} CONNECTED` : 'SERVERLESS READY';
+    }
+  }
   const endpointLabel = isOn && endpointRef ? ` · ${endpointRef}` : '';
   const jobLabel = isOn && jobRef && statusMessage !== 'Ready' ? ` · job ${jobRef}` : '';
-  const gpuLabel = isOn && gpuName && statusMessage !== 'Ready' ? ` · ${gpuName}` : '';
+  const gpuLabel = isOn && gpuName && !['Ready', 'Initializing'].includes(statusMessage) ? ` · ${gpuName}` : '';
+  const readyWorker = workerState === 'ready';
+  const initializingWorker = workerState === 'initializing';
 
   const handleToggle = () => {
     if (isBusy) return;
@@ -34,8 +41,14 @@ export default function StudioToggle({ status, gpuName, endpointRef, jobRef, sta
       {status === 'READY' && (
         <span
           aria-hidden="true"
-          className={`h-1.5 w-1.5 rounded-full ${gpuName ? 'bg-emerald-300' : 'bg-white/60'}`}
-          style={{ boxShadow: gpuName ? '0 0 7px rgba(110,231,183,0.75)' : '0 0 5px rgba(255,255,255,0.45)' }}
+          className={`h-1.5 w-1.5 rounded-full ${readyWorker ? 'bg-emerald-300' : initializingWorker ? 'bg-amber-300' : 'bg-white/60'}`}
+          style={{
+            boxShadow: readyWorker
+              ? '0 0 7px rgba(110,231,183,0.75)'
+              : initializingWorker
+                ? '0 0 7px rgba(252,211,77,0.7)'
+                : '0 0 5px rgba(255,255,255,0.45)',
+          }}
         />
       )}
       <span>{label}{gpuLabel}{endpointLabel}{jobLabel}</span>

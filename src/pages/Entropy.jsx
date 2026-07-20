@@ -197,6 +197,7 @@ export default function Entropy() {
       <StudioToggle
         status={studio.status}
         gpuName={studio.gpuName}
+        workerState={studio.workerState}
         endpointRef={studio.endpointRef}
         jobRef={studio.jobRef}
         statusMessage={studio.statusMessage}

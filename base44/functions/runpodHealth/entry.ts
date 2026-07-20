@@ -83,6 +83,12 @@ Deno.serve(async (req) => {
       activeWorker?.machine?.gpuType?.displayName ||
       endpoint.gpuTypeIds?.[0]
     );
+    const idleWorkers = Number(data.workers?.idle || 0);
+    const runningWorkers = Number(data.workers?.running || 0);
+    const workerReady = idleWorkers + runningWorkers > 0;
+    const workerState = workerReady
+      ? 'ready'
+      : (activeWorker ? 'initializing' : 'serverless');
 
     return Response.json({
       ready: true,
@@ -90,6 +96,8 @@ Deno.serve(async (req) => {
       endpointRef: endpointId.slice(-6),
       gpuName,
       workerConnected: Boolean(activeWorker),
+      workerReady,
+      workerState,
       workers: data.workers || {},
       jobs: data.jobs || {},
       healthAvailable: response.ok,
