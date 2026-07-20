@@ -162,12 +162,15 @@ export default function useStudio() {
           megapixels: params.megapixels,
           batchSize: params.batchSize,
           shift: params.shift,
+          implicitSteps: params.implicitSteps,
+          implicitEnabled: params.implicitEnabled,
           aspectRatio: params.aspectRatio,
           sampler: params.sampler,
           scheduler: params.scheduler,
           seed: params.seed,
           model: modelRef.current,
           operation: params.operation || 'generation',
+          expertMode: params.expertMode === true,
           faceLoraId: params.faceLoraId,
           loraStrength: params.loraStrength,
           denoise: params.denoise,
@@ -302,7 +305,14 @@ export default function useStudio() {
   }, [cancelActiveJob, persistGeneratedImage, resetGenerationState, resetInactivity, status]);
 
   const generate = useCallback(
-    params => runJob('runpodSubmit', { ...params, operation: 'generation' }, 45),
+    params => runJob(
+      'runpodSubmit',
+      {
+        ...params,
+        operation: params.expertMode ? 'expert-generation' : 'generation',
+      },
+      params.expertMode ? 40 : 45,
+    ),
     [runJob],
   );
 

@@ -156,6 +156,180 @@ function buildWorkflow(input: Record<string, unknown>, checkpoint: string) {
   };
 }
 
+function buildExpertWorkflow(input: Record<string, unknown>, checkpoint: string) {
+  const positivePrompt = String(input.positivePrompt || '').trim();
+  if (!positivePrompt) throw new Error('The prompt is empty');
+  const complementaryPrompt = String(
+    input.complementaryPrompt === undefined
+      ? 'shot on Hasselblad X2D, 100MP, natural skin texture, high-fashion editorial, Harper’s Bazaar style, slight asymmetry in facial features, slight wrinkles or dimples'
+      : input.complementaryPrompt,
+  ).trim();
+
+  // The Expert graph preserves the validated low-level Clown/Shark defaults.
+  // Only the creative controls exposed by the Expert prompt bar are variable.
+  const seed = Math.max(0, Math.floor(numberOrDefault(input.seed, Date.now())));
+  const steps = Math.max(1, Math.min(100, Math.floor(numberOrDefault(input.steps, 40))));
+  const cfg = Math.max(0, Math.min(20, numberOrDefault(input.cfg, 3.2)));
+  const rescaleCfg = Math.max(0, Math.min(1, numberOrDefault(input.rescaleCfg, 0.7)));
+  const rescaleEnabled = input.rescaleEnabled !== false;
+  const megapixels = Math.max(0.1, Math.min(4, numberOrDefault(input.megapixels, 1.6)));
+  const aspectRatio = String(input.aspectRatio || '3:4 (Golden Ratio)');
+  const shift = Math.max(0, Math.min(3, numberOrDefault(input.shift, 1.3)));
+  const implicitSteps = Math.max(1, Math.min(20, Math.floor(numberOrDefault(input.implicitSteps, 2))));
+  const implicitEnabled = input.implicitEnabled !== false;
+  const scheduler = String(input.scheduler || 'kl_optimal');
+
+  return {
+    '808': {
+      inputs: { clip_name: 'qwen_2.5_VL_7b_fp8_scaled.safetensors', type: 'qwen_image', device: 'default' },
+      class_type: 'CLIPLoader',
+      _meta: { title: 'Load CLIP' },
+    },
+    '809': {
+      inputs: { text: complementaryPrompt, clip: ['808', 0] },
+      class_type: 'CLIPTextEncode',
+      _meta: { title: 'Positive Prompt (Style)' },
+    },
+    '810': {
+      inputs: { conditioning_1: ['818', 0], conditioning_2: ['809', 0] },
+      class_type: 'ConditioningCombine',
+      _meta: { title: 'Conditioning (Combine)' },
+    },
+    '811': {
+      inputs: {
+        text: 'unrealistic, plastic skin, cgi, low resolution, wrong anatomy, stock photo, flat lighting, logo, text, over-smoothed face',
+        clip: ['808', 0],
+      },
+      class_type: 'CLIPTextEncode',
+      _meta: { title: 'Negative Prompt' },
+    },
+    '812': {
+      inputs: { vae_name: 'qwen_image_vae.safetensors' },
+      class_type: 'VAELoader',
+      _meta: { title: 'Load VAE' },
+    },
+    '814': {
+      inputs: { shift, model: ['817', 0] },
+      class_type: 'ModelSamplingAuraFlow',
+      _meta: { title: 'ModelSamplingAuraFlow' },
+    },
+    '815': {
+      inputs: { samples: ['952', 0], vae: ['812', 0] },
+      class_type: 'VAEDecode',
+      _meta: { title: 'VAE Decode' },
+    },
+    '817': {
+      inputs: { unet_name: checkpoint, weight_dtype: 'default' },
+      class_type: 'UNETLoader',
+      _meta: { title: 'Load Diffusion Model' },
+    },
+    '818': {
+      inputs: { text: positivePrompt, clip: ['808', 0] },
+      class_type: 'CLIPTextEncode',
+      _meta: { title: 'Positive Prompt (Subject - Enhanced by LLM)' },
+    },
+    '819': {
+      inputs: {
+        megapixel: String(megapixels),
+        aspect_ratio: aspectRatio,
+        divisible_by: '64',
+        custom_ratio: false,
+        custom_aspect_ratio: '1:1',
+      },
+      class_type: 'FluxResolutionNode',
+      _meta: { title: 'Flux Resolution Calc' },
+    },
+    '820': {
+      inputs: { width: ['819', 0], height: ['819', 1], batch_size: 1 },
+      class_type: 'EmptySD3LatentImage',
+      _meta: { title: 'EmptySD3LatentImage' },
+    },
+    '822': {
+      inputs: { multiplier: rescaleCfg, model: ['814', 0] },
+      class_type: 'RescaleCFG',
+      _meta: { title: 'RescaleCFG' },
+    },
+    '825': {
+      inputs: { filename_prefix: 'pollen-expert', images: ['815', 0] },
+      class_type: 'SaveImage',
+      _meta: { title: 'Save Image' },
+    },
+    '951': {
+      inputs: {
+        eta: 0,
+        sampler_name: 'exponential/res_2s',
+        seed: 555053740861102,
+        control_after_generate: 'fixed',
+        bongmath: true,
+        ...(implicitEnabled ? { options: ['965', 0] } : {}),
+        'options 2': ['964', 0],
+      },
+      class_type: 'ClownSampler_Beta',
+      _meta: { title: 'ClownSampler' },
+    },
+    '952': {
+      inputs: {
+        scheduler,
+        steps,
+        steps_to_run: -1,
+        denoise: 1,
+        cfg,
+        seed,
+        control_after_generate: 'fixed',
+        sampler_mode: 'standard',
+        model: rescaleEnabled ? ['822', 0] : ['814', 0],
+        positive: ['810', 0],
+        negative: ['811', 0],
+        sampler: ['951', 0],
+        latent_image: ['820', 0],
+        options: ['960', 0],
+      },
+      class_type: 'SharkSampler_Beta',
+      _meta: { title: 'SharkSampler' },
+    },
+    '960': {
+      inputs: {
+        s_noise: 1.04,
+        s_noise_substep: 1,
+        noise_anchor_sde: 1,
+        lying: 0.97,
+        lying_inv: 1.02,
+        lying_start_step: 0,
+        lying_inv_start_step: 1,
+        options: ['964', 0],
+      },
+      class_type: 'ClownOptions_SigmaScaling_Beta',
+      _meta: { title: 'ClownOptions Sigma Scaling' },
+    },
+    '964': {
+      inputs: {
+        noise_type_sde: 'brownian',
+        noise_type_sde_substep: 'gaussian',
+        noise_mode_sde: 'lorentzian',
+        noise_mode_sde_substep: 'hard',
+        eta: 0.3,
+        eta_substep: 0.5,
+        seed: 187439852784042,
+        control_after_generate: 'fixed',
+      },
+      class_type: 'ClownOptions_SDE_Beta',
+      _meta: { title: 'ClownOptions SDE' },
+    },
+    ...(implicitEnabled ? {
+      '965': {
+        inputs: {
+          implicit_type: 'bongmath',
+          implicit_type_substeps: 'bongmath',
+          implicit_steps: implicitSteps,
+          implicit_substeps: 0,
+        },
+        class_type: 'ClownOptions_ImplicitSteps_Beta',
+        _meta: { title: 'ClownOptions Implicit Steps' },
+      },
+    } : {}),
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -174,7 +348,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: `No RunPod endpoint configured for model "${model}"` }, { status: 500 });
     }
 
-    const workflow = buildWorkflow(input, checkpoint);
+    const expertMode = input.expertMode === true || input.operation === 'expert-generation';
+    const workflow = expertMode
+      ? buildExpertWorkflow(input, checkpoint)
+      : buildWorkflow(input, checkpoint);
     const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/run`, {
       method: 'POST',
       headers: {
@@ -197,6 +374,7 @@ Deno.serve(async (req) => {
       jobId: data.id,
       status: data.status || 'IN_QUEUE',
       model,
+      operation: expertMode ? 'expert-generation' : 'generation',
       endpointRef: endpointId.slice(-6),
       workflow,
     });

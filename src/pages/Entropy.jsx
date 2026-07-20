@@ -168,10 +168,13 @@ export default function Entropy() {
       megapixels: params.megapixels,
       batchSize: params.batchSize,
       shift: params.shift,
+      implicitSteps: params.implicitSteps,
+      implicitEnabled: params.implicitEnabled,
       aspectRatio: params.aspectRatio,
       sampler: params.sampler,
       scheduler: params.scheduler,
       seed: params.seed,
+      expertMode: params.expertMode === true,
     });
   };
 

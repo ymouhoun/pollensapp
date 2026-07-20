@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { extractComfySettings } from '@/lib/comfyMetadata';
 import { motion } from 'framer-motion';
-import { ChevronDown, ArrowUp, CircleX, ScanFace, Sparkles } from 'lucide-react';
+import { ChevronDown, ArrowUp, CircleX, ScanFace, SlidersHorizontal, Sparkles } from 'lucide-react';
 import ComplementaryPromptNotch from './ComplementaryPromptNotch';
 import { MODELS } from '@/lib/useStudio';
 import {
@@ -59,6 +59,18 @@ export default function EntropyPrompt({
   const [scheduler, setScheduler] = useState('kl_optimal');
   const [seedMode, setSeedMode] = useState('random');
   const [seedValue, setSeedValue] = useState(() => String(getRandomSeed()));
+  const [expertCfg, setExpertCfg] = useState(3.2);
+  const [expertRescaleCfg, setExpertRescaleCfg] = useState(0.7);
+  const [expertRescaleEnabled, setExpertRescaleEnabled] = useState(true);
+  const [expertMegapixels, setExpertMegapixels] = useState(1.6);
+  const [expertRatio, setExpertRatio] = useState('3:4 (Golden Ratio)');
+  const [expertShift, setExpertShift] = useState(1.3);
+  const [expertSteps, setExpertSteps] = useState(40);
+  const [expertImplicitSteps, setExpertImplicitSteps] = useState(2);
+  const [expertImplicitEnabled, setExpertImplicitEnabled] = useState(true);
+  const [expertScheduler, setExpertScheduler] = useState('kl_optimal');
+  const [expertSeedMode, setExpertSeedMode] = useState('random');
+  const [expertSeedValue, setExpertSeedValue] = useState(() => String(getRandomSeed()));
   const [faceId, setFaceId] = useState('');
   const [faceCfg, setFaceCfg] = useState(3.7);
   const [faceStrength, setFaceStrength] = useState(0.7);
@@ -97,6 +109,30 @@ export default function EntropyPrompt({
     const nextSeed = seedMode === 'random' ? getRandomSeed() : Number(sanitizeSeedValue(seedValue));
     setSeedValue(String(nextSeed));
     onGenerate({ complementaryPrompt, steps, cfg, rescaleCfg, rescaleEnabled, megapixels, batchSize, shift, aspectRatio: ratio, sampler, scheduler, seed: nextSeed });
+  };
+
+  const handleExpertGenerate = () => {
+    if (inputRef?.current) inputRef.current.style.height = 'auto';
+    setComplementaryOpen(false);
+    const nextSeed = expertSeedMode === 'random'
+      ? getRandomSeed()
+      : Number(sanitizeSeedValue(expertSeedValue));
+    setExpertSeedValue(String(nextSeed));
+    onGenerate({
+      complementaryPrompt,
+      steps: expertSteps,
+      cfg: expertCfg,
+      rescaleCfg: expertRescaleCfg,
+      rescaleEnabled: expertRescaleEnabled,
+      megapixels: expertMegapixels,
+      aspectRatio: expertRatio,
+      shift: expertShift,
+      implicitSteps: expertImplicitSteps,
+      implicitEnabled: expertImplicitEnabled,
+      scheduler: expertScheduler,
+      seed: nextSeed,
+      expertMode: true,
+    });
   };
 
   const handleFaceDetail = async () => {
@@ -141,6 +177,10 @@ export default function EntropyPrompt({
       }
       setDropError('');
       void handleFaceDetail();
+      return;
+    }
+    if (operationMode === 'expert') {
+      handleExpertGenerate();
       return;
     }
     handleGenerate();
@@ -309,6 +349,13 @@ export default function EntropyPrompt({
             onClick={() => handleOperationModeChange('generation')}
           />
           <WorkflowModeButton
+            active={operationMode === 'expert'}
+            disabled={generating || faceSubmitting}
+            icon={SlidersHorizontal}
+            label="Expert"
+            onClick={() => handleOperationModeChange('expert')}
+          />
+          <WorkflowModeButton
             active={operationMode === 'face-detail'}
             disabled={generating || faceSubmitting}
             icon={ScanFace}
@@ -318,7 +365,7 @@ export default function EntropyPrompt({
         </div>
       </div>
 
-      {operationMode === 'generation' && (
+      {operationMode !== 'face-detail' && (
         <ComplementaryPromptNotch
           value={complementaryPrompt}
           onChange={setComplementaryPrompt}
@@ -421,6 +468,45 @@ export default function EntropyPrompt({
               )}
             </button>
           </div>
+          </div>
+        ) : operationMode === 'expert' ? (
+          <div
+            className="flex flex-wrap items-center justify-between gap-y-1 px-4 py-1.5 text-[10px] tracking-wide"
+            style={{ fontFamily: 'var(--font-banana)' }}
+          >
+            <div className="flex items-center gap-1">
+              <EditableParam label="CFG" value={expertCfg} onChange={setExpertCfg} min={0} max={20} step={0.1} type="float" precision={1} defaultValue={3.2} />
+              <Divider />
+              <EditableParam label="RESCALE" value={expertRescaleCfg} onChange={setExpertRescaleCfg} min={0} max={1} step={0.1} type="float" defaultValue={0.7} enabled={expertRescaleEnabled} onToggle={() => setExpertRescaleEnabled(enabled => !enabled)} />
+              <Divider />
+              <EditableParam label="PX" value={expertMegapixels} onChange={setExpertMegapixels} min={0.1} max={4} step={0.1} type="float" defaultValue={1.6} />
+              <Divider />
+              <SelectParam label="RATIO" value={expertRatio} options={ASPECT_RATIOS} onChange={setExpertRatio} defaultValue="3:4 (Golden Ratio)" />
+              <Divider />
+              <EditableParam label="SHIFT" value={expertShift} onChange={setExpertShift} min={0} max={3} step={0.1} type="float" defaultValue={1.3} />
+              <Divider />
+              <EditableParam label="STEPS" value={expertSteps} onChange={setExpertSteps} min={1} max={100} step={1} defaultValue={40} />
+              <Divider />
+              <EditableParam label="IMPLICIT" value={expertImplicitSteps} onChange={setExpertImplicitSteps} min={1} max={20} step={1} defaultValue={2} enabled={expertImplicitEnabled} onToggle={() => setExpertImplicitEnabled(enabled => !enabled)} />
+            </div>
+            <div className="flex items-center gap-1">
+              <SeedParam mode={expertSeedMode} onModeChange={setExpertSeedMode} value={expertSeedValue} onValueChange={setExpertSeedValue} />
+              <Divider />
+              <SelectParam label="SCHEDULER" value={expertScheduler} options={SCHEDULERS} onChange={setExpertScheduler} defaultValue="kl_optimal" />
+              <button
+                onClick={generating ? onCancelGeneration : handlePrimaryAction}
+                disabled={!generating && disabled}
+                className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full transition-all disabled:opacity-20"
+                style={{ background: generating ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)' }}
+                aria-label={generating ? 'Cancel generation' : 'Generate in Expert mode'}
+              >
+                {generating ? (
+                  <CircleX className="h-3.5 w-3.5 text-white/60" strokeWidth={1.5} />
+                ) : (
+                  <ArrowUp className="h-3.5 w-3.5 text-white/70" strokeWidth={2} />
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           <div
