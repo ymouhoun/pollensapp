@@ -9,6 +9,7 @@ import AddNoteCard from '@/components/memory/AddNoteCard';
 import UploadModal from '@/components/memory/UploadModal';
 import MediaOverlay from '@/components/memory/MediaOverlay';
 import ProgressiveBlur from '@/components/memory/ProgressiveBlur';
+import MemoryBendEffect from '@/components/memory/MemoryBendEffect';
 import MemoryActionBar from '@/components/memory/MemoryActionBar';
 import GradientWaveText from '@/components/ui/gradient-wave-text';
 import LoadingBeam from '@/components/memory/LoadingBeam';
@@ -260,8 +261,8 @@ export default function Memory() {
         </div>
       )}
 
-      <ProgressiveBlur side="top" height={160} />
-      <ProgressiveBlur side="bottom" height={160} />
+      <ProgressiveBlur side="top" height={120} />
+      <ProgressiveBlur side="bottom" height={120} />
 
 
 
@@ -301,6 +302,7 @@ export default function Memory() {
         onToggleGalaxy={() => setShowGalaxy(!showGalaxy)}
       />
 
+      <MemoryBendEffect>
       {/* Masonry grid */}
       <div className="px-4 pb-24 pt-4 min-h-screen">
         {isLoading ? (
@@ -387,6 +389,7 @@ export default function Memory() {
           <div className="w-4 h-4 border-2 border-muted-foreground/20 border-t-foreground rounded-full animate-spin" />
         </div>
       )}
+      </MemoryBendEffect>
 
       <MediaOverlay
         item={selectedItem}
