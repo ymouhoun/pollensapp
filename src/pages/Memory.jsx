@@ -260,8 +260,8 @@ export default function Memory() {
         </div>
       )}
 
-      <ProgressiveBlur side="top" height={160} />
-      <ProgressiveBlur side="bottom" height={160} />
+      <ProgressiveBlur side="top" height={120} />
+      <ProgressiveBlur side="bottom" height={120} />
 
 
 
