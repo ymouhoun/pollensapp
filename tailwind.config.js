@@ -4,33 +4,7 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
-      fontWeight: {
-        // figma:pollens-app (taKREQ1i) — start
-        "figma-normal": "400",
-        // figma:pollens-app (taKREQ1i) — end
-      },
-      lineHeight: {
-        // figma:pollens-app (taKREQ1i) — start
-        "figma-11": "11px",
-        "figma-12": "12px",
-        "figma-16": "16px",
-        "figma-18": "18px",
-        // figma:pollens-app (taKREQ1i) — end
-      },
-      fontSize: {
-        // figma:pollens-app (taKREQ1i) — start
-        "figma-10": "10px",
-        "figma-12": "12px",
-        "figma-14": "14px",
-        // figma:pollens-app (taKREQ1i) — end
-      },
   		fontFamily: {
-        // figma:pollens-app (taKREQ1i) — start
-        "heading": ['"Gerstner Programm"', 'sans-serif'],
-        "paragraph": ['"Inter"', 'sans-serif'],
-        "figma-banana-grotesk": ['"Banana Grotesk"', 'sans-serif'],
-        // figma:pollens-app (taKREQ1i) — end
-      
   			sans: ['var(--font-sans)'],
   			display: ['var(--font-display)'],
   			gerstner: ['var(--font-gerstner)'],
@@ -42,15 +16,6 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-        // figma:pollens-app (taKREQ1i) — start
-        "figma-primary": "hsl(var(--figma-primary))",
-        "figma-secondary": "hsl(var(--figma-secondary))",
-        "figma-accent": "hsl(var(--figma-accent))",
-        "figma-text-1": "hsl(var(--figma-text-1))",
-        "figma-text-2": "hsl(var(--figma-text-2))",
-        "figma-text-3": "hsl(var(--figma-text-3))",
-        // figma:pollens-app (taKREQ1i) — end
-      
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
