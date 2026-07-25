@@ -67,7 +67,7 @@ export default function Frame1() {
           transition={{ delay: 0.6, duration: 0.8 }}
           className="flex flex-row items-center gap-[13px] w-full mb-[6px]"
         >
-          <div className="flex-1 h-14 bg-figma-secondary rounded-[54px] flex items-center justify-between pl-[21px] pr-[24px] cursor-text hover:bg-white/5 transition-colors">
+          <div className="flex-1 h-14 rounded-[54px] border border-white/20 bg-figma-secondary/50 ring-1 ring-inset ring-white/10 shadow-2xl backdrop-blur-2xl flex items-center justify-between pl-[21px] pr-[24px] cursor-text transition-all duration-300 hover:border-white/30 hover:bg-figma-secondary/60">
             <p
               className="text-figma-14 font-normal font-heading leading-figma-18 bg-clip-text truncate mr-4"
               style={{ WebkitTextFillColor: "transparent" }}
@@ -86,7 +86,7 @@ export default function Frame1() {
               </p>
             </div>
           </div>
-          <button className="w-14 h-14 shrink-0 bg-figma-secondary rounded-[44px] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+          <button className="w-14 h-14 shrink-0 rounded-[44px] border border-white/20 bg-figma-secondary/50 ring-1 ring-inset ring-white/10 shadow-2xl backdrop-blur-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:border-white/30 hover:bg-figma-secondary/60 active:scale-95">
             <img src="https://media.base44.com/images/public/69b2e952528daefdb8ba4906/53a4264d2_087a97e65_6235_41.svg" className="w-4 h-4" alt="Submit" />
           </button>
         </motion.div>
