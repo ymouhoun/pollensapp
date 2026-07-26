@@ -33,7 +33,7 @@ export default function EntropyState3() {
   };
 
   return (
-    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-clip bg-figma-primary py-20 px-4 md:px-8">
+    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-clip bg-black py-20 px-4 md:px-8">
       {/* Background Layers */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <img
@@ -80,10 +80,7 @@ export default function EntropyState3() {
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               className="h-[5px] w-[5px] rounded-full bg-figma-primary shadow-[0px_0px_1px_0px_rgba(255,255,255,1.00),_0px_0px_1px_0px_rgba(255,255,255,1.00),_0px_0px_4px_0px_rgba(255,255,255,1.00),_0px_0px_8px_0px_rgba(255,255,255,1.00),_0px_0px_14px_0px_rgba(255,255,255,1.00),_0px_0px_25px_0px_rgba(255,255,255,1.00)]"
             />
-            <p
-              className="font-heading text-figma-14 font-normal leading-figma-18 bg-clip-text"
-              style={{ WebkitTextFillColor: "transparent" }}
-            >
+            <p className="font-heading text-figma-14 font-normal leading-figma-18 text-figma-text-2">
               Connexion...
             </p>
           </div>
@@ -91,10 +88,9 @@ export default function EntropyState3() {
           {/* Input Row */}
           <div className="flex w-full flex-col sm:flex-row items-center gap-[20px]">
             {/* Fake Input Field */}
-            <div className="relative flex min-h-[70px] w-full flex-1 items-center justify-between rounded-[54px] bg-figma-secondary px-[30px] shadow-sm backdrop-blur-md transition-all hover:bg-figma-secondary/80 cursor-text">
+            <div className="relative flex min-h-[70px] w-full flex-1 items-center justify-between rounded-[54px] border border-white/10 bg-white/10 px-[30px] shadow-sm backdrop-blur-2xl transition-all hover:bg-white/[0.14] cursor-text">
               <p
-                className="font-heading text-figma-20 font-normal leading-figma-26 bg-clip-text truncate mr-4"
-                style={{ WebkitTextFillColor: "transparent" }}
+                className="font-heading text-figma-20 font-normal leading-figma-26 truncate mr-4 text-figma-text-3"
               >
                 Start the studio to generate...
               </p>
@@ -104,8 +100,7 @@ export default function EntropyState3() {
                   ↳
                 </span>
                 <p
-                  className="font-heading text-figma-20 font-normal leading-figma-26 bg-clip-text"
-                  style={{ WebkitTextFillColor: "transparent" }}
+                  className="font-heading text-figma-20 font-normal leading-figma-26 text-figma-text-2"
                 >
                   Editorial
                 </p>
@@ -116,7 +111,7 @@ export default function EntropyState3() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-[44px] bg-figma-secondary shadow-sm backdrop-blur-md transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-[44px] border border-white/10 bg-white/10 shadow-sm backdrop-blur-2xl transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="Submit generation"
             >
               <img className="h-[23px] w-[23px]" src="https://media.base44.com/images/public/69b2e952528daefdb8ba4906/929dd97d8_34548ba31_6339_94.svg" alt="" />
