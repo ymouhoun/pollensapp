@@ -11,6 +11,7 @@ import Memory from '@/pages/Memory';
 import Entropy from '@/pages/Entropy';
 import Settings from '@/pages/Settings';
 import TenantDetail from '@/pages/admin/TenantDetail';
+import EntropyState3 from './pages/EntropyState3';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin/tenant" element={<TenantDetail />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
+      <Route path="/EntropyState3" element={<EntropyState3 />} />
     </Routes>
   );
 };

@@ -65,6 +65,14 @@
     --sidebar-accent-foreground: 230 15% 25%;
     --sidebar-border: 230 20% 90%;
     --sidebar-ring: 250 30% 42%;
+    /* figma:pollens-app (taKREQ1i) — start */
+    --figma-primary: 0 0% 100%;
+    --figma-secondary: 0 0% 85% / 0.2;
+    --figma-accent: 0 0% 100% / 0.1;
+    --figma-text-1: 0 0% 100% / 0.35;
+    --figma-text-2: 0 0% 100% / 0.8;
+    --figma-text-3: 0 0% 100% / 0.53;
+    /* figma:pollens-app (taKREQ1i) — end */
   }
 
   .dark {
